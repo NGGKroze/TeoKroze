@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lottery Consecutive Match Simulator</title>
+  <style>
+    .ball.goal { background: #f44336; }
+    .ball.common { background: #2196F3; }
+    body { font-family: sans-serif; padding: 2rem; }
+    #main { display: flex; gap: 2rem; }
+    #left { flex: 1; }
+    #right { flex: 1; display: flex; flex-direction: column; align-items: flex-end; }
+    #controls { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+    button, input, select { padding: 0.5rem; font-size: 1rem; }
+    #counters { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 1.1rem; }
+    #history, #goalHistory { margin-top: 1rem; font-size: 1.1rem; }
+    #visualization { margin-top: 1rem; max-height: 200px; overflow-y: auto; }
+    .draw { display: flex; margin-bottom: 0.5rem; }
+    .ball { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #4caf50; color: #fff; margin-right: 4px; }
+    #goalVisual { margin-top: 1rem; }
+    #commonCombo { margin-top: 1rem; display: none; }
+  </style>
+</head>
+<body>
+  <h1>Consecutive Draw Simulator</h1>
+  <div id="main">
+    <div id="left">
+      <div id="controls">
+        <select id="gameType"></select>
+        <button id="startBtn">Start</button>
+        <button id="stopBtn" disabled>Stop</button>
+        <input type="number" id="batchSize" placeholder="Draws per tick" min="1" />
+        <input type="number" id="maxDraws" placeholder="Range size (0=unlimited)" min="0" />
+      </div>
+      <div id="counters">
+        <div>Total Draws: <strong id="drawCount">0</strong></div>
+        <div>Range of Draws: <strong id="rangeCount">0</strong></div>
+        <div>Range Repeats: <strong id="repeatCount">0</strong></div>
+        <div>Consecutive Unordered: <strong id="unorderedCount">0</strong></div>
+        <div>First Unordered Draw: <strong id="firstUnordered">N/A</strong></div>
+        <div>Last Unordered Draw: <strong id="lastUnordered">N/A</strong></div>
+        <div>Goal Achieved at Draw: <strong id="lastOrdered">N/A</strong></div>
+        <div>Probability of Goal: <strong id="goalProb">0%</strong></div>
+        <div>Consecutive Count: <strong id="consecCount">0</strong></div>
+      </div>
+      <div id="history">
+        <h3>Unordered Events</h3>
+        <p>First: <strong id="firstUnorderedHistory">N/A</strong></p>
+        <p>Last: <strong id="lastUnorderedHistory">N/A</strong></p>
+      </div>
+      <div id="goalHistory">
+        <h3>Goal History (Last 10)</h3>
+        <div id="goalHistoryList">None</div>
+      </div>
+    </div>
+    <div id="right">
+      <div id="visualization"></div>
+      <div id="goalVisual"></div>
+      <div id="commonCombo"><strong>Most Common Combo:</strong><div id="commonDraw"></div></div>
+    </div>
+  </div>
+  <script>
+    (function() {
+      const by = id => document.getElementById(id);
+      const gameOpts = ['5-35','6-42','6-49'];
+      let pool = 42, pick = 6;
+      let total = 0, inRange = 0, repeats = 0, unord = 0;
+      let firstUnord = null, lastUnord = null, lastOrd = null, consec = 0;
+      let freqMap = {}, goalHistMap = {};
+      let prevDraw = null, running = false, batch = 1000, maxDraws = 0;
+
+      function setupUI() {
+        const sel = by('gameType');
+        gameOpts.forEach(opt => {
+          const o = new Option(opt.replace('-', '/'), opt);
+          sel.add(o);
+        });
+        sel.value = '6-42';
+        [pick, pool] = sel.value.split('-').map(Number);
+      }
+
+      function fmt(n) {
+        if (n >= 1e9) return (n/1e9).toFixed(3) + 'B';
+        if (n >= 1e6) return (n/1e6).toFixed(3) + 'M';
+        return n;
+      }
+      function perm(n, k) { let r = 1; for (let i=0; i<k; i++) r *= (n-i); return r; }
+      function randDraw() {
+        const a = Array.from({length: pool}, (_, i) => i+1), d=[];
+        for (let i=0; i<pick; i++) d.push(a.splice(Math.random()*a.length|0,1)[0]);
+        return d;
+      }
+
+      function render(draw) {
+        const viz = by('visualization');
+        const div = document.createElement('div'); div.className = 'draw';
+        draw.forEach(n => {
+          const sp = document.createElement('span'); sp.className = 'ball'; sp.textContent = n;
+          div.appendChild(sp);
+        });
+        viz.prepend(div);
+        if (viz.childNodes.length > 10) viz.removeChild(viz.lastChild);
+      }
+
+      function updateUI() {
+        by('drawCount').textContent = fmt(total);
+        by('rangeCount').textContent = fmt(inRange);
+        by('repeatCount').textContent = fmt(repeats);
+        by('unorderedCount').textContent = fmt(unord);
+        by('firstUnordered').textContent = firstUnord ? fmt(firstUnord) : 'N/A';
+        by('lastUnordered').textContent = lastUnord ? fmt(lastUnord) : 'N/A';
+        by('firstUnorderedHistory').textContent = firstUnord ? fmt(firstUnord) : 'N/A';
+        by('lastUnorderedHistory').textContent = lastUnord ? fmt(lastUnord) : 'N/A';
+        by('lastOrdered').textContent = lastOrd ? fmt(lastOrd) : 'N/A';
+        by('goalProb').textContent = (total>1?(1-Math.exp(-(total-1)/perm(pool,pick)))*100:0).toFixed(3) + '%';
+        by('consecCount').textContent = consec;
+        // update goal history
+        const hist = goalHistMap[`${pick}-${pool}`] || [];
+        by('goalHistoryList').innerHTML = hist.map(e => `Draw ${e.draw}: ${e.prob.toFixed(3)}%`).join('<br>') || 'None';
+      }
+
+      function updateCommon() {
+        const entries = Object.entries(freqMap);
+        if (!entries.length) return;
+        const [comb] = entries.reduce((a,b) => b[1]>a[1]?b:a);
+        const nums = comb.split(',').map(Number);
+        const cd = by('commonDraw'); cd.innerHTML = '';
+        nums.forEach(n => {
+          const sp = document.createElement('span'); sp.className='ball common'; sp.textContent=n;
+          cd.appendChild(sp);
+        });
+        by('commonCombo').style.display = 'block';
+      }
+
+      function step() {
+        if (!running) return;
+        for (let i=0; i<batch; i++) {
+          const cur = randDraw(); total++; inRange++;
+          if (maxDraws>0 && inRange>maxDraws) { repeats++; inRange=1; }
+          const key = cur.slice().sort((a,b)=>a-b).join(',');
+          freqMap[key] = (freqMap[key]||0) + 1;
+          const cs = cur.join(','), ps = prevDraw.join(',');
+          if (cs === ps) {
+            lastOrd = total; consec = 2;
+            if (firstUnord === null) firstUnord = total;
+            lastUnord = total;
+            // record goal history
+            const gh = goalHistMap[`${pick}-${pool}`] || [];
+            gh.push({draw: total, prob: parseFloat(by('goalProb').textContent)});
+            if (gh.length>10) gh.shift();
+            goalHistMap[`${pick}-${pool}`] = gh;
+            // render goal visual
+            const gv = by('goalVisual'); gv.innerHTML='';
+            [prevDraw, cur].forEach(seq => {
+              const dv = document.createElement('div'); dv.className='draw';
+              seq.forEach(n => { const sp = document.createElement('span'); sp.className='ball goal'; sp.textContent=n; dv.appendChild(sp); });
+              gv.appendChild(dv);
+            });
+            updateCommon();
+            running = false;
+            by('startBtn').disabled = false;
+            by('stopBtn').disabled = true;
+            break;
+          }
+          // unordered case
+          const pk = prevDraw.slice().sort((a,b)=>a-b).join(',');
+          if (key === pk) {
+            unord++;
+            lastUnord = total;
+            if (firstUnord === null) firstUnord = total;
+          }
+          prevDraw = cur;
+        }
+        updateUI(); render(prevDraw);
+        if (running) requestAnimationFrame(step);
+      }
+
+      by('gameType').onchange = () => [pick, pool] = by('gameType').value.split('-').map(Number);
+      by('startBtn').onclick = () => {
+        batch = parseInt(by('batchSize').value,10) || 1000;
+        maxDraws = parseInt(by('maxDraws').value,10) || 0;
+        [pick,pool] = by('gameType').value.split('-').map(Number);
+        total = inRange = repeats = unord = consec = 0;
+        firstUnord = lastUnord = lastOrd = null;
+        freqMap = {};
+        by('visualization').innerHTML = '';
+        by('goalVisual').innerHTML = '';
+        by('commonCombo').style.display = 'none';
+        prevDraw = randDraw(); total++;
+        freqMap[prevDraw.slice().sort((a,b)=>a-b).join(',')] = 1;
+        render(prevDraw); updateUI();
+        running = true;
+        by('startBtn').disabled = true;
+        by('stopBtn').disabled = false;
+        requestAnimationFrame(step);
+      };
+      by('stopBtn').onclick = () => { if (running) { running = false; by('startBtn').disabled = false; by('stopBtn').disabled = true;} };
+
+      setupUI(); prevDraw = randDraw(); updateUI();
+    })();
+  </script>
+</body>
+</html>
