@@ -3,8 +3,6 @@
 package main
 
 import (
-	"path/filepath"
-	"strings"
 	"sync"
 	"syscall"
 	"unsafe"
@@ -36,8 +34,8 @@ func processImage(pid uintptr) string {
 	return syscall.UTF16ToString(buf[:n])
 }
 
-// markerWindowTitles: titles of the visible windows of Optitex Marker (a program
-// whose .exe name contains "marker"), e.g. "Marker 26 - [D:\Markers\City-New-Lice-38.mrk]".
+// markerWindowTitles: titles of the visible windows of Optitex Marker,
+// e.g. "M-VESTE-WOOLPURE-V1-PROIZ-SH - Optitex Mark 26".
 func markerWindowTitles() []string {
 	enumMu.Lock()
 	defer enumMu.Unlock()
@@ -55,9 +53,9 @@ func markerWindowTitles() []string {
 			}
 			var pid uintptr
 			pGetWindowThreadProcessId.Call(h, uintptr(unsafe.Pointer(&pid)))
-			exe := strings.ToLower(filepath.Base(processImage(pid)))
-			if strings.Contains(exe, "marker") || strings.Contains(exe, "optitex") {
-				*enumOut = append(*enumOut, syscall.UTF16ToString(buf[:n]))
+			title := syscall.UTF16ToString(buf[:n])
+			if isMarkerWindow(title, processImage(pid)) {
+				*enumOut = append(*enumOut, title)
 			}
 			return 1
 		})

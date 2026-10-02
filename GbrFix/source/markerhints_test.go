@@ -20,6 +20,7 @@ func TestParseMarkerTitle(t *testing.T) {
 		{`Optitex Marker - \\server\markers\City-New-Hastar-40.MRK *`, `\\server\markers\City-New-Hastar-40.MRK`},
 		{`City-New-Lice-40.mrk - Marker`, `City-New-Lice-40.mrk`},
 		{`City-New-Lice-40 - Optitex Marker 26`, `City-New-Lice-40`},
+		{`M-VESTE-WOOLPURE-V1-PROIZ-SH - Optitex Mark 26`, `M-VESTE-WOOLPURE-V1-PROIZ-SH`}, // real Optitex 26 title
 	}
 	for _, c := range cases {
 		got := hintTexts(parseMarkerTitle(c.title))
@@ -54,5 +55,28 @@ func TestFindMarkerOpenInMarker(t *testing.T) {
 	a2 := testApp(t, cfg)
 	if m := a2.FindMarker(gbr, "export.GBR", gbrOf(pcsA...)); m.MRK != mrk || strings.HasPrefix(m.How, "отворена") {
 		t.Fatalf("got %+v", m)
+	}
+}
+
+func TestIsMarkerWindow(t *testing.T) {
+	yes := [][2]string{
+		{`M-VESTE-WOOLPURE-V1-PROIZ-SH - Optitex Mark 26`, `C:\Program Files\Optitex\Optitex 26\App\Mark.exe`},
+		{`M-VESTE - Optitex Mark 26`, ``}, // process not readable: the title is enough
+		{`A-S-M - Something`, `C:\Program Files\EFI\Optitex 26\App\Marker.exe`},
+	}
+	no := [][2]string{
+		{`GBR Fix`, `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`},
+		{`Optitex Mark 26 - Google Search`, `C:\Program Files\Google\Chrome\Application\chrome.exe`},
+		{`Notepad`, `C:\Windows\notepad.exe`},
+	}
+	for _, c := range yes {
+		if !isMarkerWindow(c[0], c[1]) {
+			t.Errorf("not recognised: %q %q", c[0], c[1])
+		}
+	}
+	for _, c := range no {
+		if isMarkerWindow(c[0], c[1]) {
+			t.Errorf("wrongly recognised: %q %q", c[0], c[1])
+		}
 	}
 }

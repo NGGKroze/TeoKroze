@@ -82,6 +82,20 @@ func parseMarkerTitle(title string) []markerHint {
 	return out
 }
 
+// isMarkerWindow: a window of Optitex Marker. Optitex 26 calls it "Optitex Mark 26"
+// (title "NAME - Optitex Mark 26"); the program is in an Optitex folder and its .exe
+// name may be just "Mark".
+func isMarkerWindow(title, exePath string) bool {
+	t := strings.ToLower(title)
+	exe := strings.ToLower(strings.ReplaceAll(exePath, `\`, "/"))
+	base := exe[strings.LastIndex(exe, "/")+1:]
+	if base == "msedge.exe" || base == "chrome.exe" || base == "explorer.exe" {
+		return false // browser tabs / folders that only mention Optitex
+	}
+	return strings.Contains(t, "optitex mark") || strings.Contains(base, "mark") ||
+		(strings.Contains(exe, "optitex") && strings.Contains(t, " - "))
+}
+
 func isNameChar(c byte) bool {
 	return c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_'
 }

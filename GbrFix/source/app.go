@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const appVersion = "2.3"
+const appVersion = "2.4"
 
 const restoredTag = "_restored"
 
