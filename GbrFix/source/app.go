@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const appVersion = "2.2"
+const appVersion = "2.3"
 
 const restoredTag = "_restored"
 
@@ -255,8 +255,10 @@ type Event struct {
 	PhantomBefore int    `json:"phantomBefore"`
 	PhantomAfter  int    `json:"phantomAfter"`
 	Report        string `json:"report"`
-	Marker        string `json:"marker"`   // .MRK used for the notch check, and how it was found
-	NoMarker      bool   `json:"noMarker"` // no .MRK was found: the user can choose one
+	Marker        string `json:"marker"`       // .MRK used for the notch check, and how it was found
+	NoMarker      bool   `json:"noMarker"`     // no .MRK was found: the user can choose one
+	RestoredFrom  string `json:"restoredFrom"` // .MRK the missing notches were taken from
+	RestoredN     int    `json:"restoredN"`
 }
 
 type App struct {
@@ -270,8 +272,11 @@ type App struct {
 	wmu       sync.Mutex
 	stopWatch func()
 
-	mix   markerIndex
-	pairs map[string]string // GBR path (lower case) -> .MRK chosen by the user
+	mix          markerIndex
+	hmu          sync.Mutex
+	hints        []markerHint // markers seen open in Optitex Marker
+	markerTitles []string
+	pairs        map[string]string // GBR path (lower case) -> .MRK chosen by the user
 
 	mrks     map[string]*svgDrawing
 	notes    *notifier
@@ -429,6 +434,7 @@ func (a *App) schedule(p string) {
 }
 
 func (a *App) pump() {
+	tick := 0
 	for range time.Tick(500 * time.Millisecond) {
 		var ready []string
 		a.pmu.Lock()
@@ -443,6 +449,9 @@ func (a *App) pump() {
 			a.process(p, 0)
 		}
 		a.mix.tick()
+		if tick++; tick%4 == 0 { // every 2 s
+			a.pollMarker()
+		}
 		if !a.isPaused() {
 			a.retryWaiting()
 		}
@@ -551,7 +560,7 @@ func (a *App) convertFile(p string, raw []byte) {
 		return nil
 	})
 	if plan.rest != nil && mm.MRK != "" {
-		plan.rest.SourceName = filepath.Base(mm.MRK)
+		plan.rest.SourceName = mm.MRK // full path: the user sees which file the notches came from
 	}
 	markerNote, noMarker := "", false
 	if mm.MRK != "" {
@@ -609,6 +618,9 @@ func (a *App) convertFile(p string, raw []byte) {
 		Dups:          r.Total(func(x PieceSummary) int { return x.DuplicatesRemoved + x.NearDupRemoved }),
 		Unmapped:      r.Total(func(x PieceSummary) int { return x.Unmapped }),
 		PhantomBefore: before.Phantom, PhantomAfter: after.Phantom,
+	}
+	if plan.rest != nil && plan.rest.Restored > 0 {
+		e.RestoredFrom, e.RestoredN = mm.MRK, plan.rest.Restored
 	}
 	e.Report = r.ReportBG(filepath.Base(p)) + fmt.Sprintf("\nФантомни (червени) реза: преди %d, след %d\n", before.Phantom, after.Phantom)
 	if t := plan.rest.Text(); t != "" {
@@ -759,7 +771,7 @@ func (a *App) handler() http.Handler {
 		a.viewReq = ""
 		a.mu.Unlock()
 		writeJSON(w, map[string]any{"version": appVersion, "watched": watched, "events": ev, "paused": paused, "openView": openView,
-			"config": cfg, "iniPath": cfg.path, "dir": a.dir, "autostart": autostartEnabled(), "index": a.mix.status()})
+			"config": cfg, "iniPath": cfg.path, "dir": a.dir, "autostart": autostartEnabled(), "index": a.mix.status(), "markerTitles": a.currentMarkerTitles()})
 	})
 	mux.HandleFunc("/api/config", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {

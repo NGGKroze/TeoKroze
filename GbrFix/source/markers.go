@@ -537,6 +537,36 @@ func (a *App) FindMarker(gbrPath, name, gbrContent string) MarkerMatch {
 	if m.MRK == "" {
 		files = a.mix.list(searchRoots(cfg), cfg.Exclude)
 	}
+	// 2b. the marker open in Optitex Marker (its window title)
+	if m.MRK == "" {
+		a.pollMarker()
+		for _, h := range a.recentHints() {
+			if h.path {
+				if f, ok := statFile(h.text); ok && f.ext == ".mrk" && accept(f, false) {
+					m.MRK, m.How = f.path, "отворена в Marker"
+					break
+				}
+				continue
+			}
+			hk := baseKey(h.text)
+			var named []markerFile
+			for _, f := range files {
+				if f.ext == ".mrk" && f.key == hk {
+					named = append(named, f)
+				}
+			}
+			sort.SliceStable(named, func(i, j int) bool { return named[i].mod.After(named[j].mod) })
+			for _, f := range named {
+				if accept(f, false) {
+					m.MRK, m.How = f.path, "отворена в Marker, намерена в "+filepath.Dir(f.path)
+					break
+				}
+			}
+			if m.MRK != "" {
+				break
+			}
+		}
+	}
 	// 3. same name in the search folders – newest/closest in time first
 	if m.MRK == "" && key != "" {
 		var named []markerFile

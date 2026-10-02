@@ -32,3 +32,5 @@ func setAutostart(on bool) error             { fakeAutostart = on; return nil }
 func pickFolder(desc string) (string, error) { return os.TempDir(), nil }
 
 func pickFile(title, filter, startDir string) (string, error) { return "", nil }
+
+func markerWindowTitles() []string { return nil }

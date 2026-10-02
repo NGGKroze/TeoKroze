@@ -32,7 +32,12 @@ th{color:var(--mute);font-weight:600}
 td.path{word-break:break-all;max-width:520px}
 .st{font-weight:650}.st.ok{color:var(--ok)}.st.warn{color:var(--warn)}.st.error{color:var(--err)}.st.info{color:var(--mute)}
 .small{font-size:12px;color:var(--mute)}
-.links button{padding:3px 8px;font-size:12px;margin:0 4px 4px 0}
+.links button{padding:3px 8px;font-size:12px;margin:0}
+td.links{white-space:nowrap}
+.links .btns{display:flex;flex-direction:column;align-items:stretch;gap:4px;min-width:150px}
+.links .btns hr{border:0;border-top:1px solid var(--line);margin:2px 0;width:100%}
+.mrkline{margin-top:3px;padding:3px 6px;border-radius:5px;background:#f1f5ff;color:#1e3a8a;font-size:12px}
+.mrkline.rest{background:#ecfdf3;color:#14532d}
 .drop{border:2px dashed #b9c0cc;border-radius:10px;padding:26px;text-align:center;color:var(--mute);background:#fafbfc}
 .drop.hov{border-color:var(--acc);background:#eef4ff}
 .viewer{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -154,6 +159,7 @@ code{background:#eef0f3;padding:1px 5px;border-radius:4px}
       <button id="pickMrkDir" class="pri">Избери папка…</button>
     </div>
     <div class="row" style="margin-top:8px"><span id="idxState" class="small" style="flex:1"></span><button id="reindex">Обходи папките отново</button></div>
+    <div class="small" id="mkTitle" style="margin-top:6px"></div>
   </div>
   <div class="card">
     <h3>Общи</h3>
@@ -223,9 +229,21 @@ async function refresh(){
   $('#outDesc').innerHTML=status.config.outMode==='folder'?'в подпапка <code>ПАПКА'+esc(status.config.suffix)+'</code> с оригиналното име':'до него, с име <code>ИМЕ'+esc(status.config.suffix)+'.GBR</code>';$('#dlDesc').textContent=status.config.outMode==='folder'?'Коригираният файл се сваля с оригиналното име (запазете го в отделна папка).':'Коригираният файл се сваля с име ИМЕ'+status.config.suffix+'.GBR.';
   const ev=status.events||[];
   const lbl={ok:'Коригиран',warn:'Провери',error:'Грешка',info:'Инфо'};
-  $('#evBody').innerHTML=ev.length?ev.map((e,i)=>`<tr><td>${esc(e.time)}</td><td class="st ${e.status}">${lbl[e.status]||e.status}</td>
-   <td class="path">${e.src?esc(e.src):''}${e.out?'<div class="small">→ '+esc(e.out)+'</div>':''}${e.out2?'<div class="small">→ '+esc(e.out2)+' <b>(с върнати нотчове)</b></div>':''}${e.marker?'<div class="small">'+esc(e.marker)+'</div>':''}</td><td>${esc(e.msg)}</td>
-   <td class="links">${e.out?`<button data-cmp="${i}">Преди / след</button>`:''}${e.out2?`<button data-cmp2="${i}">С върнати нотчове</button>`:''}${(e.out||e.out2)?`<button data-rev="${i}">Покажи в папката</button>`:(e.src?`<button data-one="${i}">Преглед</button>`:'')}${(e.noMarker||e.marker)&&/\.gbr$/i.test(e.src||'')?`<button data-mrk="${i}">${e.noMarker?'Посочи .MRK…':'Друга .MRK…'}</button>`:''}</td></tr>`).join(''):'<tr><td colspan="5" class="small">Все още няма събития.</td></tr>';
+  const isGbr=e=>/\.gbr$/i.test(e.src||'');
+  $('#evBody').innerHTML=ev.length?ev.map((e,i)=>{
+    const paths=(e.src?esc(e.src):'')+
+      (e.out?'<div class="small">→ '+esc(e.out)+'</div>':'')+
+      (e.out2?'<div class="small">→ '+esc(e.out2)+' <b>(с върнати нотчове)</b></div>':'')+
+      (e.restoredFrom?`<div class="mrkline rest">Върнати ${e.restoredN} нотча от: <b>${esc(e.restoredFrom)}</b></div>`:'')+
+      (e.marker?'<div class="mrkline">'+esc(e.marker)+'</div>':'');
+    const b=[];
+    if(e.out)b.push(`<button data-cmp="${i}">Преди / след</button>`);
+    if(e.out2)b.push(`<button data-cmp2="${i}">Преглед с върнати нотчове</button>`);
+    if(!e.out&&!e.out2&&e.src)b.push(`<button data-one="${i}">Преглед</button>`);
+    if(e.out||e.out2)b.push(`<button data-rev="${i}">Покажи в папката</button>`);
+    if((e.noMarker||e.marker)&&isGbr(e)){if(b.length)b.push('<hr>');b.push(`<button data-mrk="${i}">${e.noMarker?'Посочи .MRK…':'Друга .MRK…'}</button>`);}
+    return `<tr><td>${esc(e.time)}</td><td class="st ${e.status}">${lbl[e.status]||e.status}</td><td class="path">${paths}</td><td>${esc(e.msg)}</td><td class="links"><div class="btns">${b.join('')}</div></td></tr>`;
+  }).join(''):'<tr><td colspan="5" class="small">Все още няма събития.</td></tr>';
   $('#evBody').querySelectorAll('[data-cmp]').forEach(b=>b.onclick=()=>{const e=ev[+b.dataset.cmp];viewPaths(e.src,e.out,e.report);});
   $('#evBody').querySelectorAll('[data-cmp2]').forEach(b=>b.onclick=()=>{const e=ev[+b.dataset.cmp2];viewPaths(e.src,e.out2,e.report,'С върнати нотчове: ');});
   $('#evBody').querySelectorAll('[data-mrk]').forEach(b=>b.onclick=async()=>{const e=ev[+b.dataset.mrk];b.disabled=true;b.textContent='Отваря се прозорец…';
@@ -234,6 +252,8 @@ async function refresh(){
   $('#evBody').querySelectorAll('[data-rev]').forEach(b=>b.onclick=()=>{const e=ev[+b.dataset.rev];fetch('/api/reveal?path='+encodeURIComponent(e.out2||e.out),{method:'POST',headers:H});});
   $('#iniPath').textContent=status.iniPath;$('#dirPath').textContent=status.dir;
   if(!cfgLoaded){loadCfgForm();cfgLoaded=true;}
+  const mt=status.markerTitles||[];
+  $('#mkTitle').innerHTML=mt.length?'Отворено в Optitex Marker: '+mt.map(t=>'<code>'+esc(t)+'</code>').join(' · ')+' – маркировката от заглавието се използва за GBR файловете, експортирани от него.':'Optitex Marker не е отворен (или прозорецът му не е намерен).';
   const ix=status.index||{};
   $('#idxState').textContent=!(ix.roots||[]).length?'Няма папки за търсене на маркировки.':
     ix.scanning?`Обхождат се папките… ${(ix.walked||0).toLocaleString('bg-BG')} файла досега`+(ix.built?` (ползва се списъкът от ${ix.built})`:' – GBR файловете без маркировка ще се проверят отново след това.'):
