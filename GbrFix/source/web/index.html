@@ -160,6 +160,7 @@ code{background:#eef0f3;padding:1px 5px;border-radius:4px}
     </div>
     <div class="row" style="margin-top:8px"><span id="idxState" class="small" style="flex:1"></span><button id="reindex">Обходи папките отново</button></div>
     <div class="small" id="mkTitle" style="margin-top:6px"></div>
+    <div class="row" style="margin-top:10px"><span style="width:340px">Изчакване преди четене на .MRK / .PDS</span><input id="optQuiet" type="number" min="0" max="120" style="width:80px"><span class="small">секунди без промяна във файла (Marker да е завършил записа). По подразбиране 3.</span></div>
   </div>
   <div class="card">
     <h3>Общи</h3>
@@ -196,7 +197,7 @@ const $=s=>document.querySelector(s);
 const H={'X-GbrFix':'1'};
 let status=null,cfgLoaded=false,watchEdit=[],mrkEdit=[];
 function loadCfgForm(){const c=status.config;watchEdit=[...(c.watch||[])];renderWatch();mrkEdit=[...(c.markerDirs||[])];renderMrk();
-  $('#optAutostart').checked=!!status.autostart;$('#optNotify').checked=!!c.notify;$('#optShV').checked=!!c.shapeV;$('#optShBox').checked=!!c.shapeBox;$('#optShU').checked=!!c.shapeU;$('#optCloseU').checked=!!c.closeBrokenU;$('#optMissing').checked=!!c.checkMissing;({same:$('#rmSame'),off:$('#rmOff')}[c.restoreMode]||$('#rmSep')).checked=true;(c.outMode==='folder'?$('#omFolder'):$('#omSuffix')).checked=true;$('#optSuffix').value=c.suffix;$('#optNear').value=c.neardup;
+  $('#optAutostart').checked=!!status.autostart;$('#optNotify').checked=!!c.notify;$('#optShV').checked=!!c.shapeV;$('#optShBox').checked=!!c.shapeBox;$('#optShU').checked=!!c.shapeU;$('#optCloseU').checked=!!c.closeBrokenU;$('#optMissing').checked=!!c.checkMissing;({same:$('#rmSame'),off:$('#rmOff')}[c.restoreMode]||$('#rmSep')).checked=true;(c.outMode==='folder'?$('#omFolder'):$('#omSuffix')).checked=true;$('#optSuffix').value=c.suffix;$('#optNear').value=c.neardup;$('#optQuiet').value=c.markerQuiet??3;
   $('#optExcl').value=(c.exclude||[]).join('\n');sfxEx();}
 function outMode(){return $('#omFolder').checked?'folder':'suffix';}
 function sfxEx(){const x=$('#optSuffix').value||'';
@@ -270,7 +271,7 @@ $('#quickPick').onclick=async()=>{$('#quickMsg').textContent='Отваря се 
     const c=status.config;await saveCfg({watch:[j.path],outMode:c.outMode,suffix:c.suffix,notify:c.notify,neardup:c.neardup,exclude:c.exclude,autostart:status.autostart});
     $('#quickMsg').textContent='';cfgLoaded=false;refresh();}catch(e){$('#quickMsg').textContent='Грешка: '+e.message;}};
 function rootWarn(v){return /^[a-z]:\\?$/i.test(v.trim())?'Внимание: избран е цял диск – по-добре изберете конкретната папка на Marker.':'';}
-function cfgBody(){return {watch:watchEdit,markerDirs:mrkEdit,shapeV:$('#optShV').checked,shapeBox:$('#optShBox').checked,shapeU:$('#optShU').checked,closeBrokenU:$('#optCloseU').checked,checkMissing:$('#optMissing').checked,restoreMode:(document.querySelector('input[name=restMode]:checked')||{}).value||'separate',outMode:outMode(),suffix:$('#optSuffix').value.trim(),notify:$('#optNotify').checked,neardup:parseInt($('#optNear').value||'0',10),
+function cfgBody(){return {watch:watchEdit,markerDirs:mrkEdit,shapeV:$('#optShV').checked,shapeBox:$('#optShBox').checked,shapeU:$('#optShU').checked,closeBrokenU:$('#optCloseU').checked,checkMissing:$('#optMissing').checked,restoreMode:(document.querySelector('input[name=restMode]:checked')||{}).value||'separate',outMode:outMode(),suffix:$('#optSuffix').value.trim(),notify:$('#optNotify').checked,neardup:parseInt($('#optNear').value||'0',10),markerQuiet:Math.max(0,Math.min(120,parseInt($('#optQuiet').value||'3',10))),
   exclude:$('#optExcl').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),autostart:$('#optAutostart').checked};}
 let saveTimer=null,saveSeq=0;
 function saveState(html){$('#saveState').innerHTML=html;}
@@ -283,7 +284,7 @@ async function autoSave(){const seq=++saveSeq;saveState('Записва се…'
 function saveSoon(ms){clearTimeout(saveTimer);saveState('Записва се…');saveTimer=setTimeout(autoSave,ms||700);}
 // checkboxes / radio buttons: save at once; text fields: shortly after typing stops
 ['#optAutostart','#optNotify','#optShV','#optShBox','#optShU','#optCloseU','#optMissing','#rmSep','#rmSame','#rmOff','#omFolder','#omSuffix'].forEach(s=>$(s).addEventListener('change',()=>autoSave()));
-['#optSuffix','#optNear','#optExcl'].forEach(s=>{$(s).addEventListener('input',()=>saveSoon(800));$(s).addEventListener('change',()=>{clearTimeout(saveTimer);autoSave();});});
+['#optSuffix','#optNear','#optQuiet','#optExcl'].forEach(s=>{$(s).addEventListener('input',()=>saveSoon(800));$(s).addEventListener('change',()=>{clearTimeout(saveTimer);autoSave();});});
 function addWatchPath(v){v=(v||'').trim();if(!v||watchEdit.some(x=>x.toLowerCase()===v.toLowerCase()))return;watchEdit.push(v);renderWatch();$('#cfgMsg').textContent=rootWarn(v);autoSave();}
 $('#addWatch').onclick=()=>{addWatchPath($('#watchIn').value);$('#watchIn').value='';};
 $('#watchIn').onkeydown=e=>{if(e.key==='Enter')$('#addWatch').click();};

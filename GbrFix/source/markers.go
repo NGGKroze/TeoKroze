@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -388,17 +389,25 @@ func (ix *markerIndex) markerBoxes(f markerFile) ([]pieceBox, bool) {
 }
 
 // Marker may save a marker several times in a row. A .MRK/.PDS is read only when it
-// has not changed for markerQuiet, so GBR Fix never reads it in the middle of saving.
+// has not changed for markerQuiet() (Settings, 3 s by default), so GBR Fix does not
+// read it in the middle of saving.
 var (
-	markerQuiet    = 10 * time.Second
+	quietNs        atomic.Int64
 	markerQuietMax = 60 * time.Second
 )
 
-// markerSettled waits (up to markerQuietMax) until p has not changed for markerQuiet.
+func init() { setMarkerQuiet(defaultMarkerQuiet * time.Second) }
+
+func markerQuiet() time.Duration     { return time.Duration(quietNs.Load()) }
+func setMarkerQuiet(d time.Duration) { quietNs.Store(int64(d)) }
+
+// markerSettled waits (up to markerQuietMax + markerQuiet()) until p has not changed
+// for markerQuiet().
 // The file's time is used when it is clearly older; otherwise (just saved, or the
 // server's clock differs) size and time are watched here.
 func markerSettled(p string) bool {
-	deadline := time.Now().Add(markerQuietMax)
+	quiet := markerQuiet()
+	deadline := time.Now().Add(markerQuietMax + quiet) // quiet: needed to see it unchanged
 	var lastSize int64 = -1
 	var lastMod, stableSince time.Time
 	for {
@@ -406,18 +415,18 @@ func markerSettled(p string) bool {
 		if err != nil {
 			return false
 		}
-		if time.Since(st.ModTime()) >= markerQuiet {
+		if time.Since(st.ModTime()) >= quiet {
 			return true
 		}
 		if st.Size() != lastSize || !st.ModTime().Equal(lastMod) {
 			lastSize, lastMod, stableSince = st.Size(), st.ModTime(), time.Now()
-		} else if time.Since(stableSince) >= markerQuiet {
+		} else if time.Since(stableSince) >= quiet {
 			return true
 		}
 		if time.Now().After(deadline) {
 			return false
 		}
-		time.Sleep(min(markerQuiet/5+time.Millisecond, 2*time.Second))
+		time.Sleep(min(quiet/5+time.Millisecond, 2*time.Second))
 	}
 }
 
@@ -778,7 +787,7 @@ func (a *App) markerSeen(p string) {
 // for one are checked again.
 func (a *App) retryWaiting() {
 	a.pmu.Lock()
-	if a.mrkDirty.IsZero() || time.Since(a.mrkDirty) < markerQuiet {
+	if a.mrkDirty.IsZero() || time.Since(a.mrkDirty) < markerQuiet() {
 		a.pmu.Unlock()
 		return
 	}

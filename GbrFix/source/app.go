@@ -19,9 +19,14 @@ import (
 	"time"
 )
 
-const appVersion = "2.5"
+const appVersion = "2.6"
 
 const restoredTag = "_restored"
+
+const (
+	defaultMarkerQuiet = 3   // s
+	maxMarkerQuiet     = 120 // s
+)
 
 //go:embed web/index.html
 var webFS embed.FS
@@ -49,6 +54,7 @@ type Config struct {
 	Notify         bool     `json:"notify"`
 	Port           int      `json:"port"`
 	ReportNextTo   bool     `json:"reportNextTo"`
+	MarkerQuiet    int      `json:"markerQuiet"` // seconds a .MRK/.PDS must be unchanged before it is read
 	path           string
 }
 
@@ -58,7 +64,7 @@ func defaultConfig() Config {
 		OutMode:    "suffix",
 		Watch:      nil, // the user chooses the folder(s)
 		Exclude:    []string{`\Windows\`, `\$Recycle.Bin\`, `\System Volume Information\`, `\AppData\Local\Temp\`, `\AppData\Local\Microsoft\`, `\GbrFix\`},
-		NearDupTol: 3, SegmentTol: 400, Notify: true, Port: 8765, CloseBrokenU: true, CheckMissing: true, RestoreMode: "separate",
+		NearDupTol: 3, SegmentTol: 400, MarkerQuiet: defaultMarkerQuiet, Notify: true, Port: 8765, CloseBrokenU: true, CheckMissing: true, RestoreMode: "separate",
 	}
 }
 
@@ -116,6 +122,8 @@ func (c Config) save() error {
 		"port=" + strconv.Itoa(c.Port) + "\n" +
 		"; Записвай и отчет .txt до коригирания файл 0/1\n" +
 		"report_next_to_file=" + b01(c.ReportNextTo) + "\n" +
+		"; Секунди, през които .MRK/.PDS трябва да е без промяна, преди да се прочете (Marker да е завършил записа)\n" +
+		"marker_quiet=" + strconv.Itoa(c.MarkerQuiet) + "\n" +
 		"cfgver=2\n"
 	return os.WriteFile(c.path, []byte(strings.ReplaceAll(ini, "\n", "\r\n")), 0644)
 }
@@ -190,6 +198,10 @@ func loadConfig(dir string) Config {
 		case "port":
 			if p, err := strconv.Atoi(v); err == nil && p > 0 {
 				c.Port = p
+			}
+		case "marker_quiet":
+			if n, err := strconv.Atoi(v); err == nil && n >= 0 && n <= maxMarkerQuiet {
+				c.MarkerQuiet = n
 			}
 		case "report_next_to_file":
 			c.ReportNextTo = v == "1"
@@ -793,6 +805,7 @@ func (a *App) handler() http.Handler {
 			CheckMiss  *bool     `json:"checkMissing"`
 			Restore    string    `json:"restoreMode"`
 			MarkerDirs *[]string `json:"markerDirs"`
+			Quiet      *int      `json:"markerQuiet"`
 		}
 		if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&in); err != nil {
 			http.Error(w, "Невалидни данни", 400)
@@ -832,6 +845,10 @@ func (a *App) handler() http.Handler {
 		}
 		if in.OutMode == "folder" || in.OutMode == "suffix" {
 			a.cfg.OutMode = in.OutMode
+		}
+		if in.Quiet != nil && *in.Quiet >= 0 && *in.Quiet <= maxMarkerQuiet {
+			a.cfg.MarkerQuiet = *in.Quiet
+			setMarkerQuiet(time.Duration(*in.Quiet) * time.Second)
 		}
 		if in.NearDup >= 0 && in.NearDup <= 50 {
 			a.cfg.NearDupTol = in.NearDup
@@ -1112,6 +1129,7 @@ func main() {
 	_, iniErr := os.Stat(filepath.Join(dir, "gbrfix.ini"))
 	firstRun := iniErr != nil
 	cfg := loadConfig(dir)
+	setMarkerQuiet(time.Duration(cfg.MarkerQuiet) * time.Second)
 	base := fmt.Sprintf("http://127.0.0.1:%d/", cfg.Port)
 	if fileArg != "" {
 		if abs, err := filepath.Abs(fileArg); err == nil {
