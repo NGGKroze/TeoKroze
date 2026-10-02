@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const appVersion = "2.4"
+const appVersion = "2.5"
 
 const restoredTag = "_restored"
 
@@ -484,7 +484,7 @@ func (a *App) process(p string, attempt int) {
 		return
 	}
 	a.pmu.Unlock()
-	raw, err := os.ReadFile(p)
+	raw, err := readShared(p)
 	if err != nil {
 		if attempt < 20 {
 			time.AfterFunc(3*time.Second, func() { a.process(p, attempt+1) })
@@ -1063,7 +1063,7 @@ func (a *App) readInput(r *http.Request) (string, string, error) {
 	if ext := strings.ToLower(filepath.Ext(p)); !gbrExts[ext] && ext != ".mrk" && ext != ".pds" {
 		return "", "", fmt.Errorf("разрешени са само .GBR, .MRK и .PDS файлове")
 	}
-	b, err := os.ReadFile(p)
+	b, err := readShared(p)
 	return string(b), filepath.Base(p), err
 }
 

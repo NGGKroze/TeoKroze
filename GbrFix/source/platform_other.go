@@ -34,3 +34,5 @@ func pickFolder(desc string) (string, error) { return os.TempDir(), nil }
 func pickFile(title, filter, startDir string) (string, error) { return "", nil }
 
 func markerWindowTitles() []string { return nil }
+
+func readShared(p string) ([]byte, error) { return os.ReadFile(p) }

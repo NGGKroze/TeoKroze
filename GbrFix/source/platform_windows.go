@@ -5,6 +5,7 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -249,4 +250,22 @@ func pickFolderPS(desc string) (string, error) {
 		`$o = New-Object System.Windows.Forms.Form; $o.TopMost = $true; ` +
 		`if ($f.ShowDialog($o) -eq 'OK') { [Console]::OutputEncoding = [Text.Encoding]::UTF8; [Console]::Write($f.SelectedPath) }`
 	return runPS(script)
+}
+
+// readShared reads a whole file while letting other programs write, rename or delete
+// it at the same time (os.ReadFile does not allow deleting), so Optitex Marker can
+// always save over its .MRK/.PDS/.GBR even while GBR Fix is reading it.
+func readShared(p string) ([]byte, error) {
+	name, err := syscall.UTF16PtrFromString(p)
+	if err != nil {
+		return nil, err
+	}
+	const fileShareAll = 0x1 | 0x2 | 0x4                                                                                                            // read | write | delete
+	h, err := syscall.CreateFile(name, syscall.GENERIC_READ, fileShareAll, nil, syscall.OPEN_EXISTING, syscall.FILE_ATTRIBUTE_NORMAL|0x08000000, 0) // FILE_FLAG_SEQUENTIAL_SCAN
+	if err != nil {
+		return nil, &os.PathError{Op: "open", Path: p, Err: err}
+	}
+	f := os.NewFile(uintptr(h), p)
+	defer f.Close()
+	return io.ReadAll(io.LimitReader(f, 256<<20))
 }

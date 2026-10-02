@@ -61,7 +61,7 @@ func findSibling(p, ext string) string {
 }
 
 func readXMLHead(p string) string {
-	b, err := os.ReadFile(p)
+	b, err := readShared(p)
 	if err != nil {
 		return ""
 	}

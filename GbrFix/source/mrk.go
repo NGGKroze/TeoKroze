@@ -9,7 +9,6 @@ package main
 import (
 	"fmt"
 	"math"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -173,7 +172,7 @@ func (d *svgDrawing) coordReport(name string) string {
 }
 
 func loadDrawing(path string) *svgDrawing {
-	b, err := os.ReadFile(path)
+	b, err := readShared(path)
 	if err != nil {
 		return nil
 	}

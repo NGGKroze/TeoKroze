@@ -363,13 +363,16 @@ func excluded(p string, exclude []string) bool {
 // markerBoxes reads the piece boxes of a marker. They are kept (also on disk, in
 // markers-cache.txt) by modification time, so each marker is read over the network
 // only once.
-func (ix *markerIndex) markerBoxes(f markerFile) []pieceBox {
+func (ix *markerIndex) markerBoxes(f markerFile) ([]pieceBox, bool) {
 	ix.mu.Lock()
 	if c, ok := ix.boxes[strings.ToLower(f.path)]; ok && c.mod.Equal(f.mod) {
 		ix.mu.Unlock()
-		return c.boxes
+		return c.boxes, true
 	}
 	ix.mu.Unlock()
+	if !markerSettled(f.path) {
+		return nil, false // Marker is still saving it: not read now
+	}
 	var boxes []pieceBox
 	if d := loadDrawing(f.path); d != nil && d.Kind == "MRK" {
 		boxes = drawingBoxes(d)
@@ -381,7 +384,41 @@ func (ix *markerIndex) markerBoxes(f markerFile) []pieceBox {
 	ix.boxes[strings.ToLower(f.path)] = cachedBoxes{f.mod, boxes}
 	ix.dirty = true
 	ix.mu.Unlock()
-	return boxes
+	return boxes, true
+}
+
+// Marker may save a marker several times in a row. A .MRK/.PDS is read only when it
+// has not changed for markerQuiet, so GBR Fix never reads it in the middle of saving.
+var (
+	markerQuiet    = 10 * time.Second
+	markerQuietMax = 60 * time.Second
+)
+
+// markerSettled waits (up to markerQuietMax) until p has not changed for markerQuiet.
+// The file's time is used when it is clearly older; otherwise (just saved, or the
+// server's clock differs) size and time are watched here.
+func markerSettled(p string) bool {
+	deadline := time.Now().Add(markerQuietMax)
+	var lastSize int64 = -1
+	var lastMod, stableSince time.Time
+	for {
+		st, err := os.Stat(p)
+		if err != nil {
+			return false
+		}
+		if time.Since(st.ModTime()) >= markerQuiet {
+			return true
+		}
+		if st.Size() != lastSize || !st.ModTime().Equal(lastMod) {
+			lastSize, lastMod, stableSince = st.Size(), st.ModTime(), time.Now()
+		} else if time.Since(stableSince) >= markerQuiet {
+			return true
+		}
+		if time.Now().After(deadline) {
+			return false
+		}
+		time.Sleep(min(markerQuiet/5+time.Millisecond, 2*time.Second))
+	}
 }
 
 func (ix *markerIndex) loadBoxes(path string) {
@@ -490,7 +527,11 @@ func (a *App) FindMarker(gbrPath, name, gbrContent string) MarkerMatch {
 		}
 	}
 	accept := func(f markerFile, strict bool) bool {
-		b := a.mix.markerBoxes(f)
+		b, ok := a.mix.markerBoxes(f)
+		if !ok {
+			a.markerSeen(f.path) // being saved: the GBR waits and is checked again
+			return false
+		}
 		if b == nil {
 			return !strict // no drawing to compare: a marker with the right name is still taken
 		}
@@ -609,7 +650,14 @@ func (a *App) FindMarker(gbrPath, name, gbrContent string) MarkerMatch {
 		}
 		return m
 	}
+	if !markerSettled(m.MRK) { // chosen by hand or next to the GBR, and still being saved
+		a.markerSeen(m.MRK)
+		return MarkerMatch{}
+	}
 	m.PDS = a.findPattern(m.MRK, gbrPath, files, cfg)
+	if m.PDS != "" && !markerSettled(m.PDS) {
+		m.PDS = ""
+	}
 	return m
 }
 
@@ -730,7 +778,7 @@ func (a *App) markerSeen(p string) {
 // for one are checked again.
 func (a *App) retryWaiting() {
 	a.pmu.Lock()
-	if a.mrkDirty.IsZero() || time.Since(a.mrkDirty) < 3*time.Second {
+	if a.mrkDirty.IsZero() || time.Since(a.mrkDirty) < markerQuiet {
 		a.pmu.Unlock()
 		return
 	}
@@ -748,7 +796,7 @@ func (a *App) retryWaiting() {
 		return
 	}
 	for _, p := range waiting {
-		raw, err := os.ReadFile(p)
+		raw, err := readShared(p)
 		if err != nil {
 			a.pmu.Lock()
 			delete(a.waitMrk, p)
