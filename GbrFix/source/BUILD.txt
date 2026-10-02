@@ -1,0 +1,1 @@
+Build: GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -s -w" -o GbrFix.exe .

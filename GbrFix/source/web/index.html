@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GBR Fix</title>
+<link rel="icon" type="image/png" href="/icon.png">
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--ink:#16181d;--mute:#6b7280;--line:#e2e5ea;--acc:#1f6feb;--ok:#138a3e;--warn:#b76e00;--err:#c62828;
+--cv:#000;--cut:#e9ecef;--notch:#8cff45;--phantom:#ff2b2b;--travel:#5f6b75;--drill:#ff9f0a;--drillc:#38bdf8}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;align-items:center;gap:14px;padding:12px 18px;background:#111;color:#fff;flex-wrap:wrap}
+header h1{font-size:17px;margin:0;font-weight:650}
+.pill{display:inline-block;padding:3px 9px;border-radius:99px;font-size:12px;background:#2a2d33;color:#cfd3da}
+.pill.on{background:#123d22;color:#8ff0a8}
+header .sp{flex:1}
+button{font:inherit;border:1px solid var(--line);background:#fff;color:var(--ink);padding:6px 12px;border-radius:7px;cursor:pointer}
+button:hover{border-color:#b9bfc9}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+header button{background:#23262c;border-color:#3a3e46;color:#eee}
+nav{display:flex;gap:4px;padding:10px 18px 0;border-bottom:1px solid var(--line);background:var(--card)}
+nav button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:8px 12px;color:var(--mute)}
+nav button.act{color:var(--ink);border-bottom-color:var(--acc);font-weight:600}
+main{padding:16px 18px;max-width:1600px;margin:0 auto}
+.panel{display:none}.panel.act{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+h3{margin:0 0 10px;font-size:15px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:13px}
+th{color:var(--mute);font-weight:600}
+td.path{word-break:break-all;max-width:520px}
+.st{font-weight:650}.st.ok{color:var(--ok)}.st.warn{color:var(--warn)}.st.error{color:var(--err)}.st.info{color:var(--mute)}
+.small{font-size:12px;color:var(--mute)}
+.links button{padding:3px 8px;font-size:12px;margin:0 4px 4px 0}
+.drop{border:2px dashed #b9c0cc;border-radius:10px;padding:26px;text-align:center;color:var(--mute);background:#fafbfc}
+.drop.hov{border-color:var(--acc);background:#eef4ff}
+.viewer{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.viewer.single{grid-template-columns:1fr}
+.cvwrap{background:var(--cv);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;min-height:520px}
+.cvhead{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;background:#141414;color:#fff;align-items:baseline;flex-wrap:wrap}
+.cvhead b{font-size:14px}.cvhead span{font-size:12px;color:#c9c9c9}
+canvas{flex:1;width:100%;height:560px;display:block;cursor:grab}
+.tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.tools label{display:flex;gap:5px;align-items:center;font-size:13px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:8px}
+.legend i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:5px;border-radius:2px}
+pre{white-space:pre-wrap;background:#f7f8fa;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;max-height:340px;overflow:auto;margin:0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+input:not([type=checkbox]),textarea{font:inherit;border:1px solid var(--line);border-radius:7px;padding:6px 9px;background:#fff}
+.chk{display:flex;gap:8px;align-items:center;margin:6px 0}
+.witem{display:flex;gap:10px;align-items:center;padding:6px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:#fafbfc}
+.witem code{flex:1;background:none;padding:0;font-size:13px}
+.witem.miss{border-color:#f0c36d;background:#fff8e6}
+code{background:#eef0f3;padding:1px 5px;border-radius:4px}
+@media (max-width:900px){.viewer{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>GBR Fix <span id="ver" style="font-weight:400;font-size:12px;color:#9aa0a8"></span></h1>
+  <span class="pill" id="watchPill">…</span>
+  <span class="sp"></span>
+  <button id="openBtn">Отвори .GBR за преглед</button>
+  <button id="pauseBtn" title="Временно спира автоматичното конвертиране">Пауза</button>
+  <button id="quitBtn" title="Затваря програмата напълно (и иконата в трея)">Изход</button>
+  <input type="file" id="fileIn" accept=".gbr,.GBR,.mrk,.MRK,.pds,.PDS" multiple hidden>
+</header>
+<div id="noFolder" style="display:none;padding:10px 18px;background:#fdecea;border-bottom:1px solid #f5c2c0;font-size:14px">
+  <b>Не е избрана папка за автоматично конвертиране.</b> Изберете папката, в която Marker записва .GBR файловете (с подпапките ѝ).
+  <button class="pri" id="quickPick" style="margin-left:10px">Избери папка…</button> <span id="quickMsg" class="small"></span>
+</div>
+<div id="trayHint" class="small" style="padding:6px 18px;background:#fffbe8;border-bottom:1px solid #f1e3a6">Затварянето на този прозорец не спира програмата – тя продължава да работи в трея (до часовника) и конвертира автоматично. Иконата: <img src="/icon.png" style="width:16px;height:16px;vertical-align:-3px"> · <a href="#" id="hideHint">скрий</a></div>
+<nav>
+  <button data-p="events" class="act">Последни файлове</button>
+  <button data-p="view">Преглед</button>
+  <button data-p="manual">Ръчно конвертиране</button>
+  <button data-p="settings">Настройки</button>
+</nav>
+<main>
+<section class="panel act" id="p-events">
+  <div class="card">
+    <h3>Автоматично коригирани файлове</h3>
+    <div class="small" style="margin-bottom:8px">Всеки нов или променен .GBR в следените папки се проверява. Ако има счупени нотчове от Optitex, се записва коригиран файл – <span id="outDesc"></span>. Оригиналът не се променя.</div>
+    <table><thead><tr><th>Време</th><th>Статус</th><th>Файл</th><th>Резултат</th><th></th></tr></thead><tbody id="evBody"><tr><td colspan="5" class="small">Все още няма събития.</td></tr></tbody></table>
+  </div>
+</section>
+
+<section class="panel" id="p-view">
+  <div class="card">
+    <div class="tools">
+      <button id="viewOpen" class="pri">Отвори файл…</button>
+      <button id="viewDl" style="display:none"></button>
+      <button id="viewDl2" style="display:none"></button>
+      <button id="fitBtn">Побери</button>
+      <label><input type="checkbox" id="tTravel"> Празни ходове</label>
+      <label><input type="checkbox" id="tLabels" checked> Номера на детайли</label>
+      <label><input type="checkbox" id="tStart" checked> Начало на контура</label>
+      <label><input type="checkbox" id="tPoints"> Точки</label>
+      <span id="coord" style="margin-left:auto;font:12px ui-monospace,Consolas,monospace;color:var(--ink);background:#f3f4f6;border-radius:6px;padding:4px 8px;min-width:330px">Посочете с мишката за координати</span>
+      <span class="small">Колелце = мащаб, влачене = преместване, двоен клик = побери. Двата изгледа се движат заедно.</span>
+    </div>
+    <div id="viewEmpty" class="drop" style="margin-bottom:10px">Пуснете .GBR, .MRK или .PDS файл тук или натиснете <b>„Отвори файл…“</b>, за да го видите.<div class="small" style="margin-top:6px">GBR: ако има счупени нотчове, до него се показва и как ще изглежда след корекцията – с бутон за сваляне.<br>MRK / PDS: показват се детайлите и всички нотчове с координатите им. Ако отворите GBR и MRK заедно, липсващите в GBR нотчове се добавят от MRK.</div></div>
+    <div class="viewer single" id="viewer">
+      <div class="cvwrap"><div class="cvhead"><b id="t0">Няма файл</b><span id="s0"></span></div><canvas id="c0"></canvas></div>
+      <div class="cvwrap" id="w1" style="display:none"><div class="cvhead"><b id="t1"></b><span id="s1"></span></div><canvas id="c1"></canvas></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--cut)"></i>рязане по контура</span>
+      <span><i style="background:var(--notch)"></i>нотч (клъцка) – точки в началото и края</span>
+      <span><i style="background:var(--phantom)"></i>червено: ход с вдигнат нож (M15), който ViewCut/машината реже</span>
+      <span><i style="background:var(--travel)"></i>празен ход</span>
+      <span><i style="border:2px solid var(--drill);height:12px;width:12px;border-radius:50%;background:none"></i>начало на контура</span>
+      <span><i style="background:var(--drillc);height:8px;width:8px;border-radius:50%"></i>пробиване</span>
+    </div>
+  </div>
+  <div class="card" id="repCard" style="display:none"><h3>Отчет</h3><pre id="rep"></pre></div>
+</section>
+
+<section class="panel" id="p-manual">
+  <div class="card">
+    <h3>Ръчно конвертиране</h3>
+    <div class="drop" id="drop">Пуснете .GBR файлове (може и с .MRK към тях) тук или <button id="pickBtn" class="pri">изберете</button><div class="small" style="margin-top:6px"><span id="dlDesc"></span> Нищо не се качва в интернет – всичко остава на този компютър.</div></div>
+    <input type="file" id="fileIn2" accept=".gbr,.GBR,.mrk,.MRK" multiple hidden>
+    <table style="margin-top:12px"><tbody id="manBody"></tbody></table>
+  </div>
+</section>
+
+<section class="panel" id="p-settings">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap"><h3>Къде да се конвертира автоматично</h3><span class="small">Промените се запазват автоматично.</span></div>
+    <div class="small" style="margin-bottom:8px">Следят се избраните папки с всички подпапки. Изберете папката (или папките), в която Marker записва маркировките. Препоръчително е да не е цял диск.</div>
+    <div id="watchList"></div>
+    <div class="row">
+      <input id="watchIn" placeholder="напр. C:\Optitex\Markers" style="flex:1;min-width:240px">
+      <button id="addWatch">Добави</button>
+      <button id="pickWatch" class="pri">Избери папка…</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Общи</h3>
+    <label class="chk"><input type="checkbox" id="optAutostart"> Стартирай GBR Fix автоматично с Windows</label>
+    <label class="chk"><input type="checkbox" id="optNotify"> Показвай известие при всяко коригиране</label>
+    <div style="margin:12px 0 2px">Нотчове в GBR файла</div>
+    <div class="small" style="margin-bottom:4px">T нотчовете винаги стават I-нотч с M19. Другите видове Optitex 26.1 изрязва като форма в плата – по избор може и те да станат I-нотч:</div>
+    <label class="chk"><input type="checkbox" id="optShV"> V нотч → I-нотч с M19</label>
+    <label class="chk"><input type="checkbox" id="optShBox"> Кутия (box) нотч → I-нотч с M19</label>
+    <label class="chk"><input type="checkbox" id="optShU"> U нотч → I-нотч с M19</label>
+    <label class="chk"><input type="checkbox" id="optCloseU"> Довършвай U нотча до ръба, ако остава като U <span class="small">(26.1 не го затваря и отрязва тънка ивица от ръба)</span></label>
+    <div style="margin:12px 0 2px">Нотчове, които Optitex е изпуснал в GBR</div>
+    <div class="small" style="margin-bottom:4px">Мястото им се взима от .MRK файла със същото име до GBR-а и се добавят като I-нотч с M19. Без .MRK нищо не се добавя.</div>
+    <label class="chk"><input type="radio" name="restMode" value="separate" id="rmSep"> Записвай <b>втори файл</b> с добавените нотчове <span class="small">(…_restored) – първият файл остава само конвертиран</span></label>
+    <label class="chk"><input type="radio" name="restMode" value="same" id="rmSame"> Добавяй ги направо в коригирания файл <span class="small">(един файл)</span></label>
+    <label class="chk"><input type="radio" name="restMode" value="off" id="rmOff"> Не добавяй липсващи нотчове</label>
+    <label class="chk"><input type="checkbox" id="optMissing"> Проверявай за липсващи нотчове спрямо .MRK / .PDS файла до GBR-а</label>
+    <div style="margin:10px 0 4px">Къде да се записват коригираните файлове</div>
+    <label class="chk"><input type="radio" name="outMode" value="suffix" id="omSuffix"> До оригинала, с наставка в името</label>
+    <label class="chk"><input type="radio" name="outMode" value="folder" id="omFolder"> В отделна папка вътре в папката на оригинала (с оригиналните имена)</label>
+    <div class="row"><span style="width:260px">Наставка</span><input id="optSuffix" style="width:140px"></div>
+    <pre id="sfxEx" style="margin-top:8px;max-width:640px"></pre>
+    <div class="row"><span style="width:260px">Почти еднакви нотчове (0 = изкл.)</span><input id="optNear" type="number" min="0" max="50" style="width:80px"><span class="small">единици × 0,1 мм</span></div>
+    <div style="margin-top:10px"><div style="margin-bottom:4px">Пропускани пътища (по един на ред – всеки път, който съдържа този текст)</div><textarea id="optExcl" rows="5" style="width:100%;font:12px ui-monospace,Consolas,monospace"></textarea></div>
+    <div class="row" style="margin-top:12px"><span id="cfgMsg" class="small"></span></div>
+    <div id="saveState" class="small" style="position:fixed;right:22px;bottom:18px;background:#fff;border:1px solid var(--line);border-radius:99px;padding:7px 14px;box-shadow:0 4px 14px rgba(0,0,0,.12);z-index:20">Промените се запазват автоматично</div>
+    <p class="small">Файл с настройките: <code id="iniPath"></code> · Отчети и лог: <code id="dirPath"></code></p>
+  </div>
+</section>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+const H={'X-GbrFix':'1'};
+let status=null,cfgLoaded=false,watchEdit=[];
+function loadCfgForm(){const c=status.config;watchEdit=[...(c.watch||[])];renderWatch();
+  $('#optAutostart').checked=!!status.autostart;$('#optNotify').checked=!!c.notify;$('#optShV').checked=!!c.shapeV;$('#optShBox').checked=!!c.shapeBox;$('#optShU').checked=!!c.shapeU;$('#optCloseU').checked=!!c.closeBrokenU;$('#optMissing').checked=!!c.checkMissing;({same:$('#rmSame'),off:$('#rmOff')}[c.restoreMode]||$('#rmSep')).checked=true;(c.outMode==='folder'?$('#omFolder'):$('#omSuffix')).checked=true;$('#optSuffix').value=c.suffix;$('#optNear').value=c.neardup;
+  $('#optExcl').value=(c.exclude||[]).join('\n');sfxEx();}
+function outMode(){return $('#omFolder').checked?'folder':'suffix';}
+function sfxEx(){const x=$('#optSuffix').value||'';
+  $('#sfxEx').textContent=outMode()==='folder'
+   ?'Пример:  ...\\robot\\cut\\Model 1\\\n   A-S-M.GBR              (оригинал)\n   A-L-XL.GBR             (оригинал)\n   Model 1'+x+'\\\n      A-S-M.GBR           (коригиран)\n      A-L-XL.GBR          (коригиран)'
+   :'Пример:  ...\\robot\\cut\\Model 1\\\n   A-S-M.GBR              (оригинал)\n   A-S-M'+x+'.GBR        (коригиран)';}
+function renderWatch(){$('#watchList').innerHTML=watchEdit.length?watchEdit.map((w,i)=>`<div class="witem"><code>${esc(w)}</code><button data-rm="${i}">Премахни</button></div>`).join(''):'<div class="witem miss"><code>Не е избрана папка – автоматичното конвертиране е изключено. Натиснете „Избери папка…“.</code></div>';
+  $('#watchList').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{watchEdit.splice(+b.dataset.rm,1);renderWatch();autoSave();});}
+
+
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.p));
+try{if(localStorage.getItem('hideHint'))$('#trayHint').style.display='none';}catch(e){}
+$('#hideHint').onclick=e=>{e.preventDefault();$('#trayHint').style.display='none';try{localStorage.setItem('hideHint','1');}catch(e){}};
+function tab(p){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('act',b.dataset.p===p));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('act',x.id==='p-'+p));if(p==='view')setTimeout(()=>{fitAll();},0);}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+async function refresh(){
+  try{
+    const r=await fetch('/api/status');status=await r.json();
+  }catch(e){$('#watchPill').textContent='Програмата не работи';$('#watchPill').className='pill';return;}
+  if(status.openView){viewPaths(status.openView);}
+  $('#ver').textContent='версия '+status.version;
+  $('#noFolder').style.display=(status.config.watch||[]).length?'none':'';
+  $('#pauseBtn').textContent=status.paused?'Пусни автоматичното конвертиране':'Пауза';
+  const w=status.watched||[];
+  $('#watchPill').textContent=status.paused?'ПАУЗА – автоматичното конвертиране е спряно':(w.length?('Следи: '+w.join('  ')):'Автоматичното конвертиране е изключено')+(status.autostart?'  ·  стартира с Windows':'');
+  $('#watchPill').className='pill'+(w.length&&!status.paused?' on':'');
+  $('#outDesc').innerHTML=status.config.outMode==='folder'?'в подпапка <code>ПАПКА'+esc(status.config.suffix)+'</code> с оригиналното име':'до него, с име <code>ИМЕ'+esc(status.config.suffix)+'.GBR</code>';$('#dlDesc').textContent=status.config.outMode==='folder'?'Коригираният файл се сваля с оригиналното име (запазете го в отделна папка).':'Коригираният файл се сваля с име ИМЕ'+status.config.suffix+'.GBR.';
+  const ev=status.events||[];
+  const lbl={ok:'Коригиран',warn:'Провери',error:'Грешка',info:'Инфо'};
+  $('#evBody').innerHTML=ev.length?ev.map((e,i)=>`<tr><td>${esc(e.time)}</td><td class="st ${e.status}">${lbl[e.status]||e.status}</td>
+   <td class="path">${e.src?esc(e.src):''}${e.out?'<div class="small">→ '+esc(e.out)+'</div>':''}${e.out2?'<div class="small">→ '+esc(e.out2)+' <b>(с върнати нотчове)</b></div>':''}</td><td>${esc(e.msg)}</td>
+   <td class="links">${e.out?`<button data-cmp="${i}">Преди / след</button>`:''}${e.out2?`<button data-cmp2="${i}">С върнати нотчове</button>`:''}${(e.out||e.out2)?`<button data-rev="${i}">Покажи в папката</button>`:(e.src?`<button data-one="${i}">Преглед</button>`:'')}</td></tr>`).join(''):'<tr><td colspan="5" class="small">Все още няма събития.</td></tr>';
+  $('#evBody').querySelectorAll('[data-cmp]').forEach(b=>b.onclick=()=>{const e=ev[+b.dataset.cmp];viewPaths(e.src,e.out,e.report);});
+  $('#evBody').querySelectorAll('[data-cmp2]').forEach(b=>b.onclick=()=>{const e=ev[+b.dataset.cmp2];viewPaths(e.src,e.out2,e.report,'С върнати нотчове: ');});
+  $('#evBody').querySelectorAll('[data-one]').forEach(b=>b.onclick=()=>{const e=ev[+b.dataset.one];viewPaths(e.src);});
+  $('#evBody').querySelectorAll('[data-rev]').forEach(b=>b.onclick=()=>{const e=ev[+b.dataset.rev];fetch('/api/reveal?path='+encodeURIComponent(e.out2||e.out),{method:'POST',headers:H});});
+  $('#iniPath').textContent=status.iniPath;$('#dirPath').textContent=status.dir;
+  if(!cfgLoaded){loadCfgForm();cfgLoaded=true;}
+}
+setInterval(refresh,1500);refresh();
+
+$('#optSuffix').oninput=sfxEx;$('#omFolder').onchange=sfxEx;$('#omSuffix').onchange=sfxEx;
+async function saveCfg(body){const r=await fetch('/api/config',{method:'POST',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error(await r.text());return r.json();}
+$('#quickPick').onclick=async()=>{$('#quickMsg').textContent='Отваря се прозорец за избор (може да е зад този прозорец)…';
+  try{const r=await fetch('/api/pickfolder',{method:'POST',headers:H});const j=await r.json();
+    if(!j.path){$('#quickMsg').textContent='Не е избрана папка.';return;}
+    const c=status.config;await saveCfg({watch:[j.path],outMode:c.outMode,suffix:c.suffix,notify:c.notify,neardup:c.neardup,exclude:c.exclude,autostart:status.autostart});
+    $('#quickMsg').textContent='';cfgLoaded=false;refresh();}catch(e){$('#quickMsg').textContent='Грешка: '+e.message;}};
+function rootWarn(v){return /^[a-z]:\\?$/i.test(v.trim())?'Внимание: избран е цял диск – по-добре изберете конкретната папка на Marker.':'';}
+function cfgBody(){return {watch:watchEdit,shapeV:$('#optShV').checked,shapeBox:$('#optShBox').checked,shapeU:$('#optShU').checked,closeBrokenU:$('#optCloseU').checked,checkMissing:$('#optMissing').checked,restoreMode:(document.querySelector('input[name=restMode]:checked')||{}).value||'separate',outMode:outMode(),suffix:$('#optSuffix').value.trim(),notify:$('#optNotify').checked,neardup:parseInt($('#optNear').value||'0',10),
+  exclude:$('#optExcl').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),autostart:$('#optAutostart').checked};}
+let saveTimer=null,saveSeq=0;
+function saveState(html){$('#saveState').innerHTML=html;}
+async function autoSave(){const seq=++saveSeq;saveState('Записва се…');
+  try{const j=await saveCfg(cfgBody());if(seq!==saveSeq)return;
+    const t=new Date().toLocaleTimeString('bg-BG',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    saveState('<span class="st ok">✓ Запазено автоматично в '+t+'</span>');
+    $('#cfgMsg').textContent=/ВНИМАНИЕ/.test(j.msg)?j.msg:'';refresh();
+  }catch(e){if(seq!==saveSeq)return;saveState('<span class="st error">Не е запазено: '+esc(e.message)+'</span>');}}
+function saveSoon(ms){clearTimeout(saveTimer);saveState('Записва се…');saveTimer=setTimeout(autoSave,ms||700);}
+// checkboxes / radio buttons: save at once; text fields: shortly after typing stops
+['#optAutostart','#optNotify','#optShV','#optShBox','#optShU','#optCloseU','#optMissing','#rmSep','#rmSame','#rmOff','#omFolder','#omSuffix'].forEach(s=>$(s).addEventListener('change',()=>autoSave()));
+['#optSuffix','#optNear','#optExcl'].forEach(s=>{$(s).addEventListener('input',()=>saveSoon(800));$(s).addEventListener('change',()=>{clearTimeout(saveTimer);autoSave();});});
+function addWatchPath(v){v=(v||'').trim();if(!v||watchEdit.some(x=>x.toLowerCase()===v.toLowerCase()))return;watchEdit.push(v);renderWatch();$('#cfgMsg').textContent=rootWarn(v);autoSave();}
+$('#addWatch').onclick=()=>{addWatchPath($('#watchIn').value);$('#watchIn').value='';};
+$('#watchIn').onkeydown=e=>{if(e.key==='Enter')$('#addWatch').click();};
+$('#pickWatch').onclick=async()=>{$('#cfgMsg').textContent='Отваря се прозорец за избор на папка (може да е зад този прозорец)…';
+  try{const r=await fetch('/api/pickfolder',{method:'POST',headers:H});const j=await r.json();$('#cfgMsg').textContent='';if(j.path)addWatchPath(j.path);}catch(e){$('#cfgMsg').textContent='Грешка: '+e.message;}};
+$('#pauseBtn').onclick=async()=>{await fetch('/api/pause?on='+(status&&status.paused?'0':'1'),{method:'POST',headers:H});refresh();};
+$('#quitBtn').onclick=async()=>{if(!confirm('Да затворя ли GBR Fix напълно? Автоматичното коригиране няма да работи, докато не я пуснете отново.\n\n(Ако само затворите прозореца, програмата продължава да работи в трея до часовника.)'))return;await fetch('/api/quit',{method:'POST',headers:H});$('#watchPill').textContent='Спряна';$('#watchPill').className='pill';};
+
+// ---------- viewer ----------
+const views=[{c:$('#c0'),sim:null},{c:$('#c1'),sim:null}];
+let cam={s:1,x:0,y:0},bounds=null;
+function setSims(a,b,ta,tb,rep){
+  views[0].sim=a;views[1].sim=b;$('#viewEmpty').style.display=a?'none':'';$('#viewDl').style.display='none';$('#viewDl2').style.display='none';
+  $('#t0').textContent=ta||'';$('#s0').textContent=a?stat(a):'';
+  $('#w1').style.display=b?'':'none';$('#viewer').classList.toggle('single',!b);
+  $('#t1').textContent=tb||'';$('#s1').textContent=b?stat(b):'';
+  $('#repCard').style.display=rep?'':'none';$('#rep').textContent=rep||'';
+  bounds=null;[a,b].forEach(s=>{if(!s)return;if(!bounds)bounds={x0:s.minX,y0:s.minY,x1:s.maxX,y1:s.maxY};else{bounds.x0=Math.min(bounds.x0,s.minX);bounds.y0=Math.min(bounds.y0,s.minY);bounds.x1=Math.max(bounds.x1,s.maxX);bounds.y1=Math.max(bounds.y1,s.maxY);}});
+  tab('view');fitAll();
+}
+function stat(s){return `${s.pieces.length} детайла · ${s.notches} нотча · ${s.drills} drill · ${s.phantom} червени`;}
+function fitAll(){const c=views[0].c;const w=c.clientWidth,h=c.clientHeight;if(!bounds||!w)return draw();
+  const bw=Math.max(1,bounds.x1-bounds.x0),bh=Math.max(1,bounds.y1-bounds.y0);cam.s=Math.min((w-40)/bw,(h-40)/bh);
+  cam.x=w/2-(bounds.x0+bw/2)*cam.s;cam.y=h/2+(bounds.y0+bh/2)*cam.s;draw();}
+function draw(){views.forEach(v=>drawOne(v));}
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function drawOne(v){
+  const c=v.c,dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(!w)return;
+  if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=css('--cv');g.fillRect(0,0,w,h);
+  const s=v.sim;if(!s)return;
+  const X=x=>x*cam.s+cam.x,Y=y=>cam.y-y*cam.s;
+  const showT=$('#tTravel').checked,showL=$('#tLabels').checked,showP=$('#tPoints').checked;
+  const col={c:css('--cut'),u:css('--travel'),n:css('--notch'),p:css('--phantom')};
+  const lw=Math.max(1,Math.min(2.2,cam.s*6));
+  const layer=(k,width,dash)=>{g.beginPath();g.strokeStyle=col[k];g.lineWidth=width;g.setLineDash(dash||[]);
+    for(const p of s.pieces)for(const m of (p.moves||[]))if(m.k===k){g.moveTo(X(m.a),Y(m.b));g.lineTo(X(m.c),Y(m.d));}g.stroke();g.setLineDash([]);};
+  if(showT)layer('u',1,[4,4]);
+  layer('c',lw);layer('n',lw);
+  g.beginPath();g.strokeStyle=col.n;g.lineWidth=Math.max(2,lw*1.6);
+  for(const p of s.pieces)for(const n of (p.notches||[])){g.moveTo(X(n[0]),Y(n[1]));g.lineTo(X(n[2]),Y(n[3]));}g.stroke();
+  const nr=Math.max(3,Math.min(5,cam.s*25));g.fillStyle=col.n;
+  for(const p of s.pieces)for(const n of (p.notches||[])){g.beginPath();g.arc(X(n[0]),Y(n[1]),nr,0,7);g.fill();g.beginPath();g.arc(X(n[2]),Y(n[3]),nr,0,7);g.fill();}
+  layer('p',Math.max(1.5,lw));
+  g.fillStyle=css('--drillc');for(const p of s.pieces)for(const d of (p.drills||[])){const x=X(d[0]),y=Y(d[1]);g.beginPath();g.arc(x,y,4.5,0,7);g.fill();}
+  if($('#tStart').checked){g.strokeStyle=css('--drill');g.fillStyle=css('--drill');g.lineWidth=2;
+    for(const p of s.pieces)if(p.start){const x=X(p.start[0]),y=Y(p.start[1]);g.beginPath();g.arc(x,y,13,0,7);g.stroke();g.beginPath();g.arc(x,y,3.5,0,7);g.fill();}}
+  if(showP){g.fillStyle='#fff';for(const p of s.pieces)for(const m of (p.moves||[])){g.fillRect(X(m.c)-1.5,Y(m.d)-1.5,3,3);}}
+  if(showL){g.fillStyle='rgba(235,235,235,.85)';g.font='600 '+Math.max(11,Math.min(28,cam.s*120))+'px system-ui';g.textAlign='center';g.textBaseline='middle';
+    for(const p of s.pieces){let x0=1e12,y0=1e12,x1=-1e12,y1=-1e12;for(const m of (p.moves||[])){if(m.k==='u')continue;for(const [x,y] of [[m.a,m.b],[m.c,m.d]]){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);}}
+      if(x1>x0)g.fillText(p.name.replace(/^N/,''),X((x0+x1)/2),Y((y0+y1)/2));}}
+}
+window.addEventListener('resize',draw);
+['#tTravel','#tLabels','#tPoints','#tStart'].forEach(s=>$(s).onchange=draw);$('#fitBtn').onclick=fitAll;
+views.forEach(v=>{const c=v.c;let drag=null;
+  c.addEventListener('wheel',e=>{e.preventDefault();const r=c.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;const f=e.deltaY<0?1.2:1/1.2;
+    cam.x=mx-(mx-cam.x)*f;cam.y=my-(my-cam.y)*f;cam.s*=f;draw();},{passive:false});
+  c.addEventListener('mousedown',e=>{drag={x:e.clientX,y:e.clientY};c.style.cursor='grabbing';});
+  c.addEventListener('mousemove',e=>{if(!v.sim)return;const r=c.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+    const wx=(mx-cam.x)/cam.s,wy=(cam.y-my)/cam.s;let best=null,bd=14/cam.s;
+    for(const p of v.sim.pieces)for(const n of (p.notches||[])){const d=Math.min(Math.hypot(n[0]-wx,n[1]-wy),Math.hypot(n[2]-wx,n[3]-wy),Math.hypot((n[0]+n[2])/2-wx,(n[1]+n[3])/2-wy));if(d<bd){bd=d;best={n,p};}}
+    $('#coord').innerHTML=best?`<b style="color:#138a3e">Нотч</b> ${esc(best.p.name)} · A X${best.n[0]} Y${best.n[1]} → B X${best.n[2]} Y${best.n[3]} · ${(Math.hypot(best.n[2]-best.n[0],best.n[3]-best.n[1])/10).toFixed(1)} мм`
+      :`X${Math.round(wx)} Y${Math.round(wy)} &nbsp;(${(wx/10).toFixed(1)} / ${(wy/10).toFixed(1)} мм)`;});
+  window.addEventListener('mousemove',e=>{if(!drag)return;cam.x+=e.clientX-drag.x;cam.y+=e.clientY-drag.y;drag={x:e.clientX,y:e.clientY};draw();});
+  window.addEventListener('mouseup',()=>{drag=null;c.style.cursor='grab';});
+  c.addEventListener('dblclick',fitAll);});
+
+async function analyzePath(p){const r=await fetch('/api/analyze?path='+encodeURIComponent(p));if(!r.ok)throw new Error(await r.text());return r.json();}
+async function viewPaths(a,b,rep,label){
+  try{const A=await analyzePath(a);let B=null;if(b)B=await analyzePath(b);
+    setSims(A.sim,B&&B.sim,(b?'Преди: ':'')+A.name,B?(label||'След: ')+B.name:'',rep);}catch(e){alert('Файлът не може да се отвори: '+e.message);}
+}
+async function convertFile(f){
+  const buf=await f.arrayBuffer();
+  const r=await fetch('/api/convert?name='+encodeURIComponent(f.name),{method:'POST',headers:H,body:buf});
+  if(!r.ok)throw new Error(await r.text());return r.json();
+}
+function downloadB64(name,b64){const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([u],{type:'application/octet-stream'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);}
+function fixedName(n){if(status&&status.config.outMode==='folder')return n;const sfx=(status&&status.config.suffix)||'_fixed';const i=n.lastIndexOf('.');return i>0?n.slice(0,i)+sfx+n.slice(i):n+sfx;}
+function restoredName(n){const fx=(status&&status.config.outMode==='folder')?n:fixedName(n);const i=fx.lastIndexOf('.');return i>0?fx.slice(0,i)+'_restored'+fx.slice(i):fx+'_restored';}
+const isDrawing=f=>/\.(mrk|pds)$/i.test(f.name);
+async function analyzeFile(f){const buf=await f.arrayBuffer();
+  const r=await fetch('/api/analyze?name='+encodeURIComponent(f.name),{method:'POST',headers:H,body:buf});
+  if(!r.ok)throw new Error(await r.text());return r.json();}
+// MRK files first: they are remembered so that a GBR with the same name gets its missing notches back
+function sortFiles(files){return [...files].sort((a,b)=>(isDrawing(b)?1:0)-(isDrawing(a)?1:0));}
+async function handleManual(files){
+  for(const f of sortFiles(files)){
+    const tr=document.createElement('tr');tr.innerHTML=`<td>${esc(f.name)}</td><td class="small">обработва се…</td><td class="links"></td>`;$('#manBody').prepend(tr);
+    try{
+      if(isDrawing(f)){const j=await analyzeFile(f);
+        tr.children[1].innerHTML=`<span class="st info">${j.kind} прочетен: ${j.sim.pieces.length} детайла, ${j.sim.notches} нотча</span>`+(j.kind==='MRK'?' – ще се ползва за липсващи нотчове в GBR със същото име':'');
+        const bv=document.createElement('button');bv.textContent='Покажи с координати';bv.onclick=()=>setSims(j.sim,null,f.name,'',j.report);tr.children[2].appendChild(bv);continue;}
+      const j=await convertFile(f);
+      tr.children[1].innerHTML=j.needsFix?`<span class="st ok">Коригиран</span> · нотчове ${j.before.notches} → ${j.after.notches} · червени реза ${j.before.phantom} → ${j.after.phantom}`:'<span class="st info">Няма счупени нотчове – не е нужна корекция</span>';
+      const bt=tr.children[2];
+      const bv=document.createElement('button');bv.textContent='Преди / след';bv.onclick=()=>setSims(j.before,j.after,'Преди: '+f.name,'След: '+fixedName(f.name),j.report);bt.appendChild(bv);
+      if(j.needsFix){const bd=document.createElement('button');bd.textContent='Свали '+fixedName(f.name);bd.onclick=()=>downloadB64(fixedName(f.name),j.fixed);bt.appendChild(bd);}
+      if(j.restored){tr.children[1].innerHTML+=` · <b>втори файл с ${j.restoredCount} върнати нотча</b>`;
+        const b2=document.createElement('button');b2.textContent='С върнати нотчове';b2.onclick=()=>setSims(j.before,j.afterRestored,'Преди: '+f.name,'С върнати нотчове: '+restoredName(f.name),j.report);bt.appendChild(b2);
+        const b3=document.createElement('button');b3.textContent='Свали '+restoredName(f.name);b3.onclick=()=>downloadB64(restoredName(f.name),j.restored);bt.appendChild(b3);}
+    }catch(e){tr.children[1].innerHTML='<span class="st error">Грешка: '+esc(e.message)+'</span>';}
+  }
+}
+async function handleOpen(files){
+  files=sortFiles(files);if(!files.length)return;
+  try{
+    let lastDrawing=null;
+    for(const f of files.filter(isDrawing)){const j=await analyzeFile(f);lastDrawing={j,f};}
+    const g=files.find(f=>!isDrawing(f));
+    if(!g){const {j,f}=lastDrawing;setSims(j.sim,null,f.name+(j.kind==='MRK'?' – маркировка':' – модел'),'',j.report);return;}
+    const j=await convertFile(g);
+    if(j.restored){setSims(j.before,j.afterRestored,'Както е: '+g.name,'С върнати '+j.restoredCount+' нотча: '+restoredName(g.name),j.report);
+      const b2=$('#viewDl2');b2.style.display='';b2.textContent='Свали '+restoredName(g.name);b2.onclick=()=>downloadB64(restoredName(g.name),j.restored);
+      if(j.needsFix){const b=$('#viewDl');b.style.display='';b.textContent='Свали '+fixedName(g.name)+' (без върнатите)';b.onclick=()=>downloadB64(fixedName(g.name),j.fixed);}}
+    else if(j.needsFix){setSims(j.before,j.after,'Както е: '+g.name,'След корекция: '+fixedName(g.name),j.report);
+      const b=$('#viewDl');b.style.display='';b.textContent='Свали '+fixedName(g.name);b.onclick=()=>downloadB64(fixedName(g.name),j.fixed);}
+    else setSims(j.before,null,g.name+' – няма нужда от корекция','',null);
+  }catch(e){alert('Файлът не може да се отвори: '+e.message);}
+}
+$('#viewOpen').onclick=()=>$('#fileIn').click();
+{const ve=$('#viewEmpty');['dragenter','dragover'].forEach(t=>ve.addEventListener(t,e=>{e.preventDefault();ve.classList.add('hov');}));
+ ['dragleave','drop'].forEach(t=>ve.addEventListener(t,e=>{ve.classList.remove('hov');}));}
+$('#openBtn').onclick=()=>$('#fileIn').click();$('#fileIn').onchange=e=>{handleOpen([...e.target.files]);e.target.value='';};
+$('#pickBtn').onclick=()=>$('#fileIn2').click();$('#fileIn2').onchange=e=>{handleManual([...e.target.files]);e.target.value='';};
+const drop=$('#drop');['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('hov');}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('hov');}));
+drop.addEventListener('drop',e=>handleManual([...e.dataTransfer.files]));
+document.body.addEventListener('dragover',e=>e.preventDefault());
+document.body.addEventListener('drop',e=>{if(!drop.contains(e.target)){e.preventDefault();handleOpen([...e.dataTransfer.files]);}});
+
+// opened with a file (GbrFix.exe file.gbr / "Open with")
+function hashOpen(){const m=location.hash.match(/view=([^&]+)/);if(m){const p=decodeURIComponent(m[1]);history.replaceState(null,'',' ');viewPaths(p);}}
+window.addEventListener('hashchange',hashOpen);hashOpen();
+</script>
+</body>
+</html>
