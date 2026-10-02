@@ -139,7 +139,7 @@ code{background:#eef0f3;padding:1px 5px;border-radius:4px}
   </div>
   <div class="card">
     <h3>Къде са маркировките (.MRK / .PDS)</h3>
-    <div class="small" style="margin-bottom:8px">Нужни са за проверката и връщането на липсващи нотчове. Ако Marker ги записва в друга папка, а не до GBR-а, добавете я тук (търси се с всички подпапки). Маркировката се търси в този ред:
+    <div class="small" style="margin-bottom:8px">Нужни са за проверката и връщането на липсващи нотчове. Ако Marker ги записва в друга папка, а не до GBR-а, добавете я тук (търси се с всички подпапки). Може да е и цялата папка на сървъра: тя се обхожда на заден план и не забавя коригирането на GBR файловете. Маркировката се търси в този ред:
       <ol style="margin:4px 0 0 18px;padding:0">
         <li>избрана ръчно с „Посочи .MRK…“ в „Последни файлове“ (запомня се за този GBR);</li>
         <li>със същото име до GBR-а или в горната папка;</li>
@@ -153,6 +153,7 @@ code{background:#eef0f3;padding:1px 5px;border-radius:4px}
       <button id="addMrk">Добави</button>
       <button id="pickMrkDir" class="pri">Избери папка…</button>
     </div>
+    <div class="row" style="margin-top:8px"><span id="idxState" class="small" style="flex:1"></span><button id="reindex">Обходи папките отново</button></div>
   </div>
   <div class="card">
     <h3>Общи</h3>
@@ -233,6 +234,10 @@ async function refresh(){
   $('#evBody').querySelectorAll('[data-rev]').forEach(b=>b.onclick=()=>{const e=ev[+b.dataset.rev];fetch('/api/reveal?path='+encodeURIComponent(e.out2||e.out),{method:'POST',headers:H});});
   $('#iniPath').textContent=status.iniPath;$('#dirPath').textContent=status.dir;
   if(!cfgLoaded){loadCfgForm();cfgLoaded=true;}
+  const ix=status.index||{};
+  $('#idxState').textContent=!(ix.roots||[]).length?'Няма папки за търсене на маркировки.':
+    ix.scanning?`Обхождат се папките… ${(ix.walked||0).toLocaleString('bg-BG')} файла досега`+(ix.built?` (ползва се списъкът от ${ix.built})`:' – GBR файловете без маркировка ще се проверят отново след това.'):
+    `Намерени ${(ix.mrk||0).toLocaleString('bg-BG')} .MRK и ${(ix.pds||0).toLocaleString('bg-BG')} .PDS · обходени ${(ix.walked||0).toLocaleString('bg-BG')} файла за ${ix.tookSec} с, в ${ix.built} · нови маркировки се добавят веднага, пълно обхождане на всеки 30 мин.`+(ix.truncated?' ВНИМАНИЕ: папките са твърде големи – обхождането е спряно по средата.':'');
 }
 setInterval(refresh,1500);refresh();
 
@@ -269,6 +274,7 @@ $('#addMrk').onclick=()=>{addMrkPath($('#mrkIn').value);$('#mrkIn').value='';};
 $('#mrkIn').onkeydown=e=>{if(e.key==='Enter')$('#addMrk').click();};
 $('#pickMrkDir').onclick=async()=>{$('#cfgMsg').textContent='Отваря се прозорец за избор на папка (може да е зад този прозорец)…';
   try{const r=await fetch('/api/pickfolder?for=mrk',{method:'POST',headers:H});const j=await r.json();$('#cfgMsg').textContent='';if(j.path)addMrkPath(j.path);}catch(e){$('#cfgMsg').textContent='Грешка: '+e.message;}};
+$('#reindex').onclick=async()=>{await fetch('/api/reindex',{method:'POST',headers:H});refresh();};
 $('#pauseBtn').onclick=async()=>{await fetch('/api/pause?on='+(status&&status.paused?'0':'1'),{method:'POST',headers:H});refresh();};
 $('#quitBtn').onclick=async()=>{if(!confirm('Да затворя ли GBR Fix напълно? Автоматичното коригиране няма да работи, докато не я пуснете отново.\n\n(Ако само затворите прозореца, програмата продължава да работи в трея до часовника.)'))return;await fetch('/api/quit',{method:'POST',headers:H});$('#watchPill').textContent='Спряна';$('#watchPill').className='pill';};
 

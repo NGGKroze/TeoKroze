@@ -55,10 +55,12 @@ func hidden(cmd *exec.Cmd) *exec.Cmd {
 }
 
 func openURL(u string) {
+	letForeground()
 	_ = hidden(exec.Command("rundll32", "url.dll,FileProtocolHandler", u)).Start()
 }
 
 func revealInExplorer(p string) {
+	letForeground() // otherwise Explorer may open behind the GBR Fix window
 	cmd := exec.Command("explorer")
 	cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: `explorer /select,"` + p + `"`}
 	_ = cmd.Start()
@@ -205,8 +207,17 @@ func setAutostart(on bool) error {
 // psQuote makes a PowerShell single-quoted string.
 func psQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
 
-// pickFile shows the standard Windows "Open" dialog.
+// pickFile shows the standard Windows "Open" dialog in front of the GBR Fix window.
+// filter is "Name|*.ext".
 func pickFile(title, filter, startDir string) (string, error) {
+	name, spec, _ := strings.Cut(filter, "|")
+	if p, err := fileDialog(title, name, spec, startDir, false); err == nil {
+		return p, nil
+	}
+	return pickFilePS(title, filter, startDir)
+}
+
+func pickFilePS(title, filter, startDir string) (string, error) {
 	script := `Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.OpenFileDialog; ` +
 		`$f.Title = ` + psQuote(title) + `; $f.Filter = ` + psQuote(filter) + `; $f.InitialDirectory = ` + psQuote(startDir) + `; ` +
 		`$o = New-Object System.Windows.Forms.Form; $o.TopMost = $true; ` +
@@ -224,8 +235,15 @@ func runPS(script string) (string, error) {
 	return strings.TrimSpace(string(out)), err
 }
 
-// pickFolder shows the standard Windows folder dialog.
+// pickFolder shows the standard Windows folder dialog in front of the GBR Fix window.
 func pickFolder(desc string) (string, error) {
+	if p, err := fileDialog(desc, "", "", "", true); err == nil {
+		return p, nil
+	}
+	return pickFolderPS(desc)
+}
+
+func pickFolderPS(desc string) (string, error) {
 	script := `Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.FolderBrowserDialog; ` +
 		`$f.Description = ` + psQuote(desc) + `; $f.ShowNewFolderButton = $false; ` +
 		`$o = New-Object System.Windows.Forms.Form; $o.TopMost = $true; ` +

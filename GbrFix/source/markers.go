@@ -12,11 +12,13 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io/fs"
 	"math"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -106,40 +108,83 @@ type cachedBoxes struct {
 	boxes []pieceBox
 }
 
+// markerIndex is the list of .MRK/.PDS files in the searched folders. A server folder
+// can hold tens of thousands of files and walking it over the network takes from
+// seconds to minutes, so it is never walked while a GBR waits: the list is built in
+// the background (at start, when the folders change and every rescanEvery), and new
+// or changed markers are added at once from the folder watcher.
 type markerIndex struct {
-	mu      sync.Mutex
-	key     string
-	built   time.Time
-	files   []markerFile
-	boxes   map[string]cachedBoxes
-	exclude []string
+	mu        sync.Mutex
+	key       string // roots + exclusions the list was built for
+	roots     []string
+	exclude   []string
+	files     []markerFile // replaced, never changed in place (callers keep the slice)
+	built     time.Time    // end of the last complete walk
+	scanning  bool
+	scanStart time.Time
+	walked    int // entries walked so far by the running walk
+	added     map[string]markerFile
+	took      time.Duration
+	truncated bool
+	gen       int // a walk started for older settings is dropped
+	onScanned func()
+	sync      bool // tests: walk at once instead of in the background
+
+	boxes     map[string]cachedBoxes // piece boxes of markers already read
+	cachePath string
+	dirty     bool
+	saved     time.Time
 }
 
 const (
-	indexTTL        = 2 * time.Minute
-	indexMaxEntries = 300000 // stop walking huge trees (a whole network drive)
-	contentMaxFiles = 400    // markers compared by content per GBR
+	rescanEvery     = 30 * time.Minute
+	indexMaxEntries = 5000000 // safety stop for a whole network drive
+	contentMaxFiles = 400     // markers compared by content per GBR
 )
 
-func (ix *markerIndex) invalidate() {
-	ix.mu.Lock()
-	ix.built = time.Time{}
-	ix.mu.Unlock()
+func indexKey(roots, exclude []string) string {
+	return strings.ToLower(strings.Join(roots, "|") + "#" + strings.Join(exclude, "|"))
 }
 
-// list returns the marker/pattern files under roots (cached for a short while).
-func (ix *markerIndex) list(roots, exclude []string) []markerFile {
-	key := strings.ToLower(strings.Join(roots, "|") + "#" + strings.Join(exclude, "|"))
+// configure sets the folders; a change starts a new walk.
+func (ix *markerIndex) configure(roots, exclude []string) {
+	key := indexKey(roots, exclude)
 	ix.mu.Lock()
-	if ix.key == key && time.Since(ix.built) < indexTTL {
-		f := ix.files
+	if ix.key == key && (ix.scanning || !ix.built.IsZero()) {
 		ix.mu.Unlock()
-		return f
+		return
 	}
+	if ix.key != key {
+		ix.files, ix.built = nil, time.Time{}
+	}
+	ix.key, ix.roots, ix.exclude = key, roots, exclude
 	ix.mu.Unlock()
+	ix.rescan()
+}
+
+// rescan walks the folders again (in the background).
+func (ix *markerIndex) rescan() {
+	ix.mu.Lock()
+	if ix.scanning || ix.key == "" {
+		ix.mu.Unlock()
+		return
+	}
+	ix.gen++
+	gen, roots, exclude := ix.gen, ix.roots, ix.exclude
+	ix.scanning, ix.scanStart, ix.walked, ix.added = true, time.Now(), 0, map[string]markerFile{}
+	sync := ix.sync
+	ix.mu.Unlock()
+	if sync {
+		ix.walk(gen, roots, exclude)
+	} else {
+		go ix.walk(gen, roots, exclude)
+	}
+}
+
+func (ix *markerIndex) walk(gen int, roots, exclude []string) {
 	var files []markerFile
 	seen := map[string]bool{}
-	entries := 0
+	entries, truncated := 0, false
 	for _, r := range roots {
 		_ = filepath.WalkDir(r, func(p string, d fs.DirEntry, err error) error {
 			if err != nil {
@@ -149,7 +194,17 @@ func (ix *markerIndex) list(roots, exclude []string) []markerFile {
 				return nil
 			}
 			entries++
+			if entries%1000 == 0 {
+				ix.mu.Lock()
+				ix.walked = entries
+				stale := ix.gen != gen
+				ix.mu.Unlock()
+				if stale {
+					return fs.SkipAll
+				}
+			}
 			if entries > indexMaxEntries {
+				truncated = true
 				return fs.SkipAll
 			}
 			if excluded(p, exclude) {
@@ -179,9 +234,120 @@ func (ix *markerIndex) list(roots, exclude []string) []markerFile {
 		})
 	}
 	ix.mu.Lock()
-	ix.key, ix.built, ix.files = key, time.Now(), files
+	if ix.gen != gen { // the settings changed meanwhile
+		ix.mu.Unlock()
+		return
+	}
+	for lp, f := range ix.added { // markers that appeared during the walk
+		if !seen[lp] {
+			files = append(files, f)
+		}
+	}
+	ix.files, ix.built, ix.scanning, ix.walked, ix.added = files, time.Now(), false, entries, nil
+	ix.took, ix.truncated = time.Since(ix.scanStart), truncated
+	done := ix.onScanned
 	ix.mu.Unlock()
-	return files
+	if done != nil {
+		done()
+	}
+}
+
+// upsert adds or updates one file reported by the folder watcher.
+func (ix *markerIndex) upsert(p string) {
+	ext := strings.ToLower(filepath.Ext(p))
+	if ext != ".mrk" && ext != ".pds" {
+		return
+	}
+	st, err := os.Stat(p)
+	if err != nil || st.IsDir() {
+		return
+	}
+	f := markerFile{path: p, key: baseKey(p), ext: ext, mod: st.ModTime()}
+	lp := strings.ToLower(p)
+	ix.mu.Lock()
+	defer ix.mu.Unlock()
+	if excluded(p, ix.exclude) {
+		return
+	}
+	inside := false
+	for _, r := range ix.roots {
+		rr := strings.ToLower(filepath.Clean(r))
+		if strings.HasPrefix(lp, rr+string(filepath.Separator)) || strings.HasPrefix(lp, rr) && strings.HasSuffix(rr, string(filepath.Separator)) {
+			inside = true
+			break
+		}
+	}
+	if !inside {
+		return
+	}
+	if ix.added != nil {
+		ix.added[lp] = f
+	}
+	files := make([]markerFile, 0, len(ix.files)+1)
+	for _, g := range ix.files {
+		if strings.ToLower(g.path) != lp {
+			files = append(files, g)
+		}
+	}
+	ix.files = append(files, f)
+}
+
+// list returns the files known now. Before the first walk has finished it is empty
+// (or partial): the GBR then waits and is checked again when the walk is done.
+func (ix *markerIndex) list(roots, exclude []string) []markerFile {
+	ix.configure(roots, exclude)
+	ix.mu.Lock()
+	defer ix.mu.Unlock()
+	return ix.files
+}
+
+// complete: the first walk of the current folders has finished.
+func (ix *markerIndex) complete() bool {
+	ix.mu.Lock()
+	defer ix.mu.Unlock()
+	return !ix.built.IsZero()
+}
+
+// tick runs from the pump: periodic walk and saving the box cache.
+func (ix *markerIndex) tick() {
+	ix.mu.Lock()
+	due := ix.key != "" && !ix.scanning && !ix.built.IsZero() && time.Since(ix.built) > rescanEvery
+	save := ix.dirty && time.Since(ix.saved) > 10*time.Second
+	ix.mu.Unlock()
+	if due {
+		ix.rescan()
+	}
+	if save {
+		ix.saveBoxes()
+	}
+}
+
+type IndexStatus struct {
+	Roots     []string `json:"roots"`
+	MRK       int      `json:"mrk"`
+	PDS       int      `json:"pds"`
+	Scanning  bool     `json:"scanning"`
+	Walked    int      `json:"walked"`
+	TookSec   float64  `json:"tookSec"`
+	Built     string   `json:"built"`
+	Truncated bool     `json:"truncated"`
+}
+
+func (ix *markerIndex) status() IndexStatus {
+	ix.mu.Lock()
+	defer ix.mu.Unlock()
+	s := IndexStatus{Roots: ix.roots, Scanning: ix.scanning, Walked: ix.walked, TookSec: math.Round(ix.took.Seconds()*10) / 10, Truncated: ix.truncated}
+	if !ix.built.IsZero() {
+		s.Built = ix.built.Format("15:04:05")
+	}
+	for _, f := range ix.files {
+		if f.ext == ".mrk" {
+			s.MRK++
+		} else {
+			s.PDS++
+		}
+	}
+	return s
 }
 
 func excluded(p string, exclude []string) bool {
@@ -194,10 +360,12 @@ func excluded(p string, exclude []string) bool {
 	return false
 }
 
-// markerBoxes reads the piece boxes of a marker (cached by modification time).
+// markerBoxes reads the piece boxes of a marker. They are kept (also on disk, in
+// markers-cache.txt) by modification time, so each marker is read over the network
+// only once.
 func (ix *markerIndex) markerBoxes(f markerFile) []pieceBox {
 	ix.mu.Lock()
-	if c, ok := ix.boxes[f.path]; ok && c.mod.Equal(f.mod) {
+	if c, ok := ix.boxes[strings.ToLower(f.path)]; ok && c.mod.Equal(f.mod) {
 		ix.mu.Unlock()
 		return c.boxes
 	}
@@ -210,9 +378,62 @@ func (ix *markerIndex) markerBoxes(f markerFile) []pieceBox {
 	if ix.boxes == nil {
 		ix.boxes = map[string]cachedBoxes{}
 	}
-	ix.boxes[f.path] = cachedBoxes{f.mod, boxes}
+	ix.boxes[strings.ToLower(f.path)] = cachedBoxes{f.mod, boxes}
+	ix.dirty = true
 	ix.mu.Unlock()
 	return boxes
+}
+
+func (ix *markerIndex) loadBoxes(path string) {
+	ix.mu.Lock()
+	defer ix.mu.Unlock()
+	ix.cachePath = path
+	ix.boxes = map[string]cachedBoxes{}
+	f, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	sc := bufio.NewScanner(f)
+	sc.Buffer(make([]byte, 64*1024), 4<<20)
+	for sc.Scan() {
+		parts := strings.Split(sc.Text(), "\t")
+		if len(parts) != 3 {
+			continue
+		}
+		ns, err := strconv.ParseInt(parts[1], 10, 64)
+		if err != nil {
+			continue
+		}
+		var boxes []pieceBox
+		nums := strings.Fields(parts[2])
+		for i := 0; i+3 < len(nums); i += 4 {
+			var v [4]int
+			for k := range v {
+				v[k], _ = strconv.Atoi(nums[i+k])
+			}
+			boxes = append(boxes, pieceBox{v[0], v[1], v[2], v[3]})
+		}
+		ix.boxes[parts[0]] = cachedBoxes{time.Unix(0, ns), boxes}
+	}
+}
+
+func (ix *markerIndex) saveBoxes() {
+	ix.mu.Lock()
+	path := ix.cachePath
+	var b strings.Builder
+	for p, c := range ix.boxes {
+		b.WriteString(p + "\t" + strconv.FormatInt(c.mod.UnixNano(), 10) + "\t")
+		for _, x := range c.boxes {
+			fmt.Fprintf(&b, "%d %d %d %d ", x.minX, x.minY, x.maxX, x.maxY)
+		}
+		b.WriteString("\r\n")
+	}
+	ix.dirty, ix.saved = false, time.Now()
+	ix.mu.Unlock()
+	if path != "" {
+		_ = writeAtomic(path, b.String())
+	}
 }
 
 // ---------------- the search ----------------
@@ -469,6 +690,7 @@ func (a *App) markerSeen(p string) {
 	if ext := strings.ToLower(filepath.Ext(p)); ext != ".mrk" && ext != ".pds" {
 		return
 	}
+	a.mix.upsert(p)
 	a.pmu.Lock()
 	a.mrkDirty = time.Now()
 	a.pmu.Unlock()
@@ -495,7 +717,6 @@ func (a *App) retryWaiting() {
 	if len(waiting) == 0 {
 		return
 	}
-	a.mix.invalidate()
 	for _, p := range waiting {
 		raw, err := os.ReadFile(p)
 		if err != nil {

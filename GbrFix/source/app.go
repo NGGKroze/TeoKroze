@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const appVersion = "2.1"
+const appVersion = "2.2"
 
 const restoredTag = "_restored"
 
@@ -345,7 +345,7 @@ func (a *App) applyWatch() {
 	}
 	stopMrk := startWatchers(mdirs, a.markerSeen, func(string) {})
 	a.stopWatch = func() { stopGBR(); stopMrk() }
-	a.mix.invalidate()
+	a.mix.configure(searchRoots(cfg), cfg.Exclude) // walks the folders in the background if they changed
 	a.mu.Lock()
 	a.watched = roots
 	a.mu.Unlock()
@@ -442,6 +442,7 @@ func (a *App) pump() {
 		for _, p := range ready {
 			a.process(p, 0)
 		}
+		a.mix.tick()
 		if !a.isPaused() {
 			a.retryWaiting()
 		}
@@ -562,6 +563,9 @@ func (a *App) convertFile(p string, raw []byte) {
 		noMarker = true
 	}
 	noMrkHint := " .MRK на маркировката не е намерен – липсващи нотчове не са проверени (посочете го с „Посочи .MRK…“ или добавете папката с маркировките в „Настройки“)."
+	if noMarker && !a.mix.complete() {
+		noMrkHint = " Папките с маркировки още се обхождат – файлът ще се провери отново, щом обхождането завърши."
+	}
 	// what is still missing in the best file we can produce
 	best := plan.main
 	if plan.second != "" {
@@ -755,7 +759,7 @@ func (a *App) handler() http.Handler {
 		a.viewReq = ""
 		a.mu.Unlock()
 		writeJSON(w, map[string]any{"version": appVersion, "watched": watched, "events": ev, "paused": paused, "openView": openView,
-			"config": cfg, "iniPath": cfg.path, "dir": a.dir, "autostart": autostartEnabled()})
+			"config": cfg, "iniPath": cfg.path, "dir": a.dir, "autostart": autostartEnabled(), "index": a.mix.status()})
 	})
 	mux.HandleFunc("/api/config", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -900,6 +904,14 @@ func (a *App) handler() http.Handler {
 			return
 		}
 		writeJSON(w, map[string]any{"path": p})
+	})
+	mux.HandleFunc("/api/reindex", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "POST", 405)
+			return
+		}
+		a.mix.rescan()
+		w.WriteHeader(204)
 	})
 	mux.HandleFunc("/api/pickmrk", func(w http.ResponseWriter, r *http.Request) {
 		// the user chooses the marker of a GBR; it is remembered and the GBR is processed again
@@ -1139,6 +1151,12 @@ func main() {
 	}
 	a := &App{cfg: cfg, dir: dir, pending: map[string]time.Time{}, done: map[string]string{}, waitMrk: map[string]time.Time{}, logf: lf, baseURL: base}
 	a.loadPairs()
+	a.mix.loadBoxes(filepath.Join(dir, "markers-cache.txt"))
+	a.mix.onScanned = func() { // GBRs that wait for a marker are checked against the new list
+		a.pmu.Lock()
+		a.mrkDirty = time.Now()
+		a.pmu.Unlock()
+	}
 	a.notes = newNotifier(func(n Note) {
 		a.mu.Lock()
 		a.lastNote = n

@@ -65,6 +65,7 @@ func testApp(t *testing.T, cfg Config) *App {
 	cfg.path = filepath.Join(dir, "gbrfix.ini")
 	a := &App{cfg: cfg, dir: dir, pending: map[string]time.Time{}, done: map[string]string{}, waitMrk: map[string]time.Time{}}
 	a.loadPairs()
+	a.mix.sync = true
 	return a
 }
 
@@ -133,6 +134,7 @@ func TestChosenMarkerIsRemembered(t *testing.T) {
 		t.Fatal(err)
 	}
 	b := &App{dir: a.dir, cfg: a.cfg}
+	b.mix.sync = true
 	b.loadPairs()
 	if m := b.FindMarker(gbr, "a.GBR", gbrOf(pcsA...)); m.MRK != mrk || m.How != "избрана ръчно" {
 		t.Fatalf("got %+v", m)
@@ -170,5 +172,78 @@ func TestWaitingGBRIsReprocessedWhenMarkerAppears(t *testing.T) {
 	}
 	if !strings.Contains(a.events[0].Marker, "M1.MRK") || a.events[0].NoMarker {
 		t.Fatalf("reprocessed without marker: %+v", a.events[0])
+	}
+}
+
+func TestBackgroundWalkAndBoxCache(t *testing.T) {
+	root := t.TempDir()
+	gbr := write(t, filepath.Join(root, "cut", "renamed.GBR"), gbrOf(pcsA...))
+	mrk := write(t, filepath.Join(root, "srv", "a", "b", "Model.MRK"), mrkOf("", pcsA...))
+	cfg := defaultConfig()
+	cfg.MarkerDirs = []string{filepath.Join(root, "srv")}
+	a := testApp(t, cfg)
+	a.mix.sync = false
+	done := make(chan bool, 1)
+	a.mix.onScanned = func() { done <- true }
+	a.mix.loadBoxes(filepath.Join(a.dir, "markers-cache.txt"))
+	a.mix.configure(searchRoots(cfg), cfg.Exclude)
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("walk did not finish")
+	}
+	if st := a.mix.status(); st.MRK != 1 || st.Scanning {
+		t.Fatalf("status %+v", st)
+	}
+	if m := a.FindMarker(gbr, "renamed.GBR", gbrOf(pcsA...)); m.MRK != mrk {
+		t.Fatalf("got %+v", m)
+	}
+	a.mix.saveBoxes()
+	var ix markerIndex
+	ix.loadBoxes(filepath.Join(a.dir, "markers-cache.txt"))
+	st, _ := os.Stat(mrk)
+	c, ok := ix.boxes[strings.ToLower(mrk)]
+	if !ok || !c.mod.Equal(st.ModTime()) || len(c.boxes) != 2 {
+		t.Fatalf("cache: %+v %v", c, ok)
+	}
+}
+
+// go test -run XXX -bench Index -benchtime 1x : how long a big marker folder takes
+func BenchmarkIndex(b *testing.B) {
+	root := b.TempDir()
+	const dirs, perDir = 2000, 25 // 50 000 files, 10 000 of them .MRK
+	for d := 0; d < dirs; d++ {
+		dir := filepath.Join(root, fmt.Sprintf("client%03d", d%100), fmt.Sprintf("model%04d", d))
+		_ = os.MkdirAll(dir, 0755)
+		for f := 0; f < perDir; f++ {
+			ext := []string{".MRK", ".PDS", ".PLT", ".TXT", ".GBR"}[f%5]
+			pcs := []rect{{100 + d, 100 + f, 1100 + d, 600 + f}, {1300, 100 + d, 1800, 900 + d}}
+			body := "x"
+			if ext == ".MRK" {
+				body = mrkOf("", pcs...)
+			}
+			_ = os.WriteFile(filepath.Join(dir, fmt.Sprintf("m%d_%d%s", d, f, ext)), []byte(body), 0644)
+		}
+	}
+	cfg := defaultConfig()
+	cfg.MarkerDirs = []string{root}
+	for i := 0; i < b.N; i++ {
+		a := &App{cfg: cfg, dir: b.TempDir(), waitMrk: map[string]time.Time{}}
+		a.mix.sync = true
+		t0 := time.Now()
+		a.mix.configure(searchRoots(cfg), cfg.Exclude)
+		st := a.mix.status()
+		b.Logf("walk: %d entries, %d MRK, %v", st.Walked, st.MRK, time.Since(t0))
+		// a GBR without any marker: worst case, the content search reads contentMaxFiles markers
+		g := gbrOf(rect{50, 50, 60, 60}, rect{70, 70, 80, 80})
+		t0 = time.Now()
+		m := a.FindMarker("", "nomatch.GBR", g)
+		b.Logf("content search, nothing cached: %v (found %v)", time.Since(t0), m.MRK != "")
+		t0 = time.Now()
+		a.FindMarker("", "nomatch.GBR", g)
+		b.Logf("content search, cached: %v", time.Since(t0))
+		t0 = time.Now()
+		a.FindMarker("", "m5_0.GBR", gbrOf(rect{105, 100, 1105, 600}, rect{1300, 105, 1800, 905}))
+		b.Logf("by name: %v", time.Since(t0))
 	}
 }
