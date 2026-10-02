@@ -43,6 +43,7 @@ var (
 	reCutCount = regexp.MustCompile(`(?s)<CUT>\s*<COUNT>(\d+)</COUNT>`)
 )
 
+// findSibling: the file with the same name as p but extension ext, in p's folder.
 func findSibling(p, ext string) string {
 	dir := filepath.Dir(p)
 	base := strings.TrimSuffix(filepath.Base(p), filepath.Ext(p))
@@ -97,6 +98,7 @@ func pdsNotchCounts(p string) map[string]int {
 type gbrPieceInfo struct {
 	name    string
 	w, h    float64
+	box     pieceBox // 0.1 mm
 	notches int
 }
 
@@ -125,6 +127,11 @@ func gbrPieces(raw string) []gbrPieceInfo {
 			cur.notches += v
 		}
 		cur.w, cur.h = (maxX-minX)/10, (maxY-minY)/10
+		if maxX >= minX {
+			cur.box = pieceBox{int(minX), int(minY), int(maxX), int(maxY)}
+		} else {
+			cur.box = pieceBox{0, 0, -1, -1}
+		}
 		out = append(out, *cur)
 	}
 	for _, t := range toks {
@@ -142,9 +149,10 @@ func gbrPieces(raw string) []gbrPieceInfo {
 	return out
 }
 
-// CheckMissingNotches looks for NAME.MRK (and the PDS it refers to) next to the GBR.
-func CheckMissingNotches(gbrPath, gbrContent string) *NotchCheck {
-	mrk := findSibling(gbrPath, ".mrk")
+// CheckMissingNotches compares the GBR with its marker (.MRK) and pattern (.PDS),
+// found by FindMarker.
+func CheckMissingNotches(m MarkerMatch, gbrContent string) *NotchCheck {
+	mrk, pds := m.MRK, m.PDS
 	if mrk == "" {
 		return nil
 	}
@@ -171,15 +179,6 @@ func CheckMissingNotches(gbrPath, gbrContent string) *NotchCheck {
 			mp.angles = append(mp.angles, v)
 		}
 		pieces = append(pieces, mp)
-	}
-	// PDS: next to the GBR, or the path written in the marker
-	pds := findSibling(gbrPath, ".pds")
-	if pds == "" {
-		if m := reStyleFn.FindStringSubmatch(x); m != nil {
-			if _, err := os.Stat(m[1]); err == nil {
-				pds = m[1]
-			}
-		}
 	}
 	var perName map[string]int
 	if pds != "" {

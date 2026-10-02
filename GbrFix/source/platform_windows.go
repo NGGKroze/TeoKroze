@@ -159,7 +159,8 @@ func (w *watcher) run(root string, onFile func(string), onErr func(string)) {
 				name := string(utf16.Decode(nameU))
 				switch info.Action {
 				case syscall.FILE_ACTION_ADDED, syscall.FILE_ACTION_MODIFIED, syscall.FILE_ACTION_RENAMED_NEW_NAME:
-					if strings.HasSuffix(strings.ToLower(name), ".gbr") {
+					switch strings.ToLower(filepath.Ext(name)) {
+					case ".gbr", ".mrk", ".pds":
 						onFile(filepath.Join(root, name))
 					}
 				}
@@ -201,12 +202,19 @@ func setAutostart(on bool) error {
 	return hidden(exec.Command("reg", "add", runKey, "/v", "GbrFix", "/t", "REG_SZ", "/d", `"`+self+`" -background`, "/f")).Run()
 }
 
-// pickFolder shows the standard Windows folder dialog.
-func pickFolder() (string, error) {
-	script := `Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.FolderBrowserDialog; ` +
-		`$f.Description = 'Изберете папка за автоматично конвертиране на .GBR'; $f.ShowNewFolderButton = $false; ` +
+// psQuote makes a PowerShell single-quoted string.
+func psQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
+
+// pickFile shows the standard Windows "Open" dialog.
+func pickFile(title, filter, startDir string) (string, error) {
+	script := `Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.OpenFileDialog; ` +
+		`$f.Title = ` + psQuote(title) + `; $f.Filter = ` + psQuote(filter) + `; $f.InitialDirectory = ` + psQuote(startDir) + `; ` +
 		`$o = New-Object System.Windows.Forms.Form; $o.TopMost = $true; ` +
-		`if ($f.ShowDialog($o) -eq 'OK') { [Console]::OutputEncoding = [Text.Encoding]::UTF8; [Console]::Write($f.SelectedPath) }`
+		`if ($f.ShowDialog($o) -eq 'OK') { [Console]::OutputEncoding = [Text.Encoding]::UTF8; [Console]::Write($f.FileName) }`
+	return runPS(script)
+}
+
+func runPS(script string) (string, error) {
 	u := utf16.Encode([]rune(script))
 	b := make([]byte, len(u)*2)
 	for i, v := range u {
@@ -214,4 +222,13 @@ func pickFolder() (string, error) {
 	}
 	out, err := hidden(exec.Command("powershell", "-NoProfile", "-STA", "-NonInteractive", "-EncodedCommand", base64.StdEncoding.EncodeToString(b))).Output()
 	return strings.TrimSpace(string(out)), err
+}
+
+// pickFolder shows the standard Windows folder dialog.
+func pickFolder(desc string) (string, error) {
+	script := `Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.FolderBrowserDialog; ` +
+		`$f.Description = ` + psQuote(desc) + `; $f.ShowNewFolderButton = $false; ` +
+		`$o = New-Object System.Windows.Forms.Form; $o.TopMost = $true; ` +
+		`if ($f.ShowDialog($o) -eq 'OK') { [Console]::OutputEncoding = [Text.Encoding]::UTF8; [Console]::Write($f.SelectedPath) }`
+	return runPS(script)
 }

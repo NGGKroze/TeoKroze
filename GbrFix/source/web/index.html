@@ -138,6 +138,23 @@ code{background:#eef0f3;padding:1px 5px;border-radius:4px}
     </div>
   </div>
   <div class="card">
+    <h3>Къде са маркировките (.MRK / .PDS)</h3>
+    <div class="small" style="margin-bottom:8px">Нужни са за проверката и връщането на липсващи нотчове. Ако Marker ги записва в друга папка, а не до GBR-а, добавете я тук (търси се с всички подпапки). Маркировката се търси в този ред:
+      <ol style="margin:4px 0 0 18px;padding:0">
+        <li>избрана ръчно с „Посочи .MRK…“ в „Последни файлове“ (запомня се за този GBR);</li>
+        <li>със същото име до GBR-а или в горната папка;</li>
+        <li>със същото име в папките тук и в следените папки;</li>
+        <li>с друго име, ако детайлите са на същите места като в GBR-а (напр. преименуван GBR).</li>
+      </ol>
+      Маркировка със същото име се взима само ако детайлите ѝ съвпадат с GBR-а. Ако GBR-ът е записан преди маркировката, той се обработва отново, щом маркировката се появи (до 24 часа). Пътят до .PDS се взима от маркировката; ако там го няма, търси се по име в същите папки.</div>
+    <div id="mrkList"></div>
+    <div class="row">
+      <input id="mrkIn" placeholder="напр. D:\Optitex\Markers или \\server\markers" style="flex:1;min-width:240px">
+      <button id="addMrk">Добави</button>
+      <button id="pickMrkDir" class="pri">Избери папка…</button>
+    </div>
+  </div>
+  <div class="card">
     <h3>Общи</h3>
     <label class="chk"><input type="checkbox" id="optAutostart"> Стартирай GBR Fix автоматично с Windows</label>
     <label class="chk"><input type="checkbox" id="optNotify"> Показвай известие при всяко коригиране</label>
@@ -148,11 +165,11 @@ code{background:#eef0f3;padding:1px 5px;border-radius:4px}
     <label class="chk"><input type="checkbox" id="optShU"> U нотч → I-нотч с M19</label>
     <label class="chk"><input type="checkbox" id="optCloseU"> Довършвай U нотча до ръба, ако остава като U <span class="small">(26.1 не го затваря и отрязва тънка ивица от ръба)</span></label>
     <div style="margin:12px 0 2px">Нотчове, които Optitex е изпуснал в GBR</div>
-    <div class="small" style="margin-bottom:4px">Мястото им се взима от .MRK файла със същото име до GBR-а и се добавят като I-нотч с M19. Без .MRK нищо не се добавя.</div>
+    <div class="small" style="margin-bottom:4px">Мястото им се взима от .MRK файла на маркировката (виж „Къде са маркировките“ горе) и се добавят като I-нотч с M19. Без .MRK нищо не се добавя.</div>
     <label class="chk"><input type="radio" name="restMode" value="separate" id="rmSep"> Записвай <b>втори файл</b> с добавените нотчове <span class="small">(…_restored) – първият файл остава само конвертиран</span></label>
     <label class="chk"><input type="radio" name="restMode" value="same" id="rmSame"> Добавяй ги направо в коригирания файл <span class="small">(един файл)</span></label>
     <label class="chk"><input type="radio" name="restMode" value="off" id="rmOff"> Не добавяй липсващи нотчове</label>
-    <label class="chk"><input type="checkbox" id="optMissing"> Проверявай за липсващи нотчове спрямо .MRK / .PDS файла до GBR-а</label>
+    <label class="chk"><input type="checkbox" id="optMissing"> Проверявай за липсващи нотчове спрямо .MRK / .PDS файла на маркировката</label>
     <div style="margin:10px 0 4px">Къде да се записват коригираните файлове</div>
     <label class="chk"><input type="radio" name="outMode" value="suffix" id="omSuffix"> До оригинала, с наставка в името</label>
     <label class="chk"><input type="radio" name="outMode" value="folder" id="omFolder"> В отделна папка вътре в папката на оригинала (с оригиналните имена)</label>
@@ -170,8 +187,8 @@ code{background:#eef0f3;padding:1px 5px;border-radius:4px}
 <script>
 const $=s=>document.querySelector(s);
 const H={'X-GbrFix':'1'};
-let status=null,cfgLoaded=false,watchEdit=[];
-function loadCfgForm(){const c=status.config;watchEdit=[...(c.watch||[])];renderWatch();
+let status=null,cfgLoaded=false,watchEdit=[],mrkEdit=[];
+function loadCfgForm(){const c=status.config;watchEdit=[...(c.watch||[])];renderWatch();mrkEdit=[...(c.markerDirs||[])];renderMrk();
   $('#optAutostart').checked=!!status.autostart;$('#optNotify').checked=!!c.notify;$('#optShV').checked=!!c.shapeV;$('#optShBox').checked=!!c.shapeBox;$('#optShU').checked=!!c.shapeU;$('#optCloseU').checked=!!c.closeBrokenU;$('#optMissing').checked=!!c.checkMissing;({same:$('#rmSame'),off:$('#rmOff')}[c.restoreMode]||$('#rmSep')).checked=true;(c.outMode==='folder'?$('#omFolder'):$('#omSuffix')).checked=true;$('#optSuffix').value=c.suffix;$('#optNear').value=c.neardup;
   $('#optExcl').value=(c.exclude||[]).join('\n');sfxEx();}
 function outMode(){return $('#omFolder').checked?'folder':'suffix';}
@@ -179,6 +196,8 @@ function sfxEx(){const x=$('#optSuffix').value||'';
   $('#sfxEx').textContent=outMode()==='folder'
    ?'Пример:  ...\\robot\\cut\\Model 1\\\n   A-S-M.GBR              (оригинал)\n   A-L-XL.GBR             (оригинал)\n   Model 1'+x+'\\\n      A-S-M.GBR           (коригиран)\n      A-L-XL.GBR          (коригиран)'
    :'Пример:  ...\\robot\\cut\\Model 1\\\n   A-S-M.GBR              (оригинал)\n   A-S-M'+x+'.GBR        (коригиран)';}
+function renderMrk(){$('#mrkList').innerHTML=mrkEdit.length?mrkEdit.map((w,i)=>`<div class="witem"><code>${esc(w)}</code><button data-rm="${i}">Премахни</button></div>`).join(''):'<div class="witem"><code>Няма добавени папки – маркировката се търси до GBR-а, в горната му папка и в следените папки.</code></div>';
+  $('#mrkList').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{mrkEdit.splice(+b.dataset.rm,1);renderMrk();autoSave();});}
 function renderWatch(){$('#watchList').innerHTML=watchEdit.length?watchEdit.map((w,i)=>`<div class="witem"><code>${esc(w)}</code><button data-rm="${i}">Премахни</button></div>`).join(''):'<div class="witem miss"><code>Не е избрана папка – автоматичното конвертиране е изключено. Натиснете „Избери папка…“.</code></div>';
   $('#watchList').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{watchEdit.splice(+b.dataset.rm,1);renderWatch();autoSave();});}
 
@@ -204,10 +223,12 @@ async function refresh(){
   const ev=status.events||[];
   const lbl={ok:'Коригиран',warn:'Провери',error:'Грешка',info:'Инфо'};
   $('#evBody').innerHTML=ev.length?ev.map((e,i)=>`<tr><td>${esc(e.time)}</td><td class="st ${e.status}">${lbl[e.status]||e.status}</td>
-   <td class="path">${e.src?esc(e.src):''}${e.out?'<div class="small">→ '+esc(e.out)+'</div>':''}${e.out2?'<div class="small">→ '+esc(e.out2)+' <b>(с върнати нотчове)</b></div>':''}</td><td>${esc(e.msg)}</td>
-   <td class="links">${e.out?`<button data-cmp="${i}">Преди / след</button>`:''}${e.out2?`<button data-cmp2="${i}">С върнати нотчове</button>`:''}${(e.out||e.out2)?`<button data-rev="${i}">Покажи в папката</button>`:(e.src?`<button data-one="${i}">Преглед</button>`:'')}</td></tr>`).join(''):'<tr><td colspan="5" class="small">Все още няма събития.</td></tr>';
+   <td class="path">${e.src?esc(e.src):''}${e.out?'<div class="small">→ '+esc(e.out)+'</div>':''}${e.out2?'<div class="small">→ '+esc(e.out2)+' <b>(с върнати нотчове)</b></div>':''}${e.marker?'<div class="small">'+esc(e.marker)+'</div>':''}</td><td>${esc(e.msg)}</td>
+   <td class="links">${e.out?`<button data-cmp="${i}">Преди / след</button>`:''}${e.out2?`<button data-cmp2="${i}">С върнати нотчове</button>`:''}${(e.out||e.out2)?`<button data-rev="${i}">Покажи в папката</button>`:(e.src?`<button data-one="${i}">Преглед</button>`:'')}${(e.noMarker||e.marker)&&/\.gbr$/i.test(e.src||'')?`<button data-mrk="${i}">${e.noMarker?'Посочи .MRK…':'Друга .MRK…'}</button>`:''}</td></tr>`).join(''):'<tr><td colspan="5" class="small">Все още няма събития.</td></tr>';
   $('#evBody').querySelectorAll('[data-cmp]').forEach(b=>b.onclick=()=>{const e=ev[+b.dataset.cmp];viewPaths(e.src,e.out,e.report);});
   $('#evBody').querySelectorAll('[data-cmp2]').forEach(b=>b.onclick=()=>{const e=ev[+b.dataset.cmp2];viewPaths(e.src,e.out2,e.report,'С върнати нотчове: ');});
+  $('#evBody').querySelectorAll('[data-mrk]').forEach(b=>b.onclick=async()=>{const e=ev[+b.dataset.mrk];b.disabled=true;b.textContent='Отваря се прозорец…';
+    try{const r=await fetch('/api/pickmrk?src='+encodeURIComponent(e.src),{method:'POST',headers:H});if(!r.ok)throw new Error(await r.text());refresh();}catch(x){alert(x.message);}finally{b.disabled=false;}});
   $('#evBody').querySelectorAll('[data-one]').forEach(b=>b.onclick=()=>{const e=ev[+b.dataset.one];viewPaths(e.src);});
   $('#evBody').querySelectorAll('[data-rev]').forEach(b=>b.onclick=()=>{const e=ev[+b.dataset.rev];fetch('/api/reveal?path='+encodeURIComponent(e.out2||e.out),{method:'POST',headers:H});});
   $('#iniPath').textContent=status.iniPath;$('#dirPath').textContent=status.dir;
@@ -224,7 +245,7 @@ $('#quickPick').onclick=async()=>{$('#quickMsg').textContent='Отваря се 
     const c=status.config;await saveCfg({watch:[j.path],outMode:c.outMode,suffix:c.suffix,notify:c.notify,neardup:c.neardup,exclude:c.exclude,autostart:status.autostart});
     $('#quickMsg').textContent='';cfgLoaded=false;refresh();}catch(e){$('#quickMsg').textContent='Грешка: '+e.message;}};
 function rootWarn(v){return /^[a-z]:\\?$/i.test(v.trim())?'Внимание: избран е цял диск – по-добре изберете конкретната папка на Marker.':'';}
-function cfgBody(){return {watch:watchEdit,shapeV:$('#optShV').checked,shapeBox:$('#optShBox').checked,shapeU:$('#optShU').checked,closeBrokenU:$('#optCloseU').checked,checkMissing:$('#optMissing').checked,restoreMode:(document.querySelector('input[name=restMode]:checked')||{}).value||'separate',outMode:outMode(),suffix:$('#optSuffix').value.trim(),notify:$('#optNotify').checked,neardup:parseInt($('#optNear').value||'0',10),
+function cfgBody(){return {watch:watchEdit,markerDirs:mrkEdit,shapeV:$('#optShV').checked,shapeBox:$('#optShBox').checked,shapeU:$('#optShU').checked,closeBrokenU:$('#optCloseU').checked,checkMissing:$('#optMissing').checked,restoreMode:(document.querySelector('input[name=restMode]:checked')||{}).value||'separate',outMode:outMode(),suffix:$('#optSuffix').value.trim(),notify:$('#optNotify').checked,neardup:parseInt($('#optNear').value||'0',10),
   exclude:$('#optExcl').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),autostart:$('#optAutostart').checked};}
 let saveTimer=null,saveSeq=0;
 function saveState(html){$('#saveState').innerHTML=html;}
@@ -243,6 +264,11 @@ $('#addWatch').onclick=()=>{addWatchPath($('#watchIn').value);$('#watchIn').valu
 $('#watchIn').onkeydown=e=>{if(e.key==='Enter')$('#addWatch').click();};
 $('#pickWatch').onclick=async()=>{$('#cfgMsg').textContent='Отваря се прозорец за избор на папка (може да е зад този прозорец)…';
   try{const r=await fetch('/api/pickfolder',{method:'POST',headers:H});const j=await r.json();$('#cfgMsg').textContent='';if(j.path)addWatchPath(j.path);}catch(e){$('#cfgMsg').textContent='Грешка: '+e.message;}};
+function addMrkPath(v){v=(v||'').trim();if(!v||mrkEdit.some(x=>x.toLowerCase()===v.toLowerCase()))return;mrkEdit.push(v);renderMrk();autoSave();}
+$('#addMrk').onclick=()=>{addMrkPath($('#mrkIn').value);$('#mrkIn').value='';};
+$('#mrkIn').onkeydown=e=>{if(e.key==='Enter')$('#addMrk').click();};
+$('#pickMrkDir').onclick=async()=>{$('#cfgMsg').textContent='Отваря се прозорец за избор на папка (може да е зад този прозорец)…';
+  try{const r=await fetch('/api/pickfolder?for=mrk',{method:'POST',headers:H});const j=await r.json();$('#cfgMsg').textContent='';if(j.path)addMrkPath(j.path);}catch(e){$('#cfgMsg').textContent='Грешка: '+e.message;}};
 $('#pauseBtn').onclick=async()=>{await fetch('/api/pause?on='+(status&&status.paused?'0':'1'),{method:'POST',headers:H});refresh();};
 $('#quitBtn').onclick=async()=>{if(!confirm('Да затворя ли GBR Fix напълно? Автоматичното коригиране няма да работи, докато не я пуснете отново.\n\n(Ако само затворите прозореца, програмата продължава да работи в трея до часовника.)'))return;await fetch('/api/quit',{method:'POST',headers:H});$('#watchPill').textContent='Спряна';$('#watchPill').className='pill';};
 

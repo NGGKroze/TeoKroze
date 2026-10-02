@@ -27,6 +27,8 @@ func startWatchers(roots []string, onFile func(string), onErr func(string)) func
 
 var fakeAutostart bool
 
-func autostartEnabled() bool      { return fakeAutostart }
-func setAutostart(on bool) error  { fakeAutostart = on; return nil }
-func pickFolder() (string, error) { return os.TempDir(), nil }
+func autostartEnabled() bool                 { return fakeAutostart }
+func setAutostart(on bool) error             { fakeAutostart = on; return nil }
+func pickFolder(desc string) (string, error) { return os.TempDir(), nil }
+
+func pickFile(title, filter, startDir string) (string, error) { return "", nil }

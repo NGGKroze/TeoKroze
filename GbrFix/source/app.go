@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const appVersion = "2.0"
+const appVersion = "2.1"
 
 const restoredTag = "_restored"
 
@@ -33,8 +33,9 @@ var assetFS embed.FS
 
 type Config struct {
 	Suffix         string   `json:"suffix"`
-	OutMode        string   `json:"outMode"` // "suffix": NAME_fixed.GBR next to the file; "folder": FOLDER\FOLDER_fixed\NAME.GBR
-	Watch          []string `json:"watch"`   // folders/drives watched with all subfolders
+	OutMode        string   `json:"outMode"`    // "suffix": NAME_fixed.GBR next to the file; "folder": FOLDER\FOLDER_fixed\NAME.GBR
+	Watch          []string `json:"watch"`      // folders/drives watched with all subfolders
+	MarkerDirs     []string `json:"markerDirs"` // where the .MRK/.PDS files are saved (searched with all subfolders)
 	Exclude        []string `json:"exclude"`
 	NearDupTol     int      `json:"neardup"`
 	RecoverBrokenI bool     `json:"recoverBrokenI"`
@@ -86,6 +87,9 @@ func (c Config) save() error {
 		"out_mode=" + c.OutMode + "\n" +
 		"; Папки/дискове за автоматично конвертиране (с всички подпапки), разделени с ;\n" +
 		"watch=" + strings.Join(c.Watch, ";") + "\n" +
+		"; Папки, в които Marker записва .MRK и .PDS файловете (търсят се с всички подпапки), разделени с ;\n" +
+		";   търсят се и в следените папки, до GBR файла и в горната му папка\n" +
+		"marker_dirs=" + strings.Join(c.MarkerDirs, ";") + "\n" +
 		"; Пътища, съдържащи тези части, се пропускат (разделени с ;)\n" +
 		"exclude=" + strings.Join(c.Exclude, ";") + "\n" +
 		"; Премахване на почти еднакви нотчове (разлика до N единици = N*0.1 мм). 0 = изключено\n" +
@@ -98,9 +102,9 @@ func (c Config) save() error {
 		"shape_u_to_i=" + b01(c.ShapeU) + "\n" +
 		"; Довършване на U нотча на 26.1, който не се връща до ръба (отрязва ивица) 0/1\n" +
 		"close_broken_u=" + b01(c.CloseBrokenU) + "\n" +
-		"; Проверка за липсващи нотчове спрямо .MRK/.PDS до файла 0/1\n" +
+		"; Проверка за липсващи нотчове спрямо .MRK/.PDS на маркировката 0/1\n" +
 		"check_missing=" + b01(c.CheckMissing) + "\n" +
-		"; Липсващи в GBR нотчове (взимат се от .MRK файла до GBR-а, като I-нотч с M19):\n" +
+		"; Липсващи в GBR нотчове (взимат се от .MRK файла на маркировката, като I-нотч с M19):\n" +
 		";   off = не се добавят; same = добавят се в коригирания файл;\n" +
 		";   separate = коригираният файл остава без тях + втори файл ..._restored с добавените\n" +
 		"restore_mode=" + c.RestoreMode + "\n" +
@@ -151,6 +155,8 @@ func loadConfig(dir string) Config {
 		case "watch":
 			hasWatch = true
 			c.Watch = splitList(v)
+		case "marker_dirs":
+			c.MarkerDirs = splitList(v)
 		case "exclude":
 			c.Exclude = splitList(v)
 		case "neardup":
@@ -249,6 +255,8 @@ type Event struct {
 	PhantomBefore int    `json:"phantomBefore"`
 	PhantomAfter  int    `json:"phantomAfter"`
 	Report        string `json:"report"`
+	Marker        string `json:"marker"`   // .MRK used for the notch check, and how it was found
+	NoMarker      bool   `json:"noMarker"` // no .MRK was found: the user can choose one
 }
 
 type App struct {
@@ -262,6 +270,9 @@ type App struct {
 	wmu       sync.Mutex
 	stopWatch func()
 
+	mix   markerIndex
+	pairs map[string]string // GBR path (lower case) -> .MRK chosen by the user
+
 	mrks     map[string]*svgDrawing
 	notes    *notifier
 	paused   bool
@@ -269,9 +280,11 @@ type App struct {
 	lastNote Note
 	baseURL  string
 
-	pmu     sync.Mutex
-	pending map[string]time.Time
-	done    map[string]string // path -> size|mtime already handled
+	pmu      sync.Mutex
+	pending  map[string]time.Time
+	done     map[string]string    // path -> size|mtime already handled
+	waitMrk  map[string]time.Time // GBRs processed without a marker
+	mrkDirty time.Time            // a .MRK/.PDS changed in a searched folder
 }
 
 func (a *App) logEvent(e Event) {
@@ -319,10 +332,20 @@ func (a *App) applyWatch() {
 	if a.stopWatch != nil {
 		a.stopWatch()
 	}
-	roots := append([]string(nil), a.conf().Watch...)
-	a.stopWatch = startWatchers(roots, a.schedule, func(msg string) {
-		a.logEvent(Event{Time: now(), Status: "error", Msg: msg})
-	})
+	cfg := a.conf()
+	roots := append([]string(nil), cfg.Watch...)
+	onErr := func(msg string) { a.logEvent(Event{Time: now(), Status: "error", Msg: msg}) }
+	stopGBR := startWatchers(roots, a.schedule, onErr)
+	// marker folders: only to notice new markers (GBRs there are not converted unless watched too)
+	var mdirs []string
+	for _, d := range cfg.MarkerDirs {
+		if st, err := os.Stat(d); err == nil && st.IsDir() {
+			mdirs = append(mdirs, d)
+		}
+	}
+	stopMrk := startWatchers(mdirs, a.markerSeen, func(string) {})
+	a.stopWatch = func() { stopGBR(); stopMrk() }
+	a.mix.invalidate()
 	a.mu.Lock()
 	a.watched = roots
 	a.mu.Unlock()
@@ -393,6 +416,10 @@ func (a *App) showUI(viewPath string) {
 }
 
 func (a *App) schedule(p string) {
+	if ext := strings.ToLower(filepath.Ext(p)); ext == ".mrk" || ext == ".pds" {
+		a.markerSeen(p)
+		return
+	}
 	if a.isPaused() || !a.candidate(p) {
 		return
 	}
@@ -414,6 +441,9 @@ func (a *App) pump() {
 		a.pmu.Unlock()
 		for _, p := range ready {
 			a.process(p, 0)
+		}
+		if !a.isPaused() {
+			a.retryWaiting()
 		}
 	}
 }
@@ -502,17 +532,36 @@ func (a *App) convertFile(p string, raw []byte) {
 	}
 	cfg := a.conf()
 	r := Convert(s, cfg.options())
+	var mm MarkerMatch
+	if cfg.CheckMissing || cfg.RestoreMode != "off" {
+		mm = a.FindMarker(p, filepath.Base(p), s)
+		if mm.MRK == "" {
+			a.waitForMarker(p)
+		} else {
+			a.pmu.Lock()
+			delete(a.waitMrk, p)
+			a.pmu.Unlock()
+		}
+	}
 	plan := planOutputs(r, cfg, func() *svgDrawing {
-		if mrk := findSibling(p, ".mrk"); mrk != "" {
-			return loadDrawing(mrk)
+		if mm.MRK != "" {
+			return loadDrawing(mm.MRK)
 		}
 		return nil
 	})
-	if plan.rest != nil {
-		if mrk := findSibling(p, ".mrk"); mrk != "" {
-			plan.rest.SourceName = filepath.Base(mrk)
-		}
+	if plan.rest != nil && mm.MRK != "" {
+		plan.rest.SourceName = filepath.Base(mm.MRK)
 	}
+	markerNote, noMarker := "", false
+	if mm.MRK != "" {
+		markerNote = "Маркировка: " + mm.MRK + " (" + mm.How + ")"
+		if mm.PDS != "" {
+			markerNote += " · модел: " + mm.PDS
+		}
+	} else if cfg.CheckMissing || cfg.RestoreMode != "off" {
+		noMarker = true
+	}
+	noMrkHint := " .MRK на маркировката не е намерен – липсващи нотчове не са проверени (посочете го с „Посочи .MRK…“ или добавете папката с маркировките в „Настройки“)."
 	// what is still missing in the best file we can produce
 	best := plan.main
 	if plan.second != "" {
@@ -520,9 +569,9 @@ func (a *App) convertFile(p string, raw []byte) {
 	}
 	var miss, missMain *NotchCheck
 	if cfg.CheckMissing {
-		miss = CheckMissingNotches(p, best)
+		miss = CheckMissingNotches(mm, best)
 		if plan.second != "" {
-			missMain = CheckMissingNotches(p, plan.main)
+			missMain = CheckMissingNotches(mm, plan.main)
 		}
 	}
 	missing := miss != nil && miss.Missing > 0
@@ -533,18 +582,24 @@ func (a *App) convertFile(p string, raw []byte) {
 			if cfg.RestoreMode != "off" {
 				hint = " Не могат да се върнат автоматично – проверете в Optitex и експортирайте отново."
 			}
-			a.logEvent(Event{Time: now(), Src: p, Status: "warn", Msg: "Нотчовете в файла са наред, но " + miss.Text() + hint, Report: miss.Text()})
+			a.logEvent(Event{Time: now(), Src: p, Status: "warn", Msg: "Нотчовете в файла са наред, но " + miss.Text() + hint, Report: miss.Text(), Marker: markerNote})
 			a.note(p, "warn")
 		case r.HeaderWarn != "":
-			a.logEvent(Event{Time: now(), Src: p, Status: "warn", Msg: "Нотчовете са наред, но заглавката е повредена: " + r.HeaderWarn + ". Експортирайте файла наново от Marker."})
+			a.logEvent(Event{Time: now(), Src: p, Status: "warn", Msg: "Нотчовете са наред, но заглавката е повредена: " + r.HeaderWarn + ". Експортирайте файла наново от Marker.", Marker: markerNote, NoMarker: noMarker})
 			a.note(p, "warn")
 		default:
-			a.logEvent(Event{Time: now(), Src: p, Status: "info", Msg: "Няма счупени нотчове – файлът не е променян."})
+			msg := "Няма счупени нотчове – файлът не е променян."
+			if miss != nil {
+				msg += " " + miss.Text()
+			} else if noMarker {
+				msg += noMrkHint
+			}
+			a.logEvent(Event{Time: now(), Src: p, Status: "info", Msg: msg, Marker: markerNote, NoMarker: noMarker})
 		}
 		return
 	}
 	before, after := Simulate(s), Simulate(best)
-	e := Event{Time: now(), Src: p,
+	e := Event{Time: now(), Src: p, Marker: markerNote, NoMarker: noMarker,
 		Notches:       r.Total(func(x PieceSummary) int { return x.SourceNotches + x.SP4TSlits + x.GeomTNotches + x.ShapeNotches }),
 		Embedded:      r.Total(func(x PieceSummary) int { return x.Embedded + x.SP4TSlits + x.GeomTNotches + x.ShapeNotches }),
 		Dups:          r.Total(func(x PieceSummary) int { return x.DuplicatesRemoved + x.NearDupRemoved }),
@@ -610,10 +665,12 @@ func (a *App) convertFile(p string, raw []byte) {
 		hint := ""
 		if cfg.RestoreMode == "off" {
 			hint = " Добавянето на липсващи нотчове е изключено в „Настройки“."
-		} else if findSibling(p, ".mrk") == "" {
-			hint = " Няма .MRK до файла, затова не могат да се върнат."
+		} else if mm.MRK == "" {
+			hint = " Няма .MRK на маркировката, затова не могат да се върнат."
 		}
 		msg = append(msg, "ВНИМАНИЕ: "+miss.Text()+hint)
+	} else if miss == nil && noMarker {
+		msg = append(msg, noMrkHint)
 	}
 	if r.HeaderWarn != "" {
 		e.Status = "warn"
@@ -706,19 +763,20 @@ func (a *App) handler() http.Handler {
 			return
 		}
 		var in struct {
-			Watch     []string `json:"watch"`
-			Exclude   []string `json:"exclude"`
-			Suffix    string   `json:"suffix"`
-			Notify    bool     `json:"notify"`
-			NearDup   int      `json:"neardup"`
-			Autostart bool     `json:"autostart"`
-			OutMode   string   `json:"outMode"`
-			ShapeV    *bool    `json:"shapeV"`
-			ShapeBox  *bool    `json:"shapeBox"`
-			ShapeU    *bool    `json:"shapeU"`
-			CloseU    *bool    `json:"closeBrokenU"`
-			CheckMiss *bool    `json:"checkMissing"`
-			Restore   string   `json:"restoreMode"`
+			Watch      []string  `json:"watch"`
+			Exclude    []string  `json:"exclude"`
+			Suffix     string    `json:"suffix"`
+			Notify     bool      `json:"notify"`
+			NearDup    int       `json:"neardup"`
+			Autostart  bool      `json:"autostart"`
+			OutMode    string    `json:"outMode"`
+			ShapeV     *bool     `json:"shapeV"`
+			ShapeBox   *bool     `json:"shapeBox"`
+			ShapeU     *bool     `json:"shapeU"`
+			CloseU     *bool     `json:"closeBrokenU"`
+			CheckMiss  *bool     `json:"checkMissing"`
+			Restore    string    `json:"restoreMode"`
+			MarkerDirs *[]string `json:"markerDirs"`
 		}
 		if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&in); err != nil {
 			http.Error(w, "Невалидни данни", 400)
@@ -732,6 +790,15 @@ func (a *App) handler() http.Handler {
 		}
 		a.mu.Lock()
 		watchChanged := strings.Join(a.cfg.Watch, "|") != strings.Join(watch, "|")
+		var mdMissing []string
+		if in.MarkerDirs != nil {
+			var md []string
+			md, mdMissing = normWatch(*in.MarkerDirs)
+			if strings.Join(a.cfg.MarkerDirs, "|") != strings.Join(md, "|") {
+				watchChanged = true
+			}
+			a.cfg.MarkerDirs = md
+		}
 		a.cfg.Watch, a.cfg.Suffix, a.cfg.Notify = watch, sfx, in.Notify
 		for _, f := range []struct {
 			v   *bool
@@ -768,11 +835,22 @@ func (a *App) handler() http.Handler {
 		}
 		logIt := watchChanged
 		msg := "Настройките са запазени. Следени папки: " + strings.Join(watch, ", ")
+		if len(cfg.MarkerDirs) > 0 {
+			msg += ". Папки с маркировки: " + strings.Join(cfg.MarkerDirs, ", ")
+		}
 		if len(missing) > 0 {
 			msg += ". ВНИМАНИЕ: в момента не съществува(т): " + strings.Join(missing, ", ") + " – ще се следи(ят), когато станат достъпни."
 		}
+		if len(mdMissing) > 0 {
+			msg += ". ВНИМАНИЕ: папката с маркировки не съществува в момента: " + strings.Join(mdMissing, ", ")
+		}
 		if len(watch) == 0 {
 			msg = "Настройките са запазени. Автоматичното конвертиране е ИЗКЛЮЧЕНО (няма избрани папки)."
+		}
+		if watchChanged {
+			a.pmu.Lock()
+			a.mrkDirty = time.Now() // new marker folders: GBRs waiting for a marker are checked again
+			a.pmu.Unlock()
 		}
 		if in.Autostart != autostartEnabled() {
 			if err := setAutostart(in.Autostart); err != nil {
@@ -812,11 +890,51 @@ func (a *App) handler() http.Handler {
 			http.Error(w, "POST", 405)
 			return
 		}
-		p, err := pickFolder()
+		desc := "Изберете папка за автоматично конвертиране на .GBR"
+		if r.URL.Query().Get("for") == "mrk" {
+			desc = "Изберете папката, в която Marker записва .MRK и .PDS файловете"
+		}
+		p, err := pickFolder(desc)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
+		writeJSON(w, map[string]any{"path": p})
+	})
+	mux.HandleFunc("/api/pickmrk", func(w http.ResponseWriter, r *http.Request) {
+		// the user chooses the marker of a GBR; it is remembered and the GBR is processed again
+		if r.Method != http.MethodPost {
+			http.Error(w, "POST", 405)
+			return
+		}
+		src := r.URL.Query().Get("src")
+		if !gbrExts[strings.ToLower(filepath.Ext(src))] {
+			http.Error(w, "само за .GBR файлове", 400)
+			return
+		}
+		start := filepath.Dir(src)
+		if md := a.conf().MarkerDirs; len(md) > 0 {
+			start = md[0]
+		}
+		p, err := pickFile("Изберете маркировката (.MRK) за "+filepath.Base(src), "Маркировка Optitex (*.mrk)|*.mrk", start)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		if p == "" {
+			writeJSON(w, map[string]any{"path": ""})
+			return
+		}
+		if !strings.EqualFold(filepath.Ext(p), ".mrk") || loadDrawing(p) == nil {
+			http.Error(w, "Файлът не е маркировка на Optitex (.MRK с чертеж): "+filepath.Base(p), 400)
+			return
+		}
+		if err := a.setPair(src, p); err != nil {
+			http.Error(w, "Изборът не може да се запише: "+err.Error(), 500)
+			return
+		}
+		a.logEvent(Event{Time: now(), Src: src, Status: "info", Msg: "Избрана маркировка " + p + " – файлът се обработва отново."})
+		go a.reprocess(src)
 		writeJSON(w, map[string]any{"path": p})
 	})
 	mux.HandleFunc("/api/analyze", func(w http.ResponseWriter, r *http.Request) {
@@ -844,13 +962,24 @@ func (a *App) handler() http.Handler {
 		}
 		cfg := a.conf()
 		conv := Convert(raw, cfg.options())
-		plan := planOutputs(conv, cfg, func() *svgDrawing { return a.recallMRK(name) })
+		srcName := "MRK файла"
+		plan := planOutputs(conv, cfg, func() *svgDrawing {
+			if d := a.recallMRK(name); d != nil {
+				return d
+			}
+			// not opened in the window: look for it in the marker folders (by name or content)
+			if m := a.FindMarker(r.URL.Query().Get("path"), name, raw); m.MRK != "" {
+				srcName = filepath.Base(m.MRK)
+				return loadDrawing(m.MRK)
+			}
+			return nil
+		})
 		before := Simulate(raw)
 		rep := conv.ReportBG(name)
 		resp := map[string]any{"name": name, "needsFix": plan.writeMain, "before": before, "after": Simulate(plan.main),
 			"fixed": base64.StdEncoding.EncodeToString([]byte(plan.main))}
 		if plan.rest != nil {
-			plan.rest.SourceName = "MRK файла"
+			plan.rest.SourceName = srcName
 			if t := plan.rest.Text(); t != "" {
 				rep += "\n" + t + "\n  " + strings.Join(plan.rest.Coords, "\n  ") + "\n"
 			}
@@ -1008,7 +1137,8 @@ func main() {
 	if lf != nil {
 		log.SetOutput(lf)
 	}
-	a := &App{cfg: cfg, dir: dir, pending: map[string]time.Time{}, done: map[string]string{}, logf: lf, baseURL: base}
+	a := &App{cfg: cfg, dir: dir, pending: map[string]time.Time{}, done: map[string]string{}, waitMrk: map[string]time.Time{}, logf: lf, baseURL: base}
+	a.loadPairs()
 	a.notes = newNotifier(func(n Note) {
 		a.mu.Lock()
 		a.lastNote = n
