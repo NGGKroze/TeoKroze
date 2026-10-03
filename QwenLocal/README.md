@@ -21,10 +21,15 @@ After install, a **Qwen Local** shortcut is added to the Desktop and Start menu
 
 | Quant         | Download | RAM + VRAM needed |
 |---------------|---------:|------------------:|
-| UD-IQ1_M      | ~75 GB   | ~85 GB            |
-| UD-Q2_K_XL    | ~79 GB   | ~90 GB  (96 GB PC) |
-| UD-Q3_K_XL    | ~95 GB*  | ~110 GB           |
+| UD-IQ1_M      | ~75 GB   | ~75 GB            |
+| UD-IQ2_M      | ~77 GB*  | ~77 GB            |
+| UD-Q2_K_XL    | ~79 GB   | ~80 GB  (e.g. 16 GB GPU + 64 GB RAM) |
+| UD-IQ3_XXS    | ~82 GB*  | ~85–90 GB         |
+| UD-Q3_K_XL    | ~95 GB*  | ~100 GB           |
 | UD-Q4_K_XL    | ~111 GB  | ~125–140 GB       |
+
+(The ~17 GB n-gram table stays memory-mapped and is read from SSD on demand, so a file can be a bit
+larger than your RAM + VRAM. Put `S:` on an NVMe SSD.)
 
 \* estimate. Click **Check Hugging Face** for the real list and sizes.
 
@@ -55,6 +60,29 @@ Endpoint (while the server runs): `http://127.0.0.1:8080/v1`, model `qwen3.8-fla
 - **Aider**: run `tool-configs\aider-local.bat` inside your project.
 - **Claude Code**: run `tool-configs\claude-code-local.bat` inside your project (uses llama-server's Anthropic-compatible endpoint).
 
+## Speed profiles (16 GB GPU + 64 GB RAM, e.g. RTX 5070 Ti)
+
+*Speed profile* = **Auto** picks **MoE-Offload** on NVIDIA cards with 10–47 GB VRAM:
+
+```
+-ngl 99 --n-cpu-moe 36 -ot per_layer_token_embd=CPU -ctk q8_0 -ctv q8_0
+--threads <physical cores> -b 2048 -ub 1024
+```
+
+- Attention/shared weights live on the GPU; the experts of the first *N* MoE layers (of 48) stay in RAM.
+- The n-gram lookup table is pinned to the CPU (it is only a lookup, no math).
+- q8_0 KV cache halves context VRAM, so more experts fit on the GPU.
+- Bigger ubatch makes prompt processing (reading your code) much faster with CPU experts.
+
+Click **Tune speed** once after installing: it benchmarks `--n-cpu-moe` 24…48 with `llama-bench`
+and saves the fastest value that fits in VRAM (+2 headroom for long contexts).
+
+**Realistic numbers** reported for a 5070 Ti with this model in llama.cpp are **~15–23 tok/s** generation.
+The 35–50 tok/s figures come from 64 GB Macs (much faster unified memory) or multi-GPU rigs.
+Things that do *not* help on this class of PC: MTP speculative decoding (slower when experts are
+offloaded to RAM) and `--no-mmap` with the bigger quants (would force the n-gram table into RAM).
+More speed: dual-channel DDR5 at its rated EXPO/XMP speed, close other apps, use 32K context.
+
 ## Server settings
 
 Uses Qwen/Unsloth's recommended sampling (`--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0`),
@@ -68,6 +96,7 @@ QwenLocal.bat -Action Install    # install / resume download
 QwenLocal.bat -Action Start      # start server
 QwenLocal.bat -Action Stop       # stop server
 QwenLocal.bat -Action Tools      # regenerate tool-configs
+QwenLocal.bat -Action Tune       # benchmark and save the best --n-cpu-moe
 ```
 
 ## Troubleshooting

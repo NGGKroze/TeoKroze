@@ -8,11 +8,12 @@
     QwenLocal.bat -Action Start    -> start the local server
     QwenLocal.bat -Action Stop     -> stop the local server
     QwenLocal.bat -Action Tools    -> (re)write coding tool configs
+    QwenLocal.bat -Action Tune     -> benchmark --n-cpu-moe values and keep the fastest
 
   Works with Windows PowerShell 5.1 (built into Windows 10/11). ASCII only on purpose.
 #>
 param(
-    [ValidateSet('Gui', 'Install', 'Start', 'Stop', 'Tools')]
+    [ValidateSet('Gui', 'Install', 'Start', 'Stop', 'Tools', 'Tune')]
     [string]$Action = 'Gui',
     [string]$InstallDir = ''
 )
@@ -33,8 +34,10 @@ $Script:ScriptDir    = Split-Path -Parent $Script:ScriptPath
 # Approximate download sizes (GB) used only for the "recommended" hint before
 # the real file list is fetched from Hugging Face.
 $Script:KnownQuants = [ordered]@{
-    'UD-IQ1_M'   = 74.5
-    'UD-Q2_K_XL' = 78.9
+    'UD-IQ1_M'    = 74.5
+    'UD-IQ2_M'    = 77.0
+    'UD-Q2_K_XL'  = 78.9
+    'UD-IQ3_XXS'  = 82.0
     'UD-Q3_K_XL' = 95.0
     'UD-Q4_K_XL' = 111.3
 }
@@ -45,6 +48,9 @@ function Get-DefaultConfig {
         InstallDir = $Script:DefaultDir
         Quant      = 'UD-Q2_K_XL'
         Backend    = 'Auto'      # Auto | CUDA | Vulkan | CPU
+        Profile    = 'Auto'      # Auto | Fit | MoE-Offload (16 GB GPU + 64 GB RAM class)
+        NCpuMoe    = 36          # MoE layers kept in RAM (MoE-Offload profile); 48 = all
+        Threads    = 0           # 0 = physical core count
         CtxSize    = 65536
         Port       = 8080
         Host       = '127.0.0.1'
@@ -99,7 +105,9 @@ function Get-SystemInfo {
     $smi = Get-Command nvidia-smi.exe -ErrorAction SilentlyContinue
     if ($smi) {
         try {
+            $ErrorActionPreference = 'Continue'
             $out = & $smi.Source --query-gpu=memory.total --format=csv,noheader,nounits 2>$null
+            $ErrorActionPreference = 'Stop'
             foreach ($l in $out) { if ($l -match '^\s*(\d+)') { $vramGB += [int]$Matches[1] / 1024; $hasNvidia = $true } }
         } catch { }
     }
@@ -120,10 +128,25 @@ function Get-FreeSpaceGB([string]$path) {
 }
 
 function Get-RecommendedQuant($sys, $quantSizes) {
-    $budget = $sys.RamGB + $sys.VramGB - 12   # leave room for OS, KV cache, context
+    # The ~17 GB n-gram (per_layer_token_embd) table stays memory-mapped and is paged
+    # from SSD on demand, so the resident footprint is roughly file size - 17 GB.
+    # Keep ~15 GB for Windows, KV cache and context: size <= RAM + VRAM.
+    $budget = $sys.RamGB + $sys.VramGB
     $best = $null
     foreach ($q in $quantSizes.Keys) { if ($quantSizes[$q] -le $budget) { $best = $q } }
     $best
+}
+
+function Resolve-Profile([string]$profileName, $sys) {
+    if ($profileName -ne 'Auto') { return $profileName }
+    # Small GPU + model bigger than VRAM: keep attention/shared weights on the GPU,
+    # MoE experts in RAM (what 5070 Ti / 4080 / 16 GB owners run).
+    if ($sys.HasNvidia -and $sys.VramGB -ge 10 -and $sys.VramGB -lt 48) { return 'MoE-Offload' }
+    'Fit'
+}
+
+function Get-PhysicalCores {
+    try { [int](Get-CimInstance Win32_Processor | Measure-Object -Property NumberOfCores -Sum).Sum } catch { 8 }
 }
 
 function Resolve-Backend([string]$backend, $sys) {
@@ -269,7 +292,23 @@ function Install-Model($cfg) {
 }
 
 # ---------------------------------------------------------------- server
+function Get-PlacementArgs($cfg, [string]$profileName) {
+    if ($profileName -eq 'MoE-Offload') {
+        $threads = [int]$cfg.Threads; if ($threads -le 0) { $threads = Get-PhysicalCores }
+        return @(
+            '-ngl', '99',                              # all layers to GPU...
+            '--n-cpu-moe', $cfg.NCpuMoe,               # ...except the experts of the first N MoE layers
+            '-ot', 'per_layer_token_embd=CPU',         # n-gram lookup table: host/SSD, no math on it
+            '-ctk', 'q8_0', '-ctv', 'q8_0',            # halve KV cache VRAM so more experts fit on GPU
+            '--threads', $threads, '--threads-batch', $threads,
+            '--batch-size', '2048', '--ubatch-size', '1024'   # bigger ubatch = much faster prompt processing with CPU experts
+        )
+    }
+    @('--fit', 'on', '--fit-target', '4096', '--batch-size', '1024', '--ubatch-size', '512')
+}
+
 function Get-ServerArgs($cfg) {
+    $profileName = Resolve-Profile $cfg.Profile (Get-SystemInfo)
     $a = @(
         '-m', "`"$($cfg.ModelFile)`"",
         '--alias', $Script:ModelAlias,
@@ -278,11 +317,10 @@ function Get-ServerArgs($cfg) {
         '--ctx-size', $cfg.CtxSize,
         '--parallel', '1',
         '--flash-attn', 'on',
-        '--fit', 'on',
-        '--fit-target', '4096',
-        '--jinja',
-        '--batch-size', '1024',
-        '--ubatch-size', '512',
+        '--jinja'
+    )
+    $a += Get-PlacementArgs $cfg $profileName
+    $a += @(
         '--temp', '1.0',
         '--top-p', '0.95',
         '--top-k', '20',
@@ -331,6 +369,48 @@ function Start-QwenServer($cfg) {
 function Stop-QwenServer {
     $p = Get-Process llama-server -ErrorAction SilentlyContinue
     if ($p) { $p | Stop-Process -Force; Write-Log 'Server stopped.' 'Green' } else { Write-Log 'Server is not running.' }
+}
+
+# ---------------------------------------------------------------- tuning
+# Finds the lowest --n-cpu-moe (most experts on the GPU) that still fits in VRAM
+# and gives the best generation speed. Each value is a separate llama-bench run so
+# an out-of-memory value just gets skipped.
+function Invoke-Tune($cfg) {
+    $bench = Join-Path $cfg.InstallDir 'llama.cpp\llama-bench.exe'
+    if (-not (Test-Path $bench)) { throw 'llama-bench.exe not found - run Install first.' }
+    if (-not $cfg.ModelFile -or -not (Test-Path $cfg.ModelFile)) { $cfg.ModelFile = Find-ModelFile $cfg }
+    if (-not $cfg.ModelFile) { throw "Model $($cfg.Quant) not installed yet - run Install first." }
+    Stop-QwenServer
+    $threads = [int]$cfg.Threads; if ($threads -le 0) { $threads = Get-PhysicalCores }
+    $results = @()
+    foreach ($n in 24, 28, 32, 36, 40, 44, 48) {
+        Write-Log "Benchmarking --n-cpu-moe $n (first run loads the model, be patient)..." 'Cyan'
+        $benchArgs = @('-m', $cfg.ModelFile, '-ngl', '99', '-ncmoe', $n, '-ot', 'per_layer_token_embd=CPU',
+            '-fa', '1', '-ctk', 'q8_0', '-ctv', 'q8_0', '-t', $threads, '-b', '2048', '-ub', '1024',
+            '-p', '1024', '-n', '128', '-r', '2', '-o', 'csv')
+        $ErrorActionPreference = 'Continue'   # PS 5.1 turns redirected native stderr into errors
+        $csv = & $bench @benchArgs 2>$null
+        $ErrorActionPreference = 'Stop'
+        if ($LASTEXITCODE -ne 0 -or -not $csv) { Write-Log "  n-cpu-moe $n : failed (probably out of VRAM)" 'Yellow'; continue }
+        $rows = @($csv | ConvertFrom-Csv)
+        $pp = $rows | Where-Object { [int]$_.n_prompt -gt 0 } | Select-Object -First 1
+        $tg = $rows | Where-Object { [int]$_.n_gen -gt 0 } | Select-Object -First 1
+        if (-not $tg) { Write-Log "  n-cpu-moe $n : no result" 'Yellow'; continue }
+        $r = [pscustomobject]@{ NCpuMoe = $n; Gen = [math]::Round([double]$tg.avg_ts, 1); Prompt = [math]::Round([double]$pp.avg_ts, 0) }
+        Write-Log ("  n-cpu-moe {0,2} : {1,6} tok/s generation, {2,6} tok/s prompt" -f $r.NCpuMoe, $r.Gen, $r.Prompt) 'Green'
+        $results += $r
+        # Speed only drops as more experts move to RAM; stop once it falls clearly.
+        $best = $results | Sort-Object Gen -Descending | Select-Object -First 1
+        if ($r.Gen -lt $best.Gen * 0.85) { break }
+    }
+    if (-not $results) { throw 'Every benchmark run failed. Try a smaller quant or the Fit profile.' }
+    $best = $results | Sort-Object Gen -Descending | Select-Object -First 1
+    # Leave one layer of headroom for long contexts (KV cache grows with context).
+    $cfg.NCpuMoe = [math]::Min(48, $best.NCpuMoe + 2)
+    $cfg.Profile = 'MoE-Offload'
+    Save-Config $cfg
+    Write-Launchers $cfg
+    Write-Log "Best: n-cpu-moe $($best.NCpuMoe) at $($best.Gen) tok/s. Saved n-cpu-moe $($cfg.NCpuMoe) (+2 headroom for context)." 'Green'
 }
 
 # ---------------------------------------------------------------- coding tools
@@ -459,7 +539,7 @@ function Show-Gui {
 
     $form = New-Object Windows.Forms.Form
     $form.Text = "$($Script:AppName) - Qwen3.8-Flash-Next for coding"
-    $form.Size = New-Object Drawing.Size(760, 640)
+    $form.Size = New-Object Drawing.Size(760, 680)
     $form.StartPosition = 'CenterScreen'
     $form.Font = New-Object Drawing.Font('Segoe UI', 9)
     $form.FormBorderStyle = 'FixedSingle'
@@ -513,6 +593,17 @@ function Show-Gui {
     $form.Controls.Add($portBox)
     $y += 32
 
+    Add-Label 'Speed profile:' 12 $y | Out-Null
+    $profileBox = New-Object Windows.Forms.ComboBox; $profileBox.DropDownStyle = 'DropDownList'; $profileBox.Location = New-Object Drawing.Point(135, $y); $profileBox.Size = New-Object Drawing.Size(140, 24)
+    [void]$profileBox.Items.AddRange(@('Auto', 'MoE-Offload', 'Fit')); $profileBox.SelectedItem = $cfg.Profile
+    if (-not $profileBox.SelectedItem) { $profileBox.SelectedIndex = 0 }
+    $form.Controls.Add($profileBox)
+    Add-Label 'MoE layers in RAM:' 300 $y 115 | Out-Null
+    $moeBox = New-Object Windows.Forms.NumericUpDown; $moeBox.Location = New-Object Drawing.Point(420, $y); $moeBox.Size = New-Object Drawing.Size(60, 24); $moeBox.Minimum = 0; $moeBox.Maximum = 48; $moeBox.Value = [int]$cfg.NCpuMoe
+    $form.Controls.Add($moeBox)
+    Add-Label ("(Auto = {0}; 'Tune speed' finds the best value)" -f (Resolve-Profile 'Auto' $sys)) 490 $y 245 | Out-Null
+    $y += 32
+
     Add-Label 'HF token (optional):' 12 $y | Out-Null
     $tokenBox = New-Object Windows.Forms.TextBox; $tokenBox.Location = New-Object Drawing.Point(135, $y); $tokenBox.Size = New-Object Drawing.Size(300, 24); $tokenBox.UseSystemPasswordChar = $true; $tokenBox.Text = $cfg.HfToken
     $form.Controls.Add($tokenBox)
@@ -523,9 +614,9 @@ function Show-Gui {
 
     $buttons = @{}
     $x = 12
-    foreach ($b in @('Install / Update', 'Start server', 'Stop server', 'Open web chat', 'Coding tools', 'Open folder')) {
-        $btn = New-Object Windows.Forms.Button; $btn.Text = $b; $btn.Location = New-Object Drawing.Point($x, $y); $btn.Size = New-Object Drawing.Size(115, 34)
-        $form.Controls.Add($btn); $buttons[$b] = $btn; $x += 121
+    foreach ($b in @('Install / Update', 'Start server', 'Stop server', 'Tune speed', 'Open web chat', 'Coding tools', 'Open folder')) {
+        $btn = New-Object Windows.Forms.Button; $btn.Text = $b; $btn.Location = New-Object Drawing.Point($x, $y); $btn.Size = New-Object Drawing.Size(100, 34)
+        $form.Controls.Add($btn); $buttons[$b] = $btn; $x += 103
     }
     $buttons['Install / Update'].Font = New-Object Drawing.Font('Segoe UI', 9, [Drawing.FontStyle]::Bold)
     $y += 44
@@ -535,7 +626,7 @@ function Show-Gui {
     $y += 24
 
     $log = New-Object Windows.Forms.TextBox; $log.Multiline = $true; $log.ReadOnly = $true; $log.ScrollBars = 'Vertical'
-    $log.Location = New-Object Drawing.Point(12, $y); $log.Size = New-Object Drawing.Size(720, (590 - $y)); $log.Font = New-Object Drawing.Font('Consolas', 9)
+    $log.Location = New-Object Drawing.Point(12, $y); $log.Size = New-Object Drawing.Size(720, (630 - $y)); $log.Font = New-Object Drawing.Font('Consolas', 9)
     $log.BackColor = [Drawing.Color]::White
     $form.Controls.Add($log)
 
@@ -565,6 +656,8 @@ function Show-Gui {
         $cfg.Port = [int]$portBox.Value
         $cfg.HfToken = $tokenBox.Text.Trim()
         $cfg.ExtraArgs = $extraBox.Text.Trim()
+        $cfg.Profile = $profileBox.SelectedItem
+        $cfg.NCpuMoe = [int]$moeBox.Value
         $saved = Read-Config $cfg.InstallDir   # keep LlamaBuild from disk
         $cfg.LlamaBuild = $saved.LlamaBuild
         $cfg.ModelFile = Find-ModelFile $cfg
@@ -609,6 +702,10 @@ function Show-Gui {
         if ([Windows.Forms.MessageBox]::Show($msg, $Script:AppName, 'YesNo') -eq 'Yes') { & $runAction 'Install' }
     })
     $buttons['Start server'].Add_Click({ & $runAction 'Start' })
+    $buttons['Tune speed'].Add_Click({
+        $msg = "Stops the server and benchmarks how many MoE layers to keep in RAM (takes 5-15 minutes). The best value is saved automatically.`n`nContinue?"
+        if ([Windows.Forms.MessageBox]::Show($msg, $Script:AppName, 'YesNo') -eq 'Yes') { & $runAction 'Tune' }
+    })
     $buttons['Stop server'].Add_Click({ Stop-QwenServer; & $appendLog 'Server stopped.' })
     $buttons['Open web chat'].Add_Click({ Start-Process "http://127.0.0.1:$([int]$portBox.Value)" })
     $buttons['Coding tools'].Add_Click({
@@ -624,7 +721,10 @@ function Show-Gui {
     $timer.Add_Tick({
         if ($ui.LogFile -and (Test-Path $ui.LogFile)) {
             $lines = @(Get-Content $ui.LogFile -ErrorAction SilentlyContinue)
-            for ($i = $ui.LogPos; $i -lt $lines.Count; $i++) { & $appendLog $lines[$i] }
+            for ($i = $ui.LogPos; $i -lt $lines.Count; $i++) {
+                & $appendLog $lines[$i]
+                if ($lines[$i] -match 'Saved n-cpu-moe (\d+)') { $moeBox.Value = [int]$Matches[1]; $profileBox.SelectedItem = 'MoE-Offload' }
+            }
             $ui.LogPos = $lines.Count
         }
         $c = @{ Port = [int]$portBox.Value }
@@ -652,8 +752,9 @@ try {
         'Start'   { Start-QwenServer $cfg }
         'Stop'    { Stop-QwenServer }
         'Tools'   { Write-ToolConfigs $cfg }
+        'Tune'    { Invoke-Tune $cfg }
     }
-    if ($Action -eq 'Install') { Read-Host 'Done. Press Enter to close' | Out-Null }
+    if ($Action -eq 'Install' -or $Action -eq 'Tune') { Read-Host 'Done. Press Enter to close' | Out-Null }
 } catch {
     Write-Log "ERROR: $_" 'Red'
     Read-Host 'Press Enter to close' | Out-Null
