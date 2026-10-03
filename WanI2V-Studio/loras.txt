@@ -1,0 +1,16 @@
+# LoRAs to download into ComfyUI/models/loras when you run install.bat or download_models.bat.
+# One link per line, optionally followed by a file name to save it as:
+#
+#   <link>  [file_name.safetensors]
+#
+# Accepted links:
+#   Civitai download link:   https://civitai.com/api/download/models/123456
+#   Civitai version page:    https://civitai.com/models/111111?modelVersionId=123456
+#   Hugging Face file:       https://huggingface.co/<user>/<repo>/resolve/main/<file>.safetensors
+#
+# Wan 2.2 I2V LoRAs usually have two files (high noise + low noise) = two versions/links.
+# Many Civitai files (all NSFW ones) need a free API key: Civitai > Account settings > API Keys,
+# then paste it into civitai_token.txt next to this file.
+#
+# Add your links below:
+

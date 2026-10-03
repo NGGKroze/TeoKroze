@@ -50,12 +50,20 @@ Wan was trained on 81-frame clips (5 s at 16 fps). Longer videos are made in **s
 
 ### LoRAs (styles, motions, NSFW concepts)
 
-1. Download Wan 2.2 **I2V** LoRAs (for example from Civitai) and put them in `ComfyUI/models/loras/`. Subfolders are fine.
-2. Wan 2.2 LoRAs usually come as a pair, `..._high_noise` and `..._low_noise`. Choose each file in the matching dropdown.
-3. For a single-file LoRA (Wan 2.1 I2V style), select it for both slots, or only for *low noise*.
-4. Click **Refresh LoRA list** after adding files. You can stack up to 3 LoRAs.
+There are three ways to add LoRAs:
 
-Many LoRAs need a trigger word in the prompt. Check the LoRA's model page.
+- **During install:** paste links into `loras.txt`, one per line, before running `install.bat`. You can add more later and run `download_models.bat`; files you already have are skipped.
+- **From the app:** open the *LoRAs* section, paste a link into **Download LoRA from link** and click Download. The link is also added to `loras.txt`, so a reinstall downloads it again.
+- **Manually:** put the files in `ComfyUI/models/loras/`. Subfolders are fine.
+
+Accepted links are a Civitai download link (`https://civitai.com/api/download/models/<versionId>`), a Civitai page link that includes `?modelVersionId=...`, or a Hugging Face file link.
+**NSFW files on Civitai need a free API key.** Get one under Civitai → Account settings → API Keys, and paste it into a file named `civitai_token.txt` in this folder. That file is never committed. For gated Hugging Face files, set `HF_TOKEN`.
+
+Using LoRAs:
+
+- Wan 2.2 LoRAs usually come as a **high noise** + **low noise** pair. On Civitai that is usually two versions of the same model, so download both. Then choose each file in its matching dropdown. Pick **I2V** versions, not T2V, when both exist.
+- For a single-file LoRA (Wan 2.1 style), select it for both slots, or only for *low noise*.
+- You can stack up to 3 LoRAs. Many need a trigger word in the prompt; check the LoRA's page.
 
 ## Performance notes (5070 Ti / 64 GB)
 
@@ -70,7 +78,8 @@ Many LoRAs need a trigger word in the prompt. Check the LoRA's model page.
 ```
 install.bat / install.ps1 / install.sh   one-time setup
 run.bat / run.sh                         start the app
-download_models.(py|bat|sh)              (re)download or resume models
+download_models.(py|bat|sh)              (re)download or resume models + LoRAs in loras.txt
+loras.txt                                LoRA links to download
 app.py                                   Gradio UI + ComfyUI process manager
 workflow.py                              builds the Wan 2.2 graph (segments, LoRAs, interpolation)
 ```

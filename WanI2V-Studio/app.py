@@ -22,6 +22,7 @@ import requests
 import websocket
 from PIL import Image, ImageOps
 
+import download_models as dl
 import workflow as wf
 
 APP_DIR = Path(__file__).resolve().parent
@@ -362,6 +363,12 @@ def build_ui() -> gr.Blocks:
                         lora_inputs += [h, l, s]
                         lora_dds += [h, l]
                     refresh = gr.Button("Refresh LoRA list", size="sm")
+                    with gr.Row():
+                        lora_url = gr.Textbox(label="Download LoRA from link", scale=4,
+                                              placeholder="https://civitai.com/api/download/models/123456 "
+                                                          "or a Hugging Face .safetensors link")
+                        lora_get = gr.Button("Download", scale=1)
+                    lora_msg = gr.Markdown()
 
                 with gr.Accordion("Advanced", open=False):
                     negative = gr.Textbox(value=wf.DEFAULT_NEGATIVE, label="Negative prompt", lines=3)
@@ -388,6 +395,19 @@ def build_ui() -> gr.Blocks:
             return [gr.update(choices=choices) for _ in lora_dds]
 
         refresh.click(refresh_loras, None, lora_dds)
+
+        def fetch_lora(url):
+            if not url or not url.strip():
+                raise gr.Error("Paste a LoRA link first.")
+            try:
+                dest = dl.download_lora(url)
+            except Exception as e:
+                raise gr.Error(f"Download failed: {e}")
+            with open(dl.LORA_LIST, "a", encoding="utf-8") as f:  # reinstalls get it too
+                f.write(f"{url.strip()}  {dest.name}\n")
+            return [f"Saved `{dest.name}`."] + refresh_loras()
+
+        lora_get.click(fetch_lora, lora_url, [lora_msg, *lora_dds])
 
         go.click(generate,
                  [image, prompt, extend_prompt, seconds, resolution, mode, smooth, seed,

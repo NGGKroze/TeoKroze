@@ -3,3 +3,4 @@ ComfyUI/
 tools/
 comfyui.log
 __pycache__/
+civitai_token.txt
