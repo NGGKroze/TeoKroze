@@ -1,0 +1,21 @@
+name: Package Wan I2V Studio
+
+on:
+  push:
+    paths: ["WanI2V-Studio/**", ".github/workflows/package-wani2v.yml"]
+  workflow_dispatch:
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Python
+        run: python -m py_compile WanI2V-Studio/*.py
+      - name: Upload zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: WanI2V-Studio
+          path: |
+            WanI2V-Studio
+            !WanI2V-Studio/.gitignore
