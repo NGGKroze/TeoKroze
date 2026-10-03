@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: data:; script-src 'self' blob: 'wasm-unsafe-eval' https://cdn.jsdelivr.net; worker-src 'self' blob:; connect-src 'self' blob: data: https://huggingface.co https://*.huggingface.co https://*.hf.co https://cdn.jsdelivr.net https://*.xethub.hf.co; img-src 'self' blob: data:; media-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:" />
+  <title>Kroze Music Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">◉</span> Kroze Music Studio</div>
+    <div class="top-actions">
+      <button id="btnLoadProject" class="ghost">Open project</button>
+      <button id="btnSaveProject" class="ghost">Save project</button>
+      <button id="btnExport" class="primary">Export video</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <nav class="tabs">
+        <button data-tab="audio" class="active">Audio</button>
+        <button data-tab="background">Background</button>
+        <button data-tab="visualizer">Visualizer</button>
+        <button data-tab="lyrics">Lyrics</button>
+        <button data-tab="text">Text &amp; FX</button>
+        <button data-tab="export">Export</button>
+      </nav>
+
+      <!-- ================= AUDIO ================= -->
+      <section class="panel active" data-panel="audio">
+        <div class="card">
+          <h3>Use your own song</h3>
+          <label class="file-btn">Upload audio (mp3, wav, flac, ogg, m4a)
+            <input type="file" id="audioFile" accept="audio/*,.mp3,.wav,.flac,.ogg,.m4a,.aac" />
+          </label>
+          <div class="hint" id="audioInfo">No audio loaded.</div>
+        </div>
+
+        <div class="card">
+          <h3>Generate music <span class="badge">instant</span></h3>
+          <div class="row">
+            <label>Style
+              <select id="genPreset"></select>
+            </label>
+            <label>Key
+              <select id="genKey"></select>
+            </label>
+          </div>
+          <div class="row">
+            <label>Scale
+              <select id="genScale">
+                <option value="auto">Style default</option>
+                <option value="minor">Minor</option>
+                <option value="major">Major</option>
+              </select>
+            </label>
+            <label>BPM <input type="number" id="genBpm" min="0" max="200" value="0" title="0 = style default" /></label>
+          </div>
+          <div class="row">
+            <label>Length (s) <input type="number" id="genDuration" min="10" max="600" value="90" /></label>
+            <label>Seed
+              <span class="inline"><input type="number" id="genSeed" value="7" /><button id="genRandom" class="icon" title="Random seed">🎲</button></span>
+            </label>
+          </div>
+          <details>
+            <summary>Mix</summary>
+            <label class="range">Drums <input type="range" id="mixDrums" min="0" max="100" value="80" /></label>
+            <label class="range">Bass <input type="range" id="mixBass" min="0" max="100" value="80" /></label>
+            <label class="range">Chords <input type="range" id="mixChords" min="0" max="100" value="70" /></label>
+            <label class="range">Pad <input type="range" id="mixPad" min="0" max="100" value="50" /></label>
+            <label class="range">Melody <input type="range" id="mixLead" min="0" max="100" value="70" /></label>
+          </details>
+          <div class="row">
+            <button id="btnGenerate" class="primary">Generate</button>
+            <button id="btnSaveWav">Save audio as WAV</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>AI music (MusicGen) <span class="badge warn">experimental</span></h3>
+          <label>Describe the music
+            <textarea id="aiPrompt" rows="2">80s pop track with bassy drums and synth, upbeat</textarea>
+          </label>
+          <div class="row">
+            <label>Seconds <input type="number" id="aiSeconds" min="2" max="30" value="10" /></label>
+            <label>Guidance <input type="number" id="aiGuidance" min="1" max="10" step="0.5" value="3" /></label>
+          </div>
+          <button id="btnAiGenerate">Generate with AI</button>
+          <div class="hint">Runs fully on your computer. First use downloads the model (~600 MB). Slow on CPU — max 30 s per clip.</div>
+        </div>
+      </section>
+
+      <!-- ================= BACKGROUND ================= -->
+      <section class="panel" data-panel="background">
+        <div class="card">
+          <h3>Background</h3>
+          <label>Type
+            <select data-bind="background.type">
+              <option value="gradient">Animated gradient</option>
+              <option value="color">Solid colour</option>
+              <option value="image">Image</option>
+              <option value="video">Video (loops)</option>
+            </select>
+          </label>
+          <div class="row">
+            <label>Colour 1 <input type="color" data-bind="background.color1" /></label>
+            <label>Colour 2 <input type="color" data-bind="background.color2" /></label>
+          </div>
+          <label class="file-btn">Upload image
+            <input type="file" id="bgImageFile" accept="image/*" />
+          </label>
+          <label class="file-btn">Upload video
+            <input type="file" id="bgVideoFile" accept="video/*" />
+          </label>
+          <div class="hint" id="bgInfo"></div>
+        </div>
+        <div class="card">
+          <h3>Background effects</h3>
+          <label class="range">Blur <input type="range" min="0" max="40" data-bind="background.blur" /></label>
+          <label class="range">Darken <input type="range" min="0" max="90" data-bind="background.dim" /></label>
+          <label class="range">Beat zoom <input type="range" min="0" max="100" data-bind="background.zoomPulse" /></label>
+          <label class="check"><input type="checkbox" data-bind="background.drift" /> Slow camera drift (Ken Burns)</label>
+        </div>
+      </section>
+
+      <!-- ================= VISUALIZER ================= -->
+      <section class="panel" data-panel="visualizer">
+        <div class="card">
+          <h3>Visualizer</h3>
+          <label>Style
+            <select data-bind="visualizer.style" id="vizStyle">
+              <option value="circle">Circle spectrum (with cover art)</option>
+              <option value="bars">Spectrum bars</option>
+              <option value="mirror">Mirrored bars</option>
+              <option value="mountains">Spectrum mountains</option>
+              <option value="wave">Waveform</option>
+              <option value="rings">Pulse rings</option>
+              <option value="particles">Particle burst</option>
+              <option value="none">None</option>
+            </select>
+          </label>
+          <label class="file-btn">Center image / cover art (circle style)
+            <input type="file" id="centerImageFile" accept="image/*" />
+          </label>
+          <div class="row">
+            <label>Colour 1 <input type="color" data-bind="visualizer.color1" /></label>
+            <label>Colour 2 <input type="color" data-bind="visualizer.color2" /></label>
+          </div>
+          <label class="check"><input type="checkbox" data-bind="visualizer.rainbow" /> Rainbow colour cycle</label>
+        </div>
+        <div class="card">
+          <h3>Tuning</h3>
+          <label class="range">Bars <input type="range" min="16" max="160" data-bind="visualizer.bars" /></label>
+          <label class="range">Sensitivity <input type="range" min="30" max="250" data-bind="visualizer.sensitivity" /></label>
+          <label class="range">Smoothing <input type="range" min="0" max="95" data-bind="visualizer.smoothing" /></label>
+          <label class="range">Glow <input type="range" min="0" max="100" data-bind="visualizer.glow" /></label>
+          <label class="range">Opacity <input type="range" min="10" max="100" data-bind="visualizer.opacity" /></label>
+          <label class="range">Size <input type="range" min="30" max="250" data-bind="visualizer.scale" /></label>
+          <label class="range">Width <input type="range" min="20" max="100" data-bind="visualizer.width" /></label>
+          <label class="range">Vertical position <input type="range" min="5" max="98" data-bind="visualizer.posY" /></label>
+          <label class="range">Horizontal offset <input type="range" min="-45" max="45" data-bind="visualizer.offsetX" /></label>
+          <label class="range">Rotation speed <input type="range" min="-100" max="100" data-bind="visualizer.rotate" /></label>
+          <label class="check"><input type="checkbox" data-bind="visualizer.rounded" /> Rounded bars</label>
+          <label class="check"><input type="checkbox" data-bind="visualizer.peaks" /> Peak markers</label>
+          <label class="check"><input type="checkbox" data-bind="visualizer.spinCenter" /> Spin center image</label>
+        </div>
+      </section>
+
+      <!-- ================= LYRICS ================= -->
+      <section class="panel" data-panel="lyrics">
+        <div class="card">
+          <h3>Lyrics</h3>
+          <div class="row wrap">
+            <label class="file-btn small">Import .lrc / .srt / .txt
+              <input type="file" id="lyricsFile" accept=".lrc,.srt,.txt,text/plain" />
+            </label>
+            <button id="btnLrcSave" class="small">Save .lrc</button>
+            <button id="btnSrtSave" class="small">Save .srt</button>
+          </div>
+          <textarea id="lyricsText" rows="10" spellcheck="false" placeholder="Paste lyrics here (one line per row), import a file, or auto-detect them.&#10;&#10;Timed format: [00:12.50]First line"></textarea>
+          <div class="hint" id="lyricsInfo">0 lines</div>
+        </div>
+        <div class="card">
+          <h3>Auto-detect lyrics (Whisper AI)</h3>
+          <div class="row">
+            <label>Model
+              <select id="asrModel">
+                <option value="onnx-community/whisper-base_timestamped">Base – word timing (≈200 MB)</option>
+                <option value="onnx-community/whisper-tiny_timestamped">Tiny – fastest (≈100 MB)</option>
+                <option value="onnx-community/whisper-small_timestamped">Small – better (≈600 MB)</option>
+                <option value="onnx-community/whisper-large-v3-turbo">Large v3 turbo – best, line timing (≈1.6 GB)</option>
+              </select>
+            </label>
+            <label>Language
+              <select id="asrLang">
+                <option value="auto">Auto</option>
+                <option value="english">English</option>
+                <option value="croatian">Croatian</option>
+                <option value="serbian">Serbian</option>
+                <option value="bosnian">Bosnian</option>
+                <option value="german">German</option>
+                <option value="spanish">Spanish</option>
+                <option value="french">French</option>
+                <option value="italian">Italian</option>
+                <option value="portuguese">Portuguese</option>
+                <option value="russian">Russian</option>
+                <option value="japanese">Japanese</option>
+                <option value="korean">Korean</option>
+              </select>
+            </label>
+          </div>
+          <button id="btnDetect" class="primary">Detect lyrics from audio</button>
+          <div class="hint">Runs on your computer; model downloads once. Works best on clear vocals — always review the result.</div>
+        </div>
+        <div class="card">
+          <h3>Timing tools</h3>
+          <button id="btnSpread">Spread plain lines across the song</button>
+          <button id="btnTapSync">Tap-sync: press <kbd>Space</kbd> on each line</button>
+          <label class="range">Shift lyrics (s) <input type="range" min="-3" max="3" step="0.05" data-bind="lyrics.offset" /></label>
+        </div>
+        <div class="card">
+          <h3>Lyric animation</h3>
+          <label class="check"><input type="checkbox" data-bind="lyrics.enabled" /> Show lyrics</label>
+          <label>Animation
+            <select data-bind="lyrics.animation">
+              <option value="karaoke">Karaoke fill</option>
+              <option value="pop">Word pop-in</option>
+              <option value="bounce">Bouncing word</option>
+              <option value="glow">Glow active word</option>
+              <option value="typewriter">Typewriter</option>
+              <option value="slide">Slide in</option>
+              <option value="fade">Fade up</option>
+            </select>
+          </label>
+          <label>Font
+            <select data-bind="lyrics.font" class="font-select"></select>
+          </label>
+          <div class="row">
+            <label>Text <input type="color" data-bind="lyrics.color" /></label>
+            <label>Highlight <input type="color" data-bind="lyrics.highlight" /></label>
+            <label>Outline <input type="color" data-bind="lyrics.strokeColor" /></label>
+          </div>
+          <label class="range">Size <input type="range" min="2" max="14" step="0.5" data-bind="lyrics.size" /></label>
+          <label class="range">Outline width <input type="range" min="0" max="6" step="0.5" data-bind="lyrics.stroke" /></label>
+          <label>Position
+            <select data-bind="lyrics.position">
+              <option value="bottom">Bottom</option>
+              <option value="center">Center</option>
+              <option value="top">Top</option>
+            </select>
+          </label>
+          <label class="range">Vertical nudge <input type="range" min="-30" max="30" data-bind="lyrics.offsetY" /></label>
+          <label class="check"><input type="checkbox" data-bind="lyrics.bold" /> Bold</label>
+          <label class="check"><input type="checkbox" data-bind="lyrics.uppercase" /> UPPERCASE</label>
+          <label class="check"><input type="checkbox" data-bind="lyrics.shadow" /> Drop shadow</label>
+          <label class="check"><input type="checkbox" data-bind="lyrics.context" /> Show previous / next line</label>
+          <label class="check"><input type="checkbox" data-bind="lyrics.beatPulse" /> Pulse with the beat</label>
+        </div>
+      </section>
+
+      <!-- ================= TEXT & FX ================= -->
+      <section class="panel" data-panel="text">
+        <div class="card">
+          <h3>Title overlay</h3>
+          <label>Song title <input type="text" data-bind="text.title" placeholder="Song title" /></label>
+          <label>Artist <input type="text" data-bind="text.artist" placeholder="Artist" /></label>
+          <label>Font <select data-bind="text.font" class="font-select"></select></label>
+          <div class="row">
+            <label>Colour <input type="color" data-bind="text.color" /></label>
+            <label>Position
+              <select data-bind="text.position">
+                <option value="bottom-left">Bottom left</option>
+                <option value="bottom-center">Bottom center</option>
+                <option value="top-left">Top left</option>
+                <option value="top-center">Top center</option>
+                <option value="center">Center</option>
+              </select>
+            </label>
+          </div>
+          <label class="range">Size <input type="range" min="2" max="12" step="0.5" data-bind="text.size" /></label>
+        </div>
+        <div class="card">
+          <h3>Effects</h3>
+          <label class="range">Vignette <input type="range" min="0" max="100" data-bind="effects.vignette" /></label>
+          <label class="range">Film grain <input type="range" min="0" max="100" data-bind="effects.grain" /></label>
+          <label class="range">Floating dust <input type="range" min="0" max="150" data-bind="effects.dust" /></label>
+          <label class="range">Beat shake <input type="range" min="0" max="100" data-bind="effects.shake" /></label>
+          <label class="range">Beat flash <input type="range" min="0" max="100" data-bind="effects.flash" /></label>
+        </div>
+      </section>
+
+      <!-- ================= EXPORT ================= -->
+      <section class="panel" data-panel="export">
+        <div class="card">
+          <h3>Video format</h3>
+          <label>Aspect ratio
+            <select data-bind="format.aspect">
+              <option value="16:9">16:9 – YouTube</option>
+              <option value="9:16">9:16 – TikTok / Reels / Shorts</option>
+              <option value="1:1">1:1 – Square</option>
+              <option value="4:5">4:5 – Instagram feed</option>
+            </select>
+          </label>
+          <div class="row">
+            <label>Resolution
+              <select data-bind="format.res">
+                <option value="720">720p</option>
+                <option value="1080">1080p</option>
+                <option value="1440">1440p</option>
+                <option value="2160">4K</option>
+              </select>
+            </label>
+            <label>FPS
+              <select data-bind="format.fps">
+                <option value="24">24</option>
+                <option value="30">30</option>
+                <option value="60">60</option>
+              </select>
+            </label>
+          </div>
+          <div class="row">
+            <label>File type
+              <select data-bind="format.container">
+                <option value="mp4">MP4 (H.264)</option>
+                <option value="webm">WebM (VP9)</option>
+              </select>
+            </label>
+            <label>Quality
+              <select data-bind="format.quality">
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="small">Small file</option>
+              </select>
+            </label>
+          </div>
+          <label>Length
+            <select data-bind="format.range">
+              <option value="full">Full song</option>
+              <option value="15">First 15 s (quick test)</option>
+              <option value="30">First 30 s</option>
+              <option value="60">First 60 s</option>
+            </select>
+          </label>
+          <button id="btnExport2" class="primary">Export video</button>
+          <div class="hint" id="ffmpegInfo"></div>
+        </div>
+      </section>
+
+      <div class="status" id="status">
+        <div class="status-text" id="statusText">Ready.</div>
+        <div class="progress"><div id="progressBar"></div></div>
+      </div>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="preview"></canvas>
+        <div class="tap-overlay" id="tapOverlay" hidden>
+          <div>Tap-sync: press <kbd>Space</kbd> (or click) when each line starts · <kbd>Esc</kbd> to finish</div>
+          <div class="tap-next" id="tapNext"></div>
+        </div>
+      </div>
+      <div class="transport">
+        <button id="btnPlay" class="play" title="Play / pause (Space)">▶</button>
+        <span id="timeCur">00:00</span>
+        <input type="range" id="seek" min="0" max="1000" value="0" />
+        <span id="timeDur">00:00</span>
+        <label class="vol">🔊 <input type="range" id="volume" min="0" max="100" value="90" /></label>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal" id="exportModal" hidden>
+    <div class="modal-box">
+      <h3>Exporting video…</h3>
+      <div class="progress big"><div id="exportBar"></div></div>
+      <div id="exportText">Preparing…</div>
+      <div class="row end">
+        <button id="btnExportCancel">Cancel</button>
+        <button id="btnExportOpen" class="primary" hidden>Show file</button>
+        <button id="btnExportClose" hidden>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

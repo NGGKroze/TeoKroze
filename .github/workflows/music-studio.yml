@@ -1,0 +1,72 @@
+name: Build Kroze Music Studio
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+    paths:
+      - 'MusicStudio/**'
+      - '.github/workflows/music-studio.yml'
+    tags:
+      - 'studio-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            args: --win nsis zip
+          - os: macos-latest
+            args: --mac dmg zip
+          - os: ubuntu-latest
+            args: --linux AppImage zip
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: MusicStudio
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: MusicStudio/package-lock.json
+
+      # --ignore-scripts skips the large native ONNX/sharp downloads the app does not use
+      # (the AI models run on the bundled WebAssembly/WebGPU build instead).
+      - name: Install dependencies
+        run: |
+          npm ci --ignore-scripts
+          node node_modules/ffmpeg-static/install.js
+          node node_modules/electron/install.js
+
+      - name: Build
+        run: npx electron-builder ${{ matrix.args }} --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KrozeMusicStudio-${{ runner.os }}
+          path: |
+            MusicStudio/release/*.exe
+            MusicStudio/release/*.zip
+            MusicStudio/release/*.dmg
+            MusicStudio/release/*.AppImage
+          if-no-files-found: error
+
+      - name: Attach to GitHub release
+        if: startsWith(github.ref, 'refs/tags/studio-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            MusicStudio/release/*.exe
+            MusicStudio/release/*.zip
+            MusicStudio/release/*.dmg
+            MusicStudio/release/*.AppImage
