@@ -129,6 +129,20 @@ fun ProfilesScreen(vm: MainViewModel) {
                 }
             }
         }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Общи настройки", fontWeight = FontWeight.Bold)
+                    SwitchRow("Известие, когато любим имот поевтинее", data.priceDropAlerts) { on ->
+                        vm.store.update { it.copy(priceDropAlerts = on) }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Скрити обяви: ${data.hidden.size}", Modifier.weight(1f))
+                        if (data.hidden.isNotEmpty()) TextButton(onClick = { vm.unhideAll() }) { Text("Покажи ги пак") }
+                    }
+                }
+            }
+        }
     }
 
     confirmDelete?.let { p ->

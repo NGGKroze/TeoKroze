@@ -6,9 +6,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import bg.teokroze.imoti.core.Duplicates
 import bg.teokroze.imoti.core.Listing
 import bg.teokroze.imoti.core.ListingDetails
+import bg.teokroze.imoti.core.PropertyType
 import bg.teokroze.imoti.core.SearchFilter
+import bg.teokroze.imoti.core.Stats
+import bg.teokroze.imoti.data.DealStatus
+import bg.teokroze.imoti.data.Geocoder
+import bg.teokroze.imoti.data.MapGroup
 import bg.teokroze.imoti.data.Repository
 import bg.teokroze.imoti.data.Store
 import bg.teokroze.imoti.work.CheckWorker
@@ -16,7 +22,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-enum class Tab(val label: String) { SEARCH("Търсене"), FAVORITES("Любими"), NEWS("Нови"), ALERTS("Профили") }
+enum class Tab(val label: String) { SEARCH("Търсене"), MAP("Карта"), FAVORITES("Любими"), NEWS("Нови"), ALERTS("Профили") }
+
+enum class MapSource(val label: String) { RESULTS("Резултати"), FAVORITES("Любими"), NEWS("Нови") }
 
 enum class Sort(val label: String) {
     NEWEST("Най-нови"), PRICE_ASC("Цена ↑"), PRICE_DESC("Цена ↓"), PRICE_SQM("€/м² ↑");
@@ -36,7 +44,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var filter by mutableStateOf(SearchFilter(id = newId()))
     var sort by mutableStateOf(Sort.NEWEST)
     private var rawResults by mutableStateOf<List<Listing>>(emptyList())
-    val results: List<Listing> get() = sort.apply(rawResults)
+    /** Same property found on several sites: listing id -> its copies elsewhere. */
+    var duplicates by mutableStateOf<Map<String, List<Listing>>>(emptyMap())
+        private set
+    var collapseDuplicates by mutableStateOf(true)
+    val results: List<Listing>
+        get() = sort.apply(if (collapseDuplicates) Duplicates.collapse(rawResults, duplicates) else rawResults)
+    /** Listings this search returned that the app had never seen before. */
+    var newIds by mutableStateOf<Set<String>>(emptySet())
+        private set
+    /** Median €/m² per type over the last results + favorites, for "cheaper than average" hints. */
+    val medians: Map<PropertyType, Double>
+        get() = Stats.medianPerSqm((rawResults + store.state.value.favorites).distinctBy { it.id })
     var loading by mutableStateOf(false)
         private set
     var searched by mutableStateOf(false)
@@ -57,7 +76,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             loading = true
             errors = emptyList()
             val res = runCatching { Repository.search(filter, pages = 3) }
-            res.onSuccess { rawResults = it.listings; errors = it.errors }
+            res.onSuccess { r ->
+                // On the very first search everything is "new", which isn't useful to highlight.
+                val firstEver = store.state.value.prices.isEmpty()
+                val fresh = store.recordPrices(r.listings).first
+                newIds = if (firstEver) emptySet() else fresh
+                duplicates = Duplicates.find(r.listings)
+                rawResults = r.listings
+                errors = r.errors
+            }
                 .onFailure { errors = listOf(it.message ?: "Грешка при търсене") }
             searched = true
             loading = false
@@ -65,6 +92,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun open(listing: Listing) {
+        store.markViewed(listing.id)
         opened = listing
         details = null
         detailsError = null
@@ -83,6 +111,48 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun toggleFavorite(listing: Listing) = store.toggleFavorite(listing)
+
+    fun hide(listing: Listing) {
+        store.setHidden(listing.id, true)
+        if (opened?.id == listing.id) close()
+    }
+
+    fun unhideAll() = store.update { it.copy(hidden = emptyList()) }
+
+    /** Favorites tab: show only this status (null = all). */
+    var favoriteStatus by mutableStateOf<DealStatus?>(null)
+
+    // ---------- Map ----------
+
+    var mapSource by mutableStateOf(MapSource.RESULTS)
+    var mapGroups by mutableStateOf<List<MapGroup>>(emptyList())
+        private set
+    var mapLoading by mutableStateOf(false)
+        private set
+    var mapSelected by mutableStateOf<MapGroup?>(null)
+    private var mapJob: Job? = null
+
+    fun mapListings(): List<Listing> {
+        val d = store.state.value
+        val hidden = d.hidden.toHashSet()
+        return when (mapSource) {
+            MapSource.RESULTS -> results
+            MapSource.FAVORITES -> d.favorites
+            MapSource.NEWS -> d.hits.map { it.listing }.distinctBy { it.id }
+        }.filter { it.id !in hidden }
+    }
+
+    fun loadMap() {
+        mapJob?.cancel()
+        mapSelected = null
+        val listings = mapListings()
+        mapJob = viewModelScope.launch {
+            mapLoading = true
+            mapGroups = emptyList()
+            Geocoder.group(store, listings) { mapGroups = it }
+            mapLoading = false
+        }
+    }
 
     /** Profile open in the editor; null when the editor is closed. */
     var editing by mutableStateOf<SearchFilter?>(null)

@@ -84,6 +84,22 @@ object Notifier {
         }
     }
 
+    fun notifyPriceDrops(context: Context, drops: List<bg.teokroze.imoti.data.PriceDrop>) {
+        if (!canNotify(context)) return
+        drops.take(5).forEach { d ->
+            val l = d.listing
+            val n = NotificationCompat.Builder(context, CHANNEL)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle("↓ Поевтиня с ${"%,.0f".format(d.from - d.to)} €")
+                .setContentText("${"%,.0f".format(d.from)} € → ${"%,.0f".format(d.to)} € · ${l.title}")
+                .setStyle(NotificationCompat.BigTextStyle().bigText("${"%,.0f".format(d.from)} € → ${"%,.0f".format(d.to)} €\n${l.title}\n${l.source.label} · любим имот"))
+                .setContentIntent(openListingIntent(context, l))
+                .setAutoCancel(true)
+                .build()
+            post(context, ("drop" + l.id).hashCode(), n)
+        }
+    }
+
     private fun headline(l: Listing): String =
         listOfNotNull(l.priceText.ifBlank { null }, l.areaSqm?.let { "${it.toInt()} м²" }, l.location.ifBlank { null })
             .joinToString(" · ")

@@ -75,6 +75,14 @@ import bg.teokroze.imoti.core.Listing
 import bg.teokroze.imoti.core.PropertyType
 import bg.teokroze.imoti.core.SearchFilter
 import bg.teokroze.imoti.core.Source
+import bg.teokroze.imoti.core.PriceHistory
+import bg.teokroze.imoti.core.Stats
+import bg.teokroze.imoti.data.DealStatus
+import bg.teokroze.imoti.data.StoreData
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.ui.draw.alpha
 import coil.compose.AsyncImage
 import java.text.DateFormat
 import java.util.Date
@@ -121,6 +129,7 @@ private fun TabsScaffold(vm: MainViewModel) {
                                 Icon(
                                     when (t) {
                                         Tab.SEARCH -> Icons.Filled.Search
+                                        Tab.MAP -> Icons.Filled.LocationOn
                                         Tab.FAVORITES -> Icons.Filled.Favorite
                                         Tab.NEWS -> Icons.Filled.Star
                                         Tab.ALERTS -> Icons.Filled.Notifications
@@ -128,7 +137,7 @@ private fun TabsScaffold(vm: MainViewModel) {
                                     contentDescription = t.label,
                                 )
                             },
-                            label = { Text(t.label) },
+                            label = { Text(t.label, maxLines = 1) },
                         )
                     }
                 }
@@ -137,6 +146,7 @@ private fun TabsScaffold(vm: MainViewModel) {
             Box(Modifier.padding(padding)) {
                 when (vm.tab) {
                     Tab.SEARCH -> SearchScreen(vm)
+                    Tab.MAP -> MapScreen(vm)
                     Tab.FAVORITES -> FavoritesScreen(vm)
                     Tab.NEWS -> NewsScreen(vm)
                     Tab.ALERTS -> ProfilesScreen(vm)
@@ -177,17 +187,26 @@ private fun SearchScreen(vm: MainViewModel) {
         if (vm.loading) {
             item { Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
         } else if (vm.searched) {
+            val hidden = data.hidden.toHashSet()
+            val shown = vm.results.filter { it.id !in hidden }
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${vm.results.size} обяви", Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                    Text("${shown.size} обяви", Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                    if (vm.newIds.isNotEmpty()) Text("${shown.count { it.id in vm.newIds }} нови", color = MaterialTheme.colorScheme.tertiary)
+                    TextButton(onClick = { vm.tab = Tab.MAP; vm.mapSource = MapSource.RESULTS }) { Text("На картата") }
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Sort.entries.forEach { s -> FilterChip(selected = vm.sort == s, onClick = { vm.sort = s }, label = { Text(s.label) }) }
+                    if (vm.duplicates.isNotEmpty()) {
+                        FilterChip(
+                            selected = vm.collapseDuplicates,
+                            onClick = { vm.collapseDuplicates = !vm.collapseDuplicates },
+                            label = { Text("Без повторения") },
+                        )
+                    }
                 }
             }
-            items(vm.results, key = { it.id }) { l ->
-                ListingCard(l, l.id in favIds, onClick = { vm.open(l) }, onFavorite = { vm.toggleFavorite(l) })
-            }
+            items(shown, key = { it.id }) { l -> ListingItem(vm, l, data, favIds) }
         }
     }
 }
@@ -263,37 +282,76 @@ private fun NumberField(label: String, value: Double?, modifier: Modifier, onCha
     )
 }
 
+/** Card with everything the store knows about the listing (new, viewed, price drop, duplicates, status). */
 @Composable
-fun ListingCard(l: Listing, favorite: Boolean, onClick: () -> Unit, onFavorite: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+fun ListingItem(vm: MainViewModel, l: Listing, data: StoreData, favIds: Set<String>) {
+    ListingCard(
+        l = l,
+        favorite = l.id in favIds,
+        onClick = { vm.open(l) },
+        onFavorite = { vm.toggleFavorite(l) },
+        isNew = l.id in vm.newIds,
+        viewed = l.id in data.viewed,
+        drop = PriceHistory.dropFromPeak(data.prices[l.id]),
+        alsoOn = vm.duplicates[l.id].orEmpty().map { it.source }.distinct(),
+        status = data.notes[l.id]?.status?.takeIf { it != DealStatus.NONE },
+    )
+}
+
+@Composable
+fun ListingCard(
+    l: Listing,
+    favorite: Boolean,
+    onClick: () -> Unit,
+    onFavorite: () -> Unit,
+    isNew: Boolean = false,
+    viewed: Boolean = false,
+    drop: Double = 0.0,
+    alsoOn: List<Source> = emptyList(),
+    status: DealStatus? = null,
+) {
+    Card(Modifier.fillMaxWidth().clickable(onClick = onClick).alpha(if (viewed && !favorite) 0.75f else 1f)) {
         Row {
-            if (l.imageUrl != null) {
-                AsyncImage(
-                    model = l.imageUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(width = 120.dp, height = 110.dp),
-                )
-            } else {
-                Box(Modifier.size(width = 120.dp, height = 110.dp), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.Home, null, tint = MaterialTheme.colorScheme.outline)
+            Box {
+                if (l.imageUrl != null) {
+                    AsyncImage(
+                        model = l.imageUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(width = 120.dp, height = 116.dp),
+                    )
+                } else {
+                    Box(Modifier.size(width = 120.dp, height = 116.dp), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Home, null, tint = MaterialTheme.colorScheme.outline)
+                    }
                 }
+                if (isNew) Badge("НОВО", MaterialTheme.colorScheme.tertiary, Modifier.padding(4.dp))
             }
             Column(Modifier.weight(1f).padding(8.dp)) {
-                Text(
-                    l.priceText.ifBlank { "Цена при запитване" },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        l.priceText.ifBlank { "Цена при запитване" },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    if (drop >= 1) {
+                        Spacer(Modifier.width(6.dp))
+                        Badge("↓ ${shortPrice(drop)}", Color(0xFF2E7D32))
+                    }
+                }
                 Text(l.title, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium)
                 val meta = listOfNotNull(
                     l.areaSqm?.let { "${it.toInt()} м²" },
-                    if (l.priceEur != null && l.areaSqm != null && l.areaSqm!! > 0) "${(l.priceEur!! / l.areaSqm!!).toInt()} €/м²" else null,
+                    Stats.pricePerSqm(l)?.let { "${it.toInt()} €/м²" },
                     l.location.ifBlank { null },
-                    l.source.label,
+                    l.source.label + if (alsoOn.isNotEmpty()) " (+${alsoOn.joinToString { it.label }})" else "",
                 ).joinToString(" · ")
                 Text(meta, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
+                if (status != null) {
+                    Spacer(Modifier.height(2.dp))
+                    Badge(status.label, MaterialTheme.colorScheme.secondary)
+                }
             }
             IconButton(onClick = onFavorite) {
                 Icon(
@@ -306,17 +364,47 @@ fun ListingCard(l: Listing, favorite: Boolean, onClick: () -> Unit, onFavorite: 
     }
 }
 
+@Composable
+fun Badge(text: String, color: Color, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        modifier
+            .background(color, RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp, vertical = 1.dp),
+        color = Color.White,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+    )
+}
+
 // ---------- Favorites / news ----------
 
 @Composable
 private fun FavoritesScreen(vm: MainViewModel) {
     val data by vm.store.state.collectAsStateWithLifecycle()
-    ListingList(
-        items = data.favorites,
-        favIds = data.favorites.map { it.id }.toSet(),
-        empty = "Нямаш любими имоти. Натисни ♡ на обява, за да я запазиш.",
-        vm = vm,
-    )
+    val statusOf = { id: String -> data.notes[id]?.status ?: DealStatus.NONE }
+    val used = data.favorites.map { statusOf(it.id) }.toSet()
+    val selected = vm.favoriteStatus?.takeIf { it in used }
+    Column {
+        if (used.size > 1) {
+            FlowRow(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                FilterChip(selected = selected == null, onClick = { vm.favoriteStatus = null }, label = { Text("Всички") })
+                DealStatus.entries.filter { it in used }.forEach { st ->
+                    FilterChip(
+                        selected = selected == st,
+                        onClick = { vm.favoriteStatus = st },
+                        label = { Text("${st.label} (${data.favorites.count { statusOf(it.id) == st }})") },
+                    )
+                }
+            }
+        }
+        ListingList(
+            items = data.favorites.filter { selected == null || statusOf(it.id) == selected },
+            data = data,
+            empty = "Нямаш любими имоти. Натисни ♡ на обява, за да я запазиш.",
+            vm = vm,
+        )
+    }
 }
 
 @Composable
@@ -348,8 +436,8 @@ private fun NewsScreen(vm: MainViewModel) {
             }
         }
         ListingList(
-            items = hits.map { it.listing }.distinctBy { it.id },
-            favIds = data.favorites.map { it.id }.toSet(),
+            items = hits.map { it.listing }.distinctBy { it.id }.filter { it.id !in data.hidden },
+            data = data,
             empty = "Тук се появяват новите обяви, открити от профилите за известия (раздел „Профили“).",
             vm = vm,
         )
@@ -362,14 +450,13 @@ fun formatTime(millis: Long): String =
 fun profileTitle(p: SearchFilter): String = p.name.ifBlank { "Профил" }
 
 @Composable
-private fun ListingList(items: List<Listing>, favIds: Set<String>, empty: String, vm: MainViewModel) {
+private fun ListingList(items: List<Listing>, data: StoreData, empty: String, vm: MainViewModel) {
     if (items.isEmpty()) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) { Text(empty) }
         return
     }
+    val favIds = data.favorites.map { it.id }.toSet()
     LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        items(items, key = { it.id }) { l ->
-            ListingCard(l, l.id in favIds, onClick = { vm.open(l) }, onFavorite = { vm.toggleFavorite(l) })
-        }
+        items(items, key = { it.id }) { l -> ListingItem(vm, l, data, favIds) }
     }
 }

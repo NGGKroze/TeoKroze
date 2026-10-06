@@ -31,6 +31,7 @@ class CheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
         val profiles = store.state.value.searches.filter { it.notify && (only == null || it.id == only) }
+        val drops = mutableListOf<bg.teokroze.imoti.data.PriceDrop>()
         for (profile in profiles) {
             val settings = profile.settings
             val seen = store.state.value.seen[profile.id]
@@ -44,9 +45,11 @@ class CheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
             val result = runCatching { Repository.search(profile, pages = 3) }.getOrNull() ?: continue
             // A site that is down must not make all its listings look "new" next time.
             if (result.listings.isEmpty()) continue
+            drops += store.recordPrices(result.listings).second
 
+            val hidden = store.state.value.hidden.toHashSet()
             val seenSet = seen?.toHashSet()
-            val fresh = if (seenSet == null) emptyList() else result.listings.filter { it.id !in seenSet }
+            val fresh = if (seenSet == null) emptyList() else result.listings.filter { it.id !in seenSet && it.id !in hidden }
             store.update { d ->
                 val ids = (result.listings.map { it.id } + seen.orEmpty()).distinct().take(MAX_SEEN)
                 d.copy(
@@ -59,6 +62,7 @@ class CheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
             }
             if (fresh.isNotEmpty()) Notifier.notifyNew(applicationContext, profile, fresh)
         }
+        if (store.state.value.priceDropAlerts) Notifier.notifyPriceDrops(applicationContext, drops.distinctBy { it.listing.id })
         store.update { it.copy(lastCheck = now) }
         return Result.success()
     }
