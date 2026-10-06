@@ -7,7 +7,7 @@ import bg.teokroze.imoti.work.Notifier
 class ImotiApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        Notifier.createChannel(this)
+        Notifier.createChannels(this)
         CheckWorker.schedule(this)
     }
 }

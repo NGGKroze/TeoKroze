@@ -105,4 +105,27 @@ class ParsingTest {
         assertEquals(false, SearchFilter("a", maxPriceEur = 100000.0).matches(l))
         assertEquals(false, SearchFilter("a", sources = setOf(Source.OLX_BG)).matches(l))
     }
+
+    @Test
+    fun cityVsAround() {
+        fun l(loc: String, title: String = "Къща") = Listing(Source.OLX_BG, loc, "u", title, location = loc)
+        assertTrue(Searcher.isRuseCity(l("Русе, Възраждане")))
+        assertTrue(Searcher.isRuseCity(l("град Русе, Център")))
+        assertTrue(Searcher.isRuseCity(l("", "Продава 2-СТАЕН град Русе")))
+        assertEquals(false, Searcher.isRuseCity(l("село Николово")))
+        assertEquals(false, Searcher.isRuseCity(l("Мартен")))
+        assertEquals(false, Searcher.isRuseCity(l("област Русе")))
+        assertEquals(false, Searcher.isRuseCity(l("Русенец")))
+    }
+
+    @Test
+    fun quietHoursAndCriteria() {
+        val n = NotifySettings(quietFrom = 22, quietTo = 8)
+        assertTrue(n.isQuiet(23)); assertTrue(n.isQuiet(3)); assertEquals(false, n.isQuiet(8)); assertEquals(false, n.isQuiet(15))
+        assertEquals(false, n.copy(quietHours = false).isQuiet(23))
+        assertTrue(NotifySettings(quietFrom = 13, quietTo = 15).isQuiet(14))
+        val a = SearchFilter("1", name = "A", maxPriceEur = 50000.0)
+        assertTrue(a.sameCriteria(a.copy(id = "2", name = "B", settings = NotifySettings(silent = true))))
+        assertEquals(false, a.sameCriteria(a.copy(maxPriceEur = 70000.0)))
+    }
 }

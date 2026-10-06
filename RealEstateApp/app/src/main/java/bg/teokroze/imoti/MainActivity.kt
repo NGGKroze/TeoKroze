@@ -44,6 +44,8 @@ class MainActivity : ComponentActivity() {
             intent.removeExtra(Notifier.EXTRA_LISTING)
         }
         if (intent.getStringExtra(EXTRA_TAB) == TAB_NEWS) {
+            vm.close()
+            vm.newsProfile = intent.getStringExtra(EXTRA_PROFILE)
             vm.tab = Tab.NEWS
             intent.removeExtra(EXTRA_TAB)
         }
@@ -52,5 +54,6 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_TAB = "tab"
         const val TAB_NEWS = "news"
+        const val EXTRA_PROFILE = "profile"
     }
 }

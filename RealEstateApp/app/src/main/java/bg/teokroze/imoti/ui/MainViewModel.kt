@@ -16,7 +16,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-enum class Tab(val label: String) { SEARCH("Търсене"), FAVORITES("Любими"), NEWS("Нови"), ALERTS("Известия") }
+enum class Tab(val label: String) { SEARCH("Търсене"), FAVORITES("Любими"), NEWS("Нови"), ALERTS("Профили") }
 
 enum class Sort(val label: String) {
     NEWEST("Най-нови"), PRICE_ASC("Цена ↑"), PRICE_DESC("Цена ↓"), PRICE_SQM("€/м² ↑");
@@ -84,20 +84,54 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun toggleFavorite(listing: Listing) = store.toggleFavorite(listing)
 
-    /** Save the current filter; the current results become the baseline so only later listings notify. */
-    fun saveCurrentSearch(name: String) {
-        val saved = filter.copy(id = newId(), name = name.trim(), notify = true)
-        val baseline = if (searched) rawResults.map { it.id } else null
-        store.update { d ->
-            d.copy(
-                searches = d.searches + saved,
-                seen = if (baseline != null) d.seen + (saved.id to baseline) else d.seen,
-            )
-        }
-        if (baseline == null) CheckWorker.runNow(getApplication())
+    /** Profile open in the editor; null when the editor is closed. */
+    var editing by mutableStateOf<SearchFilter?>(null)
+    /** News tab: show hits of this profile only (null = all). */
+    var newsProfile by mutableStateOf<String?>(null)
+
+    fun newProfile(template: SearchFilter? = null) {
+        editing = (template ?: SearchFilter(id = "")).copy(id = newId())
     }
 
-    fun deleteSearch(id: String) = store.update { d -> d.copy(searches = d.searches.filterNot { it.id == id }, seen = d.seen - id) }
+    fun newProfileFromSearch() {
+        editing = filter.copy(id = newId(), name = "")
+    }
+
+    fun editProfile(p: SearchFilter) {
+        editing = p
+    }
+
+    fun cancelEdit() {
+        editing = null
+    }
+
+    /** Insert or update a profile. New or changed criteria get a fresh baseline so old listings don't notify. */
+    fun saveProfile(p: SearchFilter) {
+        val old = store.state.value.searches.firstOrNull { it.id == p.id }
+        val criteriaChanged = old == null || !old.sameCriteria(p)
+        // If the current search results are for exactly these criteria, use them as the baseline right away.
+        val baseline = if (criteriaChanged && searched && filter.sameCriteria(p)) rawResults.map { it.id } else null
+        val now = System.currentTimeMillis()
+        store.update { d ->
+            val searches = if (old == null) d.searches + p else d.searches.map { if (it.id == p.id) p else it }
+            when {
+                !criteriaChanged -> d.copy(searches = searches)
+                baseline != null -> d.copy(searches = searches, seen = d.seen + (p.id to baseline), lastRun = d.lastRun + (p.id to now))
+                else -> d.copy(searches = searches, seen = d.seen - p.id, lastRun = d.lastRun - p.id)
+            }
+        }
+        if (criteriaChanged && baseline == null) CheckWorker.baseline(getApplication(), p.id)
+        editing = null
+    }
+
+    fun deleteSearch(id: String) = store.update { d ->
+        d.copy(
+            searches = d.searches.filterNot { it.id == id },
+            seen = d.seen - id,
+            lastRun = d.lastRun - id,
+            hits = d.hits.filterNot { it.profileId == id },
+        )
+    }
 
     fun setNotify(id: String, on: Boolean) = store.update { d ->
         d.copy(searches = d.searches.map { if (it.id == id) it.copy(notify = on) else it })
@@ -111,7 +145,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun checkNow() = CheckWorker.runNow(getApplication())
 
-    fun clearNews() = store.update { it.copy(news = emptyList()) }
+    fun clearNews() = store.update { d ->
+        val p = newsProfile
+        d.copy(hits = if (p == null) emptyList() else d.hits.filterNot { it.profileId == p })
+    }
 
     private fun newId() = UUID.randomUUID().toString()
 }

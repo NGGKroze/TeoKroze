@@ -98,6 +98,9 @@ fun ImotiRoot(vm: MainViewModel) {
         if (opened != null) {
             BackHandler { vm.close() }
             DetailScreen(vm, opened)
+        } else if (vm.editing != null) {
+            BackHandler { vm.cancelEdit() }
+            ProfileEditor(vm, vm.editing!!)
         } else {
             TabsScaffold(vm)
         }
@@ -136,7 +139,7 @@ private fun TabsScaffold(vm: MainViewModel) {
                     Tab.SEARCH -> SearchScreen(vm)
                     Tab.FAVORITES -> FavoritesScreen(vm)
                     Tab.NEWS -> NewsScreen(vm)
-                    Tab.ALERTS -> AlertsScreen(vm)
+                    Tab.ALERTS -> ProfilesScreen(vm)
                 }
             }
         }
@@ -149,7 +152,6 @@ private fun SearchScreen(vm: MainViewModel) {
     val data by vm.store.state.collectAsStateWithLifecycle()
     val favIds = data.favorites.map { it.id }.toSet()
     var showFilters by remember { mutableStateOf(!vm.searched) }
-    var saveDialog by remember { mutableStateOf(false) }
 
     LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
@@ -164,7 +166,7 @@ private fun SearchScreen(vm: MainViewModel) {
                 Button(onClick = { showFilters = false; vm.search() }, enabled = !vm.loading) {
                     Icon(Icons.Filled.Search, null); Spacer(Modifier.width(6.dp)); Text("Търси")
                 }
-                OutlinedButton(onClick = { saveDialog = true }) {
+                OutlinedButton(onClick = { vm.newProfileFromSearch() }) {
                     Icon(Icons.Filled.Notifications, null); Spacer(Modifier.width(6.dp)); Text("Следи за нови")
                 }
             }
@@ -187,23 +189,6 @@ private fun SearchScreen(vm: MainViewModel) {
                 ListingCard(l, l.id in favIds, onClick = { vm.open(l) }, onFavorite = { vm.toggleFavorite(l) })
             }
         }
-    }
-
-    if (saveDialog) {
-        var name by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { saveDialog = false },
-            title = { Text("Известия за нови обяви") },
-            text = {
-                Column {
-                    Text("Ще получаваш известие, когато се появи нова обява по: ${vm.filter.describe()}")
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(name, { name = it }, label = { Text("Име (по желание)") }, singleLine = true)
-                }
-            },
-            confirmButton = { TextButton(onClick = { vm.saveCurrentSearch(name); saveDialog = false }) { Text("Запази") } },
-            dismissButton = { TextButton(onClick = { saveDialog = false }) { Text("Отказ") } },
-        )
     }
 }
 
@@ -257,7 +242,7 @@ fun FilterEditor(filter: SearchFilter, onChange: (SearchFilter) -> Unit) {
                     )
                 }
             }
-            TextButton(onClick = { onChange(SearchFilter(id = filter.id)) }) { Text("Изчисти филтрите") }
+            TextButton(onClick = { onChange(SearchFilter(id = filter.id, name = filter.name, notify = filter.notify, settings = filter.settings)) }) { Text("Изчисти филтрите") }
         }
     }
 }
@@ -337,25 +322,44 @@ private fun FavoritesScreen(vm: MainViewModel) {
 @Composable
 private fun NewsScreen(vm: MainViewModel) {
     val data by vm.store.state.collectAsStateWithLifecycle()
+    val selected = vm.newsProfile?.takeIf { id -> data.searches.any { it.id == id } }
+    val hits = data.hits.filter { selected == null || it.profileId == selected }
     Column {
         Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (data.lastCheck > 0) "Последна проверка: ${DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(data.lastCheck))}"
-                else "Още няма проверка",
+                if (data.lastCheck > 0) "Последна проверка: ${formatTime(data.lastCheck)}" else "Още няма проверка",
                 Modifier.weight(1f),
                 style = MaterialTheme.typography.bodySmall,
             )
             IconButton(onClick = { vm.checkNow() }) { Icon(Icons.Filled.Refresh, "Провери сега") }
-            if (data.news.isNotEmpty()) TextButton(onClick = { vm.clearNews() }) { Text("Изчисти") }
+            if (hits.isNotEmpty()) TextButton(onClick = { vm.clearNews() }) { Text("Изчисти") }
+        }
+        if (data.searches.size > 1) {
+            FlowRow(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                FilterChip(selected = selected == null, onClick = { vm.newsProfile = null }, label = { Text("Всички") })
+                data.searches.forEach { p ->
+                    val count = data.hits.count { it.profileId == p.id }
+                    FilterChip(
+                        selected = selected == p.id,
+                        onClick = { vm.newsProfile = p.id },
+                        label = { Text("${profileTitle(p)} ($count)") },
+                    )
+                }
+            }
         }
         ListingList(
-            items = data.news,
+            items = hits.map { it.listing }.distinctBy { it.id },
             favIds = data.favorites.map { it.id }.toSet(),
-            empty = "Тук ще се появяват новите обяви от запазените търсения (раздел „Известия“).",
+            empty = "Тук се появяват новите обяви, открити от профилите за известия (раздел „Профили“).",
             vm = vm,
         )
     }
 }
+
+fun formatTime(millis: Long): String =
+    DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(millis))
+
+fun profileTitle(p: SearchFilter): String = p.name.ifBlank { "Профил" }
 
 @Composable
 private fun ListingList(items: List<Listing>, favIds: Set<String>, empty: String, vm: MainViewModel) {
@@ -366,46 +370,6 @@ private fun ListingList(items: List<Listing>, favIds: Set<String>, empty: String
     LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         items(items, key = { it.id }) { l ->
             ListingCard(l, l.id in favIds, onClick = { vm.open(l) }, onFavorite = { vm.toggleFavorite(l) })
-        }
-    }
-}
-
-// ---------- Saved searches / notifications ----------
-
-@Composable
-private fun AlertsScreen(vm: MainViewModel) {
-    val data by vm.store.state.collectAsStateWithLifecycle()
-    LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item {
-            Text(
-                "Приложението проверява запазените търсения приблизително на всеки час и праща известие за всяка нова обява. " +
-                    "Ново търсене се запазва от „Търсене“ → „Следи за нови“.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-        item {
-            OutlinedButton(onClick = { vm.checkNow() }) { Icon(Icons.Filled.Refresh, null); Spacer(Modifier.width(6.dp)); Text("Провери сега") }
-        }
-        if (data.searches.isEmpty()) item { Text("Нямаш запазени търсения.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        items(data.searches, key = { it.id }) { f ->
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(f.name.ifBlank { "Търсене" }, fontWeight = FontWeight.Bold)
-                            Text(f.describe(), style = MaterialTheme.typography.bodySmall)
-                            Text("Сайтове: ${f.sources.joinToString { it.label }}", style = MaterialTheme.typography.bodySmall)
-                        }
-                        Switch(checked = f.notify, onCheckedChange = { vm.setNotify(f.id, it) })
-                    }
-                    HorizontalDivider(Modifier.padding(vertical = 6.dp))
-                    Row {
-                        TextButton(onClick = { vm.runSaved(f) }) { Text("Покажи обявите") }
-                        Spacer(Modifier.weight(1f))
-                        IconButton(onClick = { vm.deleteSearch(f.id) }) { Icon(Icons.Filled.Delete, "Изтрий") }
-                    }
-                }
-            }
         }
     }
 }

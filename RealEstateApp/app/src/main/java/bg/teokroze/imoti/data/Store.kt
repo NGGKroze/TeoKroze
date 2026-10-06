@@ -10,14 +10,26 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 
+/** A listing found by a notification profile. */
+@Serializable
+data class Hit(
+    val listing: Listing,
+    val profileId: String,
+    val profileName: String,
+    val at: Long,
+)
+
 @Serializable
 data class StoreData(
     val favorites: List<Listing> = emptyList(),
+    /** Notification profiles (saved searches). */
     val searches: List<SearchFilter> = emptyList(),
-    /** Saved-search id -> listing ids already seen, so only new ones are notified. */
+    /** Profile id -> listing ids already seen, so only new ones are notified. */
     val seen: Map<String, List<String>> = emptyMap(),
-    /** Listings that triggered a notification, newest first. */
-    val news: List<Listing> = emptyList(),
+    /** Profile id -> when it was last checked. */
+    val lastRun: Map<String, Long> = emptyMap(),
+    /** New listings found by profiles, newest first. */
+    val hits: List<Hit> = emptyList(),
     val lastCheck: Long = 0,
 )
 

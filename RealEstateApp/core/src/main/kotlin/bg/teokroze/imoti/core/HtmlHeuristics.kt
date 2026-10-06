@@ -93,7 +93,12 @@ object HtmlHeuristics {
 
     fun findLocation(text: String): String {
         locationPattern.find(text)?.let { return TextParsing.clean(it.value).trimEnd(',', '-', ' ') }
-        return if ("русе" in text.lowercase()) "Русе" else ""
+        val lower = text.lowercase()
+        return when {
+            "област русе" in lower || "обл. русе" in lower -> "област Русе"
+            "русе" in lower -> "Русе"
+            else -> ""
+        }
     }
 
     /** Generic listing-page parser: meta tags, JSON-LD, tel:/mailto: links, tables, description blocks. */

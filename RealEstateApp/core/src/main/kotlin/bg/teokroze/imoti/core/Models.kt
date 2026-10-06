@@ -13,7 +13,49 @@ enum class Source(val label: String, val host: String) {
 @Serializable
 enum class Area(val label: String) {
     CITY("град Русе"),
+    AROUND("около Русе (без града)"),
     REGION("Русе + областта"),
+}
+
+@Serializable
+enum class NotifyFrequency(val label: String, val minutes: Long) {
+    HOURLY("Всеки час", 60),
+    EVERY_3H("На 3 часа", 180),
+    EVERY_6H("На 6 часа", 360),
+    TWICE_DAILY("2 пъти на ден", 720),
+    DAILY("Веднъж на ден", 1440),
+}
+
+@Serializable
+enum class NotifyStyle(val label: String) {
+    EACH("Отделно известие за всяка обява"),
+    SUMMARY("Едно общо известие"),
+}
+
+/** How a notification profile is allowed to bother you. Notifications are only sent when something new is found. */
+@Serializable
+data class NotifySettings(
+    val frequency: NotifyFrequency = NotifyFrequency.HOURLY,
+    val style: NotifyStyle = NotifyStyle.EACH,
+    /** Max separate notifications per check in EACH mode; the rest are folded into one summary. */
+    val maxPerCheck: Int = 5,
+    /** No sound or vibration. */
+    val silent: Boolean = false,
+    /** Hold notifications between [quietFrom] and [quietTo] o'clock; they arrive after the quiet period. */
+    val quietHours: Boolean = true,
+    val quietFrom: Int = 22,
+    val quietTo: Int = 8,
+) {
+    fun isQuiet(hour: Int): Boolean =
+        quietHours && quietFrom != quietTo &&
+            if (quietFrom < quietTo) hour in quietFrom until quietTo else hour >= quietFrom || hour < quietTo
+
+    fun describe(): String = buildList {
+        add(frequency.label.lowercase())
+        add(if (style == NotifyStyle.SUMMARY) "общо известие" else "до $maxPerCheck известия")
+        if (silent) add("без звук")
+        if (quietHours) add("тихо %02d–%02d ч.".format(quietFrom, quietTo))
+    }.joinToString(" · ")
 }
 
 @Serializable
@@ -86,6 +128,7 @@ data class SearchFilter(
     val keyword: String = "",
     val sources: Set<Source> = Source.entries.toSet(),
     val notify: Boolean = true,
+    val settings: NotifySettings = NotifySettings(),
 ) {
     fun matches(l: Listing): Boolean {
         if (l.source !in sources) return false
@@ -101,6 +144,11 @@ data class SearchFilter(
         }
         return true
     }
+
+    /** Same search criteria (ignores name and notification options). */
+    fun sameCriteria(other: SearchFilter): Boolean =
+        copy(id = "", name = "", notify = true, settings = NotifySettings()) ==
+            other.copy(id = "", name = "", notify = true, settings = NotifySettings())
 
     fun describe(): String = buildList {
         add(area.label)

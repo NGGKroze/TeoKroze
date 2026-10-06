@@ -30,7 +30,11 @@ object ImotBg : ListingSource {
         val suffix = if (page > 1) "/p-$page" else ""
         val city = "https://www.imot.bg/obiavi/prodazhbi/grad-ruse$suffix"
         val region = "https://www.imot.bg/obiavi/prodazhbi/oblast-ruse$suffix"
-        return if (area == Area.CITY) listOf(city) else listOf(city, region)
+        return when (area) {
+            Area.CITY -> listOf(city)
+            Area.AROUND -> listOf(region)
+            Area.REGION -> listOf(city, region)
+        }
     }
 
     override fun parseSearch(html: String, pageUrl: String) =
@@ -59,7 +63,7 @@ object OlxBg : ListingSource {
     private val detail = Regex("""olx\.bg/(?:d/)?ad/[^?#]*?-ID([A-Za-z0-9]+)\.html""")
 
     override fun searchUrls(area: Area, page: Int): List<String> {
-        val place = if (area == Area.CITY) "ruse" else "oblast-ruse"
+        val place = if (area == Area.CITY) "ruse" else "oblast-ruse" // AROUND: whole oblast, city dropped later
         val p = if (page > 1) "&page=$page" else ""
         return listOf("https://www.olx.bg/nedvizhimi-imoti/prodazhbi/$place/?search%5Border%5D=created_at%3Adesc$p")
     }

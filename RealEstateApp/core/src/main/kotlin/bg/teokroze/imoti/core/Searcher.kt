@@ -62,10 +62,21 @@ class Searcher(
         return src.parseDetails(fetcher.get(listing.url), listing.url)
     }
 
-    private fun inArea(l: Listing, area: Area): Boolean {
-        if (area == Area.REGION) return true
+    private fun inArea(l: Listing, area: Area): Boolean = when (area) {
+        Area.REGION -> true
         // City search: drop obvious village listings that slipped in.
-        val loc = "${l.location} ${l.title}".lowercase()
-        return !Regex("""(^|\s)(с\.|село)\s""").containsMatchIn(loc)
+        Area.CITY -> !Regex("""(^|\s)(с\.|село)\s""").containsMatchIn("${l.location} ${l.title}".lowercase())
+        Area.AROUND -> !isRuseCity(l)
+    }
+
+    companion object {
+        private val cityPattern = Regex("""(град|гр\.)\s*русе|^русе(?![а-я])""")
+
+        /** True when the listing is in the city of Ruse itself (not a village or another town in the oblast). */
+        fun isRuseCity(l: Listing): Boolean {
+            val loc = l.location.lowercase().trim()
+            if (loc.isNotEmpty()) return cityPattern.containsMatchIn(loc)
+            return cityPattern.containsMatchIn(l.title.lowercase())
+        }
     }
 }
