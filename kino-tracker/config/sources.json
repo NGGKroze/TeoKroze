@@ -7,30 +7,137 @@
   },
   "nfc": {
     "enabled": true,
-    "seed_urls": ["https://www.nfc.bg/", "https://www.nfc.bg/bg/box-office/"],
+    "seed_urls": [
+      "https://www.nfc.bg/",
+      "https://www.nfc.bg/bg/box-office/"
+    ],
     "max_pages": 80,
     "max_depth": 2
   },
   "cinemas": [
-    {"id": "cinemacity", "name": "Cinema City", "chain": "Cinema City", "type": "cinemacity",
-     "api": "https://www.cinemacity.bg/bg/data-api-service/v1/quickbook", "lang": "bg_BG"},
-    {"id": "kinoarena", "name": "Кино Арена", "chain": "Kino Arena", "type": "html", "city": "Няколко града",
-     "urls": ["https://www.kinoarena.com/bg/program"], "verify": true},
-    {"id": "cineland", "name": "Cineland", "chain": "Cineland", "type": "html", "city": "София",
-     "urls": ["https://www.cineland.bg/"], "verify": true},
-    {"id": "cinegrand", "name": "Cine Grand", "chain": "Cine Grand", "type": "html", "city": "София",
-     "urls": ["https://www.cinegrand.bg/"], "verify": true},
-    {"id": "cinemax", "name": "Cinemax", "chain": "Cinemax", "type": "html", "city": "Няколко града",
-     "urls": ["https://www.cinemax.bg/"], "verify": true},
-    {"id": "eurocinema", "name": "Евро Синема", "chain": "Euro Cinema", "type": "html", "city": "София",
-     "urls": ["https://www.eurocinema.bg/"], "verify": true},
-    {"id": "domnakinoto", "name": "Дом на киното", "chain": "Независимо", "type": "html", "city": "София",
-     "urls": ["https://www.domnakinoto.com/"], "verify": true},
-    {"id": "odeon", "name": "Кино Одеон", "chain": "НФЦ", "type": "html", "city": "София",
-     "urls": ["https://www.odeon-bg.com/"], "verify": true},
-    {"id": "lumiere", "name": "Кино Люмиер", "chain": "Независимо", "type": "html", "city": "София",
-     "urls": ["https://www.lumierecinema.bg/"], "verify": true},
-    {"id": "g8", "name": "G8 Cinema", "chain": "Независимо", "type": "html", "city": "София",
-     "urls": ["https://www.g8cinema.bg/"], "verify": true}
+    {
+      "id": "cinemacity",
+      "name": "Cinema City",
+      "chain": "Cinema City",
+      "type": "cinemacity",
+      "api": "https://www.cinemacity.bg/bg/data-api-service/v1/quickbook",
+      "lang": "bg_BG"
+    },
+    {
+      "id": "kinoarena",
+      "name": "Кино Арена",
+      "chain": "Kino Arena",
+      "type": "html",
+      "city": "Няколко града",
+      "urls": [
+        "https://www.kinoarena.com/bg/program/view/kino-arena-the-mall",
+        "https://www.kinoarena.com/bg/program/view/arena-mega-mol",
+        "https://www.kinoarena.com/bg/program/view/arena-serdika",
+        "https://www.kinoarena.com/bg/program/view/kino-arena-panorama-mall-pleven",
+        "https://www.kinoarena.com/bg/program/view/kino-arena-dobrich",
+        "https://www.kinoarena.com/bg/program/view/kino-arena-smolyan",
+        "https://www.kinoarena.com/bg/program/view/kurdzhali",
+        "https://www.kinoarena.com/bg/program/view/arena-bansko"
+      ],
+      "selectors": {
+        "film": ".contentWrapper",
+        "title": ".rowHeader .title a",
+        "time": ".timeTable .time"
+      }
+    },
+    {
+      "id": "cineland",
+      "name": "Cineland",
+      "chain": "Cineland",
+      "type": "html",
+      "city": "София",
+      "urls": [
+        "https://www.cineland.bg/"
+      ],
+      "verify": true
+    },
+    {
+      "id": "cinegrand",
+      "name": "Cine Grand",
+      "chain": "Cine Grand",
+      "type": "html",
+      "city": "София",
+      "urls": [
+        "https://www.cinegrand.bg/"
+      ],
+      "selectors": {
+        "film": "a.movie",
+        "title": ".movie-title"
+      }
+    },
+    {
+      "id": "cinemax",
+      "name": "Cinemax",
+      "chain": "Cinemax",
+      "type": "html",
+      "city": "Няколко града",
+      "urls": [
+        "https://www.cinemax.bg/"
+      ],
+      "verify": true
+    },
+    {
+      "id": "eurocinema",
+      "name": "Евро Синема",
+      "chain": "Euro Cinema",
+      "type": "html",
+      "city": "София",
+      "urls": [
+        "https://www.eurocinema.bg/"
+      ],
+      "verify": true
+    },
+    {
+      "id": "domnakinoto",
+      "name": "Дом на киното",
+      "chain": "Независимо",
+      "type": "html",
+      "city": "София",
+      "urls": [
+        "https://www.domnakinoto.com/"
+      ],
+      "selectors": {
+        "film": ".film-box",
+        "title": ".film-title"
+      }
+    },
+    {
+      "id": "odeon",
+      "name": "Кино Одеон",
+      "chain": "НФЦ",
+      "type": "html",
+      "city": "София",
+      "urls": [
+        "https://www.odeon-bg.com/"
+      ],
+      "verify": true
+    },
+    {
+      "id": "lumiere",
+      "name": "Кино Люмиер",
+      "chain": "Независимо",
+      "type": "html",
+      "city": "София",
+      "urls": [
+        "https://www.lumierecinema.bg/"
+      ],
+      "verify": true
+    },
+    {
+      "id": "g8",
+      "name": "G8 Cinema",
+      "chain": "Независимо",
+      "type": "html",
+      "city": "София",
+      "urls": [
+        "https://www.g8cinema.bg/"
+      ],
+      "verify": true
+    }
   ]
 }

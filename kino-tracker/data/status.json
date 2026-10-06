@@ -1,9 +1,86 @@
 {
  "sources": {},
- "generated_at": "2026-10-06T09:41:20+00:00",
+ "cinemas": [
+  {
+   "id": "cinemacity",
+   "name": "Cinema City",
+   "ok": true,
+   "films": 132,
+   "cinemas": 7,
+   "note": null
+  },
+  {
+   "id": "kinoarena",
+   "name": "Кино Арена",
+   "ok": true,
+   "films": 19,
+   "cinemas": 1,
+   "note": null
+  },
+  {
+   "id": "cineland",
+   "name": "Cineland",
+   "ok": false,
+   "films": 0,
+   "cinemas": 1,
+   "note": "no films found – page layout needs selectors"
+  },
+  {
+   "id": "cinegrand",
+   "name": "Cine Grand",
+   "ok": true,
+   "films": 8,
+   "cinemas": 1,
+   "note": null
+  },
+  {
+   "id": "cinemax",
+   "name": "Cinemax",
+   "ok": false,
+   "films": 0,
+   "note": "HTTPSConnectionPool(host='www.cinemax.bg', port=443): Max retries exceeded with url: / (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 502 Bad Gateway')))"
+  },
+  {
+   "id": "eurocinema",
+   "name": "Евро Синема",
+   "ok": false,
+   "films": 0,
+   "note": "HTTPSConnectionPool(host='www.eurocinema.bg', port=443): Max retries exceeded with url: / (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 502 Bad Gateway')))"
+  },
+  {
+   "id": "domnakinoto",
+   "name": "Дом на киното",
+   "ok": true,
+   "films": 5,
+   "cinemas": 1,
+   "note": null
+  },
+  {
+   "id": "odeon",
+   "name": "Кино Одеон",
+   "ok": false,
+   "films": 0,
+   "note": "HTTPSConnectionPool(host='www.odeon-bg.com', port=443): Max retries exceeded with url: / (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 502 Bad Gateway')))"
+  },
+  {
+   "id": "lumiere",
+   "name": "Кино Люмиер",
+   "ok": false,
+   "films": 0,
+   "note": "HTTPSConnectionPool(host='www.lumierecinema.bg', port=443): Max retries exceeded with url: / (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 502 Bad Gateway')))"
+  },
+  {
+   "id": "g8",
+   "name": "G8 Cinema",
+   "ok": false,
+   "films": 0,
+   "note": "HTTPSConnectionPool(host='www.g8cinema.bg', port=443): Max retries exceeded with url: / (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 502 Bad Gateway')))"
+  }
+ ],
+ "generated_at": "2026-10-06T09:57:22+00:00",
  "counts": {
-  "films": 0,
+  "films": 33,
   "charts": 0,
-  "cinemas": 0
+  "cinemas": 11
  }
 }

@@ -1,4 +1,736 @@
 {
- "generated_at": "2026-10-06T09:41:20+00:00",
- "films": []
+ "generated_at": "2026-10-06T09:57:22+00:00",
+ "films": [
+  {
+   "key": "always-lalisa",
+   "title": "ALWAYS LALISA",
+   "titles": [
+    "ALWAYS LALISA"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 5,
+   "screenings": 5,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "София"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8494O2R.jpg",
+   "release": "2026-10-12"
+  },
+  {
+   "key": "avengers-doomsday",
+   "title": "AVENGERS: DOOMSDAY",
+   "titles": [
+    "AVENGERS: DOOMSDAY"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 1,
+   "screenings": 0,
+   "cities": [
+    "София"
+   ],
+   "poster": "https://www.cinegrand.bg/files/movie-image/BGSOFCG1/12/73/1273/5312_thumbnail_1-bx200x286.jpg?_s=ebafbf41ad2c25b6c2fa5c00824b87bb"
+  },
+  {
+   "key": "oasis-don-t-look-back-in-anger",
+   "title": "Oasis: Don't Look Back In Anger",
+   "titles": [
+    "Oasis: Don't Look Back In Anger"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 1,
+   "screenings": 0,
+   "cities": [
+    "София"
+   ],
+   "poster": "https://softwareforcinema.com/f/movies/q/7/b8782f559abd6dff1bcb4d262770c027.jpeg"
+  },
+  {
+   "key": "queen-budapest",
+   "title": "Queen Budapest",
+   "titles": [
+    "Queen Budapest"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 7,
+   "screenings": 14,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Стара Загора"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8444O2R.jpg",
+   "release": "2026-10-07"
+  },
+  {
+   "key": "buntovnikat",
+   "title": "Бунтовникът",
+   "titles": [
+    "Бунтовникът"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 2,
+   "screenings": 4,
+   "cities": [
+    "Варна",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8295S2R.jpg",
+   "release": "2026-08-21"
+  },
+  {
+   "key": "v-bryuzh",
+   "title": "В Брюж",
+   "titles": [
+    "В Брюж"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 1,
+   "screenings": 0,
+   "cities": [
+    "София"
+   ],
+   "poster": "https://softwareforcinema.com/f/movies/q/7/fd5fac3dfee3e9ce88b6b0facdc71a66.jpeg"
+  },
+  {
+   "key": "veriti",
+   "title": "Верити",
+   "titles": [
+    "Верити",
+    "ВЕРИТИ"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 9,
+   "screenings": 122,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Стара Загора",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8244S2R.jpg",
+   "release": "2026-10-02"
+  },
+  {
+   "key": "geroyat-ot-gara-fridrihshtrase",
+   "title": "ГЕРОЯТ ОТ ГАРА „ФРИДРИХЩРАСЕ\"",
+   "titles": [
+    "ГЕРОЯТ ОТ ГАРА „ФРИДРИХЩРАСЕ\""
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 1,
+   "screenings": 0,
+   "cities": [
+    "София"
+   ],
+   "poster": "https://www.cinegrand.bg/files/movie-image/BGSOFCG1/12/58/1258/5248_thumbnail_1-bx200x286.jpg?_s=00a8881d46bc2132a1207691939efe51"
+  },
+  {
+   "key": "dyun-chast-treta",
+   "title": "ДЮН: ЧАСТ ТРЕТА",
+   "titles": [
+    "ДЮН: ЧАСТ ТРЕТА"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 1,
+   "screenings": 0,
+   "cities": [
+    "София"
+   ],
+   "poster": "https://www.cinegrand.bg/files/movie-image/BGSOFCG1/12/53/1253/5228_thumbnail_1-bx200x286.jpg?_s=9e3c27ab362f30b4767671dc5dc7a8cd"
+  },
+  {
+   "key": "digar",
+   "title": "Дигър",
+   "titles": [
+    "Дигър",
+    "ДИГЪР"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 10,
+   "screenings": 117,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Стара Загора",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8221S2R.jpg",
+   "release": "2026-10-02"
+  },
+  {
+   "key": "dyavolat-nosi-prada-2",
+   "title": "Дяволът носи Прада 2",
+   "titles": [
+    "Дяволът носи Прада 2"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 1,
+   "screenings": 3,
+   "cities": [
+    "София"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7795S2R.jpg",
+   "release": "2026-04-29"
+  },
+  {
+   "key": "zarazno-zlo",
+   "title": "Заразно зло",
+   "titles": [
+    "Заразно зло"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 8,
+   "screenings": 79,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Стара Загора",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8242S2R.jpg",
+   "release": "2026-09-18"
+  },
+  {
+   "key": "zooekspres",
+   "title": "Зооекспрес",
+   "titles": [
+    "Зооекспрес",
+    "ЗООЕКСПРЕС"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 9,
+   "screenings": 74,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Стара Загора",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7492D2R.jpg",
+   "release": "2026-10-02"
+  },
+  {
+   "key": "koyota-sreshtu-akme",
+   "title": "КОЙОТА срещу АКМЕ",
+   "titles": [
+    "КОЙОТА срещу АКМЕ",
+    "Койота срещу Акме"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 8,
+   "screenings": 37,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Стара Загора",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8352D2R.jpg",
+   "release": "2026-09-04"
+  },
+  {
+   "key": "kovaren-kapan-byagstvo-ot-otvadnoto",
+   "title": "Коварен капан: Бягство от отвъдното",
+   "titles": [
+    "Коварен капан: Бягство от отвъдното"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 4,
+   "screenings": 11,
+   "cities": [
+    "Русе",
+    "София",
+    "Стара Загора",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8183S2R.jpg",
+   "release": "2026-08-21"
+  },
+  {
+   "key": "kolite-20-godini",
+   "title": "Колите: 20 години",
+   "titles": [
+    "Колите: 20 години"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 1,
+   "screenings": 1,
+   "cities": [
+    "Варна"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8377D2R.jpg",
+   "release": "2026-09-04"
+  },
+  {
+   "key": "kurierat",
+   "title": "Куриерът",
+   "titles": [
+    "Куриерът"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 7,
+   "screenings": 20,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8325S2R.jpg",
+   "release": "2026-09-11"
+  },
+  {
+   "key": "minoni-and-chudovishta",
+   "title": "Миньони & чудовища",
+   "titles": [
+    "Миньони & чудовища"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 6,
+   "screenings": 10,
+   "cities": [
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Стара Загора"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8023D2R.jpg",
+   "release": "2026-07-01"
+  },
+  {
+   "key": "naslednikat",
+   "title": "Наследникът",
+   "titles": [
+    "Наследникът"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 8,
+   "screenings": 51,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Стара Загора",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8406O2R.jpg",
+   "release": "2026-09-11"
+  },
+  {
+   "key": "odiseya",
+   "title": "Одисея",
+   "titles": [
+    "Одисея"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 7,
+   "screenings": 39,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7460S2R.jpg",
+   "release": "2026-07-17"
+  },
+  {
+   "key": "ostrovat-na-zabravata",
+   "title": "Островът на забравата",
+   "titles": [
+    "Островът на забравата"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 8,
+   "screenings": 78,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Стара Загора",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8095D2R.jpg",
+   "release": "2026-09-25"
+  },
+  {
+   "key": "otmastitelite-krayat-spetsialno-izdanie",
+   "title": "Отмъстителите: Краят – Специално издание",
+   "titles": [
+    "Отмъстителите: Краят – Специално издание"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 8,
+   "screenings": 55,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Стара Загора",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8383S3R.jpg",
+   "release": "2026-09-25"
+  },
+  {
+   "key": "palestina-36",
+   "title": "ПАЛЕСТИНА 36",
+   "titles": [
+    "ПАЛЕСТИНА 36"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 1,
+   "screenings": 0,
+   "cities": [
+    "София"
+   ],
+   "poster": "https://softwareforcinema.com/f/movies/q/7/de863ff78e0cb1d9368eba113fc12feb.png"
+  },
+  {
+   "key": "padane-2",
+   "title": "Падане 2",
+   "titles": [
+    "Падане 2"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 1,
+   "screenings": 2,
+   "cities": [
+    "Няколко града"
+   ],
+   "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png"
+  },
+  {
+   "key": "padane-2-martva-tochka",
+   "title": "Падане 2: Мъртва точка",
+   "titles": [
+    "Падане 2: Мъртва точка"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 5,
+   "screenings": 15,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8423S2R.jpg",
+   "release": "2026-09-04"
+  },
+  {
+   "key": "payatsi",
+   "title": "Паяци",
+   "titles": [
+    "Паяци",
+    "ПАЯЦИ"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 9,
+   "screenings": 65,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Стара Загора",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8504S2R.jpg",
+   "release": "2026-10-02"
+  },
+  {
+   "key": "pes-patrul-dino-filmat",
+   "title": "Пес Патрул: Дино филмът",
+   "titles": [
+    "Пес Патрул: Дино филмът",
+    "Пес Патрул: Дино Филмът"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 7,
+   "screenings": 22,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8093D2R.jpg",
+   "release": "2026-08-14"
+  },
+  {
+   "key": "prilozhna-magiya-2",
+   "title": "Приложна магия 2",
+   "titles": [
+    "Приложна магия 2"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 5,
+   "screenings": 14,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "София",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8220S2R.jpg",
+   "release": "2026-09-11"
+  },
+  {
+   "key": "svatba-s-vkus-na-portokal",
+   "title": "СВАТБА С ВКУС НА ПОРТОКАЛ",
+   "titles": [
+    "СВАТБА С ВКУС НА ПОРТОКАЛ"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 1,
+   "screenings": 0,
+   "cities": [
+    "София"
+   ],
+   "poster": "https://www.cinegrand.bg/files/movie-image/BGSOFCG1/12/59/1259/5250_thumbnail_1-bx200x286.jpg?_s=668fc65c451aeaa43828506091a40d5d"
+  },
+  {
+   "key": "spaydar-men-nov-den",
+   "title": "Спайдър-мен: Нов ден",
+   "titles": [
+    "Спайдър-мен: Нов ден"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 7,
+   "screenings": 22,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8085S3R.jpg",
+   "release": "2026-07-31"
+  },
+  {
+   "key": "sartseto-na-zvyara",
+   "title": "Сърцето на звяра",
+   "titles": [
+    "Сърцето на звяра"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 8,
+   "screenings": 113,
+   "cities": [
+    "Бургас",
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Стара Загора",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8314S2R.jpg",
+   "release": "2026-09-25"
+  },
+  {
+   "key": "tayniyat-svyat-na-finik-2",
+   "title": "Тайният свят на Финик 2",
+   "titles": [
+    "Тайният свят на Финик 2"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 6,
+   "screenings": 15,
+   "cities": [
+    "Варна",
+    "Пловдив",
+    "Русе",
+    "София",
+    "Няколко града"
+   ],
+   "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7853D2R.jpg",
+   "release": "2026-09-18"
+  },
+  {
+   "key": "houp",
+   "title": "ХОУП",
+   "titles": [
+    "ХОУП"
+   ],
+   "runs": [],
+   "sources": [
+    "cinemas"
+   ],
+   "now_showing": true,
+   "venues": 1,
+   "screenings": 0,
+   "cities": [
+    "София"
+   ],
+   "poster": "https://softwareforcinema.com/f/movies/q/7/b51b229b25462cf5bb26bf0e24cbc68f.jpeg"
+  }
+ ]
 }

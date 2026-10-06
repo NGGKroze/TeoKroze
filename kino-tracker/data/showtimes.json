@@ -1,4 +1,2646 @@
 {
- "generated_at": "2026-10-06T09:41:20+00:00",
- "cinemas": []
+ "generated_at": "2026-10-06T09:57:22+00:00",
+ "cinemas": [
+  {
+   "id": "cinemacity-1265",
+   "name": "Cinema City Бургас",
+   "chain": "Cinema City",
+   "city": "Бургас",
+   "url": "https://www.cinemacity.bg/cinemas/burgas",
+   "films": [
+    {
+     "title": "Зооекспрес",
+     "key": "zooekspres",
+     "showtimes": [
+      "2026-10-06T13:00:00",
+      "2026-10-06T16:30:00",
+      "2026-10-06T18:30:00",
+      "2026-10-07T13:00:00",
+      "2026-10-07T16:30:00",
+      "2026-10-07T18:30:00",
+      "2026-10-08T14:30:00",
+      "2026-10-08T16:30:00",
+      "2026-10-08T18:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7492D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/pets-on-a-train/7492d2r",
+     "length": 90,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Дигър",
+     "key": "digar",
+     "showtimes": [
+      "2026-10-06T13:10:00",
+      "2026-10-06T16:40:00",
+      "2026-10-06T19:20:00",
+      "2026-10-06T21:00:00",
+      "2026-10-06T22:00:00",
+      "2026-10-07T13:10:00",
+      "2026-10-07T16:40:00",
+      "2026-10-07T19:20:00",
+      "2026-10-07T21:00:00",
+      "2026-10-07T22:00:00",
+      "2026-10-08T14:00:00",
+      "2026-10-08T16:40:00",
+      "2026-10-08T19:20:00",
+      "2026-10-08T21:00:00",
+      "2026-10-08T22:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8221S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/digger/8221s2r",
+     "length": 129,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Сърцето на звяра",
+     "key": "sartseto-na-zvyara",
+     "showtimes": [
+      "2026-10-06T13:30:00",
+      "2026-10-06T15:50:00",
+      "2026-10-06T17:20:00",
+      "2026-10-06T19:30:00",
+      "2026-10-06T21:45:00",
+      "2026-10-07T13:30:00",
+      "2026-10-07T16:10:00",
+      "2026-10-07T17:20:00",
+      "2026-10-07T19:30:00",
+      "2026-10-07T21:45:00",
+      "2026-10-08T13:00:00",
+      "2026-10-08T15:10:00",
+      "2026-10-08T17:20:00",
+      "2026-10-08T19:30:00",
+      "2026-10-08T21:45:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8314S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heart-of-the-beast/8314s2r",
+     "length": 102,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Верити",
+     "key": "veriti",
+     "showtimes": [
+      "2026-10-06T14:00:00",
+      "2026-10-06T17:10:00",
+      "2026-10-06T19:40:00",
+      "2026-10-06T22:10:00",
+      "2026-10-07T14:00:00",
+      "2026-10-07T17:10:00",
+      "2026-10-07T18:45:00",
+      "2026-10-07T22:10:00",
+      "2026-10-08T14:45:00",
+      "2026-10-08T17:10:00",
+      "2026-10-08T19:40:00",
+      "2026-10-08T22:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8244S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/verity/8244s2r",
+     "length": 114,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Островът на забравата",
+     "key": "ostrovat-na-zabravata",
+     "showtimes": [
+      "2026-10-06T14:20:00",
+      "2026-10-06T16:40:00",
+      "2026-10-06T19:00:00",
+      "2026-10-07T14:20:00",
+      "2026-10-07T16:40:00",
+      "2026-10-07T19:00:00",
+      "2026-10-08T14:20:00",
+      "2026-10-08T16:40:00",
+      "2026-10-08T19:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8095D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/forgotten-island/8095d2r",
+     "length": 110,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Пес Патрул: Дино филмът",
+     "key": "pes-patrul-dino-filmat",
+     "showtimes": [
+      "2026-10-06T15:00:00",
+      "2026-10-07T15:00:00",
+      "2026-10-08T13:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8093D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/paw-patrol-the-dino-movie/8093d2r",
+     "length": 90,
+     "release": "2026-08-14"
+    },
+    {
+     "title": "Наследникът",
+     "key": "naslednikat",
+     "showtimes": [
+      "2026-10-06T16:00:00",
+      "2026-10-06T18:30:00",
+      "2026-10-07T16:00:00",
+      "2026-10-07T18:30:00",
+      "2026-10-08T13:30:00",
+      "2026-10-08T16:00:00",
+      "2026-10-08T18:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8406O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heir/8406o2r",
+     "length": 115,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "КОЙОТА срещу АКМЕ",
+     "key": "koyota-sreshtu-akme",
+     "showtimes": [
+      "2026-10-06T17:00:00",
+      "2026-10-07T17:00:00",
+      "2026-10-08T15:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8352D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/coyote-vs-acme/8352d2r",
+     "length": 104,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Отмъстителите: Краят – Специално издание",
+     "key": "otmastitelite-krayat-spetsialno-izdanie",
+     "showtimes": [
+      "2026-10-06T17:45:00",
+      "2026-10-06T21:20:00",
+      "2026-10-07T17:45:00",
+      "2026-10-07T21:20:00",
+      "2026-10-08T14:10:00",
+      "2026-10-08T17:45:00",
+      "2026-10-08T21:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8383S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/avengers-endgame-special-edition/8383s3r",
+     "length": 183,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Заразно зло",
+     "key": "zarazno-zlo",
+     "showtimes": [
+      "2026-10-06T18:00:00",
+      "2026-10-06T20:10:00",
+      "2026-10-06T22:15:00",
+      "2026-10-07T18:00:00",
+      "2026-10-07T20:10:00",
+      "2026-10-07T22:15:00",
+      "2026-10-08T13:45:00",
+      "2026-10-08T18:00:00",
+      "2026-10-08T20:10:00",
+      "2026-10-08T22:15:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8242S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/resident-evil/8242s2r",
+     "length": 93,
+     "release": "2026-09-18"
+    },
+    {
+     "title": "Спайдър-мен: Нов ден",
+     "key": "spaydar-men-nov-den",
+     "showtimes": [
+      "2026-10-06T18:10:00",
+      "2026-10-08T18:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8085S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/spider-man-brand-new-day/8085s3r",
+     "length": 151,
+     "release": "2026-07-31"
+    },
+    {
+     "title": "Одисея",
+     "key": "odiseya",
+     "showtimes": [
+      "2026-10-06T19:10:00",
+      "2026-10-07T19:10:00",
+      "2026-10-08T15:40:00",
+      "2026-10-08T19:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7460S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/odyssey/7460s2r",
+     "length": 172,
+     "release": "2026-07-17"
+    },
+    {
+     "title": "Паяци",
+     "key": "payatsi",
+     "showtimes": [
+      "2026-10-06T20:30:00",
+      "2026-10-06T22:30:00",
+      "2026-10-07T20:30:00",
+      "2026-10-07T22:30:00",
+      "2026-10-08T13:40:00",
+      "2026-10-08T20:30:00",
+      "2026-10-08T22:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8504S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/crawlers/8504s2r",
+     "length": 86,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Приложна магия 2",
+     "key": "prilozhna-magiya-2",
+     "showtimes": [
+      "2026-10-06T21:10:00",
+      "2026-10-07T21:10:00",
+      "2026-10-08T21:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8220S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/practical-magic-2/8220s2r",
+     "length": 131,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Падане 2: Мъртва точка",
+     "key": "padane-2-martva-tochka",
+     "showtimes": [
+      "2026-10-06T21:30:00",
+      "2026-10-07T21:30:00",
+      "2026-10-08T21:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8423S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/fall-2-deadpoint/8423s2r",
+     "length": 98,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Куриерът",
+     "key": "kurierat",
+     "showtimes": [
+      "2026-10-06T22:30:00",
+      "2026-10-07T22:30:00",
+      "2026-10-08T15:50:00",
+      "2026-10-08T22:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8325S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/runner/8325s2r",
+     "length": 97,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Queen Budapest",
+     "key": "queen-budapest",
+     "showtimes": [
+      "2026-10-07T19:30:00",
+      "2026-10-10T18:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8444O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/queen-budapest/8444o2r",
+     "length": 92,
+     "release": "2026-10-07"
+    },
+    {
+     "title": "ALWAYS LALISA",
+     "key": "always-lalisa",
+     "showtimes": [
+      "2026-10-12T19:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8494O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/always-lalisa/8494o2r",
+     "length": 100,
+     "release": "2026-10-12"
+    }
+   ]
+  },
+  {
+   "id": "cinemacity-1267",
+   "name": "Cinema City Варна",
+   "chain": "Cinema City",
+   "city": "Варна",
+   "url": "https://www.cinemacity.bg/cinemas/varna",
+   "films": [
+    {
+     "title": "Зооекспрес",
+     "key": "zooekspres",
+     "showtimes": [
+      "2026-10-06T13:00:00",
+      "2026-10-06T16:50:00",
+      "2026-10-06T18:50:00",
+      "2026-10-07T13:00:00",
+      "2026-10-07T16:50:00",
+      "2026-10-07T18:50:00",
+      "2026-10-08T14:50:00",
+      "2026-10-08T16:50:00",
+      "2026-10-08T18:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7492D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/pets-on-a-train/7492d2r",
+     "length": 90,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Сърцето на звяра",
+     "key": "sartseto-na-zvyara",
+     "showtimes": [
+      "2026-10-06T13:10:00",
+      "2026-10-06T15:20:00",
+      "2026-10-06T17:30:00",
+      "2026-10-06T19:40:00",
+      "2026-10-06T21:50:00",
+      "2026-10-07T13:10:00",
+      "2026-10-07T15:20:00",
+      "2026-10-07T17:30:00",
+      "2026-10-07T19:40:00",
+      "2026-10-07T21:50:00",
+      "2026-10-08T13:10:00",
+      "2026-10-08T15:20:00",
+      "2026-10-08T17:30:00",
+      "2026-10-08T19:40:00",
+      "2026-10-08T21:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8314S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heart-of-the-beast/8314s2r",
+     "length": 102,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Островът на забравата",
+     "key": "ostrovat-na-zabravata",
+     "showtimes": [
+      "2026-10-06T13:20:00",
+      "2026-10-06T14:10:00",
+      "2026-10-06T16:30:00",
+      "2026-10-06T19:00:00",
+      "2026-10-07T13:20:00",
+      "2026-10-07T14:10:00",
+      "2026-10-07T16:30:00",
+      "2026-10-07T19:00:00",
+      "2026-10-08T13:20:00",
+      "2026-10-08T14:10:00",
+      "2026-10-08T16:30:00",
+      "2026-10-08T19:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8095D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/forgotten-island/8095d2r",
+     "length": 110,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "КОЙОТА срещу АКМЕ",
+     "key": "koyota-sreshtu-akme",
+     "showtimes": [
+      "2026-10-06T13:30:00",
+      "2026-10-06T16:00:00",
+      "2026-10-06T18:15:00",
+      "2026-10-07T13:30:00",
+      "2026-10-07T16:00:00",
+      "2026-10-07T18:15:00",
+      "2026-10-08T13:30:00",
+      "2026-10-08T16:00:00",
+      "2026-10-08T18:15:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8352D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/coyote-vs-acme/8352d2r",
+     "length": 104,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Дигър",
+     "key": "digar",
+     "showtimes": [
+      "2026-10-06T13:30:00",
+      "2026-10-06T16:40:00",
+      "2026-10-06T19:20:00",
+      "2026-10-06T20:50:00",
+      "2026-10-06T22:00:00",
+      "2026-10-07T13:30:00",
+      "2026-10-07T16:40:00",
+      "2026-10-07T19:20:00",
+      "2026-10-07T20:50:00",
+      "2026-10-07T22:00:00",
+      "2026-10-08T14:00:00",
+      "2026-10-08T16:40:00",
+      "2026-10-08T19:20:00",
+      "2026-10-08T20:50:00",
+      "2026-10-08T22:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8221S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/digger/8221s2r",
+     "length": 129,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Верити",
+     "key": "veriti",
+     "showtimes": [
+      "2026-10-06T14:50:00",
+      "2026-10-06T15:40:00",
+      "2026-10-06T17:15:00",
+      "2026-10-06T19:50:00",
+      "2026-10-06T21:30:00",
+      "2026-10-06T22:15:00",
+      "2026-10-07T14:50:00",
+      "2026-10-07T15:40:00",
+      "2026-10-07T17:15:00",
+      "2026-10-07T19:50:00",
+      "2026-10-07T21:30:00",
+      "2026-10-07T22:15:00",
+      "2026-10-08T14:50:00",
+      "2026-10-08T15:40:00",
+      "2026-10-08T17:15:00",
+      "2026-10-08T19:50:00",
+      "2026-10-08T21:30:00",
+      "2026-10-08T22:15:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8244S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/verity/8244s2r",
+     "length": 114,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Заразно зло",
+     "key": "zarazno-zlo",
+     "showtimes": [
+      "2026-10-06T15:20:00",
+      "2026-10-06T17:20:00",
+      "2026-10-06T19:30:00",
+      "2026-10-06T21:40:00",
+      "2026-10-07T15:20:00",
+      "2026-10-07T17:20:00",
+      "2026-10-07T19:30:00",
+      "2026-10-07T21:40:00",
+      "2026-10-08T15:20:00",
+      "2026-10-08T17:20:00",
+      "2026-10-08T19:30:00",
+      "2026-10-08T21:40:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8242S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/resident-evil/8242s2r",
+     "length": 93,
+     "release": "2026-09-18"
+    },
+    {
+     "title": "Одисея",
+     "key": "odiseya",
+     "showtimes": [
+      "2026-10-06T15:50:00",
+      "2026-10-06T19:10:00",
+      "2026-10-07T15:50:00",
+      "2026-10-07T19:10:00",
+      "2026-10-08T15:50:00",
+      "2026-10-08T19:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7460S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/odyssey/7460s2r",
+     "length": 172,
+     "release": "2026-07-17"
+    },
+    {
+     "title": "Тайният свят на Финик 2",
+     "key": "tayniyat-svyat-na-finik-2",
+     "showtimes": [
+      "2026-10-06T15:50:00",
+      "2026-10-07T15:50:00",
+      "2026-10-08T15:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7853D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/finnick-2/7853d2r",
+     "length": 87,
+     "release": "2026-09-18"
+    },
+    {
+     "title": "Наследникът",
+     "key": "naslednikat",
+     "showtimes": [
+      "2026-10-06T16:10:00",
+      "2026-10-06T18:40:00",
+      "2026-10-07T16:10:00",
+      "2026-10-07T18:40:00",
+      "2026-10-08T13:45:00",
+      "2026-10-08T16:10:00",
+      "2026-10-08T18:40:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8406O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heir/8406o2r",
+     "length": 115,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Отмъстителите: Краят – Специално издание",
+     "key": "otmastitelite-krayat-spetsialno-izdanie",
+     "showtimes": [
+      "2026-10-06T16:45:00",
+      "2026-10-06T18:00:00",
+      "2026-10-07T16:00:00",
+      "2026-10-07T18:00:00",
+      "2026-10-08T16:45:00",
+      "2026-10-08T18:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8383S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/avengers-endgame-special-edition/8383s3r",
+     "length": 183,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Пес Патрул: Дино филмът",
+     "key": "pes-patrul-dino-filmat",
+     "showtimes": [
+      "2026-10-06T17:45:00",
+      "2026-10-07T17:45:00",
+      "2026-10-08T17:45:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8093D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/paw-patrol-the-dino-movie/8093d2r",
+     "length": 90,
+     "release": "2026-08-14"
+    },
+    {
+     "title": "Спайдър-мен: Нов ден",
+     "key": "spaydar-men-nov-den",
+     "showtimes": [
+      "2026-10-06T19:45:00",
+      "2026-10-07T19:45:00",
+      "2026-10-08T13:40:00",
+      "2026-10-08T19:45:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8085S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/spider-man-brand-new-day/8085s3r",
+     "length": 151,
+     "release": "2026-07-31"
+    },
+    {
+     "title": "Приложна магия 2",
+     "key": "prilozhna-magiya-2",
+     "showtimes": [
+      "2026-10-06T20:20:00",
+      "2026-10-07T21:30:00",
+      "2026-10-08T20:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8220S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/practical-magic-2/8220s2r",
+     "length": 131,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Паяци",
+     "key": "payatsi",
+     "showtimes": [
+      "2026-10-06T20:30:00",
+      "2026-10-06T22:30:00",
+      "2026-10-07T20:30:00",
+      "2026-10-07T22:30:00",
+      "2026-10-08T14:00:00",
+      "2026-10-08T20:30:00",
+      "2026-10-08T22:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8504S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/crawlers/8504s2r",
+     "length": 86,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Куриерът",
+     "key": "kurierat",
+     "showtimes": [
+      "2026-10-06T21:10:00",
+      "2026-10-07T21:10:00",
+      "2026-10-08T21:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8325S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/runner/8325s2r",
+     "length": 97,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Падане 2: Мъртва точка",
+     "key": "padane-2-martva-tochka",
+     "showtimes": [
+      "2026-10-06T21:20:00",
+      "2026-10-07T21:20:00",
+      "2026-10-08T21:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8423S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/fall-2-deadpoint/8423s2r",
+     "length": 98,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Бунтовникът",
+     "key": "buntovnikat",
+     "showtimes": [
+      "2026-10-06T22:30:00",
+      "2026-10-07T22:30:00",
+      "2026-10-08T22:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8295S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/mutiny/8295s2r",
+     "length": 95,
+     "release": "2026-08-21"
+    },
+    {
+     "title": "Queen Budapest",
+     "key": "queen-budapest",
+     "showtimes": [
+      "2026-10-07T19:30:00",
+      "2026-10-10T18:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8444O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/queen-budapest/8444o2r",
+     "length": 92,
+     "release": "2026-10-07"
+    },
+    {
+     "title": "Колите: 20 години",
+     "key": "kolite-20-godini",
+     "showtimes": [
+      "2026-10-08T13:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8377D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/cars-20th-anniversary/8377d2r",
+     "length": 116,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Миньони & чудовища",
+     "key": "minoni-and-chudovishta",
+     "showtimes": [
+      "2026-10-08T13:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8023D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/minions-monsters/8023d2r",
+     "length": 90,
+     "release": "2026-07-01"
+    },
+    {
+     "title": "ALWAYS LALISA",
+     "key": "always-lalisa",
+     "showtimes": [
+      "2026-10-12T19:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8494O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/always-lalisa/8494o2r",
+     "length": 100,
+     "release": "2026-10-12"
+    }
+   ]
+  },
+  {
+   "id": "cinemacity-1262",
+   "name": "Cinema City Пловдив",
+   "chain": "Cinema City",
+   "city": "Пловдив",
+   "url": "https://www.cinemacity.bg/cinemas/plovdiv",
+   "films": [
+    {
+     "title": "Островът на забравата",
+     "key": "ostrovat-na-zabravata",
+     "showtimes": [
+      "2026-10-06T13:00:00",
+      "2026-10-06T14:30:00",
+      "2026-10-06T16:50:00",
+      "2026-10-06T19:10:00",
+      "2026-10-07T13:00:00",
+      "2026-10-07T13:20:00",
+      "2026-10-07T14:30:00",
+      "2026-10-07T16:50:00",
+      "2026-10-07T19:10:00",
+      "2026-10-08T13:00:00",
+      "2026-10-08T14:30:00",
+      "2026-10-08T16:50:00",
+      "2026-10-08T19:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8095D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/forgotten-island/8095d2r",
+     "length": 110,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Заразно зло",
+     "key": "zarazno-zlo",
+     "showtimes": [
+      "2026-10-06T13:10:00",
+      "2026-10-06T18:00:00",
+      "2026-10-06T20:10:00",
+      "2026-10-06T22:15:00",
+      "2026-10-07T13:10:00",
+      "2026-10-07T18:00:00",
+      "2026-10-07T20:10:00",
+      "2026-10-07T22:15:00",
+      "2026-10-08T13:10:00",
+      "2026-10-08T18:00:00",
+      "2026-10-08T20:10:00",
+      "2026-10-08T22:15:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8242S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/resident-evil/8242s2r",
+     "length": 93,
+     "release": "2026-09-18"
+    },
+    {
+     "title": "Отмъстителите: Краят – Специално издание",
+     "key": "otmastitelite-krayat-spetsialno-izdanie",
+     "showtimes": [
+      "2026-10-06T13:30:00",
+      "2026-10-06T15:15:00",
+      "2026-10-06T20:20:00",
+      "2026-10-07T15:15:00",
+      "2026-10-07T21:10:00",
+      "2026-10-08T13:30:00",
+      "2026-10-08T15:15:00",
+      "2026-10-08T20:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8383S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/avengers-endgame-special-edition/8383s3r",
+     "length": 183,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Наследникът",
+     "key": "naslednikat",
+     "showtimes": [
+      "2026-10-06T13:40:00",
+      "2026-10-06T16:10:00",
+      "2026-10-06T18:40:00",
+      "2026-10-07T13:40:00",
+      "2026-10-07T16:10:00",
+      "2026-10-07T18:40:00",
+      "2026-10-08T13:40:00",
+      "2026-10-08T16:10:00",
+      "2026-10-08T18:40:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8406O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heir/8406o2r",
+     "length": 115,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Сърцето на звяра",
+     "key": "sartseto-na-zvyara",
+     "showtimes": [
+      "2026-10-06T13:50:00",
+      "2026-10-06T17:20:00",
+      "2026-10-06T19:30:00",
+      "2026-10-06T21:40:00",
+      "2026-10-07T13:50:00",
+      "2026-10-07T17:20:00",
+      "2026-10-07T19:30:00",
+      "2026-10-07T21:40:00",
+      "2026-10-08T13:50:00",
+      "2026-10-08T17:20:00",
+      "2026-10-08T19:30:00",
+      "2026-10-08T21:40:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8314S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heart-of-the-beast/8314s2r",
+     "length": 102,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Дигър",
+     "key": "digar",
+     "showtimes": [
+      "2026-10-06T14:00:00",
+      "2026-10-06T16:40:00",
+      "2026-10-06T19:20:00",
+      "2026-10-06T21:00:00",
+      "2026-10-06T22:00:00",
+      "2026-10-07T14:00:00",
+      "2026-10-07T16:40:00",
+      "2026-10-07T19:20:00",
+      "2026-10-07T21:00:00",
+      "2026-10-07T22:00:00",
+      "2026-10-08T14:00:00",
+      "2026-10-08T16:40:00",
+      "2026-10-08T19:20:00",
+      "2026-10-08T21:00:00",
+      "2026-10-08T22:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8221S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/digger/8221s2r",
+     "length": 129,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Миньони & чудовища",
+     "key": "minoni-and-chudovishta",
+     "showtimes": [
+      "2026-10-06T14:10:00",
+      "2026-10-07T14:10:00",
+      "2026-10-08T14:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8023D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/minions-monsters/8023d2r",
+     "length": 90,
+     "release": "2026-07-01"
+    },
+    {
+     "title": "Зооекспрес",
+     "key": "zooekspres",
+     "showtimes": [
+      "2026-10-06T14:20:00",
+      "2026-10-06T16:30:00",
+      "2026-10-06T18:30:00",
+      "2026-10-07T14:20:00",
+      "2026-10-07T16:30:00",
+      "2026-10-07T18:30:00",
+      "2026-10-08T14:20:00",
+      "2026-10-08T16:30:00",
+      "2026-10-08T18:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7492D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/pets-on-a-train/7492d2r",
+     "length": 90,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Тайният свят на Финик 2",
+     "key": "tayniyat-svyat-na-finik-2",
+     "showtimes": [
+      "2026-10-06T14:40:00",
+      "2026-10-07T14:40:00",
+      "2026-10-08T14:40:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7853D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/finnick-2/7853d2r",
+     "length": 87,
+     "release": "2026-09-18"
+    },
+    {
+     "title": "Верити",
+     "key": "veriti",
+     "showtimes": [
+      "2026-10-06T14:40:00",
+      "2026-10-06T17:15:00",
+      "2026-10-06T18:50:00",
+      "2026-10-06T19:45:00",
+      "2026-10-06T21:20:00",
+      "2026-10-06T22:10:00",
+      "2026-10-07T14:40:00",
+      "2026-10-07T17:15:00",
+      "2026-10-07T18:50:00",
+      "2026-10-07T19:45:00",
+      "2026-10-07T21:20:00",
+      "2026-10-07T22:10:00",
+      "2026-10-08T14:40:00",
+      "2026-10-08T17:15:00",
+      "2026-10-08T18:50:00",
+      "2026-10-08T19:45:00",
+      "2026-10-08T21:20:00",
+      "2026-10-08T22:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8244S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/verity/8244s2r",
+     "length": 114,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Пес Патрул: Дино филмът",
+     "key": "pes-patrul-dino-filmat",
+     "showtimes": [
+      "2026-10-06T15:20:00",
+      "2026-10-07T15:20:00",
+      "2026-10-08T15:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8093D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/paw-patrol-the-dino-movie/8093d2r",
+     "length": 90,
+     "release": "2026-08-14"
+    },
+    {
+     "title": "Паяци",
+     "key": "payatsi",
+     "showtimes": [
+      "2026-10-06T16:00:00",
+      "2026-10-06T20:30:00",
+      "2026-10-06T22:30:00",
+      "2026-10-07T16:00:00",
+      "2026-10-07T20:30:00",
+      "2026-10-07T22:30:00",
+      "2026-10-08T16:00:00",
+      "2026-10-08T20:30:00",
+      "2026-10-08T22:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8504S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/crawlers/8504s2r",
+     "length": 86,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "КОЙОТА срещу АКМЕ",
+     "key": "koyota-sreshtu-akme",
+     "showtimes": [
+      "2026-10-06T16:20:00",
+      "2026-10-06T18:45:00",
+      "2026-10-07T16:20:00",
+      "2026-10-07T18:45:00",
+      "2026-10-08T16:20:00",
+      "2026-10-08T18:45:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8352D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/coyote-vs-acme/8352d2r",
+     "length": 104,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Одисея",
+     "key": "odiseya",
+     "showtimes": [
+      "2026-10-06T16:40:00",
+      "2026-10-06T20:00:00",
+      "2026-10-07T16:40:00",
+      "2026-10-07T20:00:00",
+      "2026-10-08T16:40:00",
+      "2026-10-08T20:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7460S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/odyssey/7460s2r",
+     "length": 172,
+     "release": "2026-07-17"
+    },
+    {
+     "title": "Спайдър-мен: Нов ден",
+     "key": "spaydar-men-nov-den",
+     "showtimes": [
+      "2026-10-06T17:10:00",
+      "2026-10-07T16:00:00",
+      "2026-10-08T17:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8085S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/spider-man-brand-new-day/8085s3r",
+     "length": 151,
+     "release": "2026-07-31"
+    },
+    {
+     "title": "Куриерът",
+     "key": "kurierat",
+     "showtimes": [
+      "2026-10-06T21:10:00",
+      "2026-10-07T21:40:00",
+      "2026-10-08T21:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8325S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/runner/8325s2r",
+     "length": 97,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Падане 2: Мъртва точка",
+     "key": "padane-2-martva-tochka",
+     "showtimes": [
+      "2026-10-06T21:30:00",
+      "2026-10-07T21:30:00",
+      "2026-10-08T21:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8423S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/fall-2-deadpoint/8423s2r",
+     "length": 98,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Queen Budapest",
+     "key": "queen-budapest",
+     "showtimes": [
+      "2026-10-07T19:30:00",
+      "2026-10-10T18:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8444O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/queen-budapest/8444o2r",
+     "length": 92,
+     "release": "2026-10-07"
+    },
+    {
+     "title": "ALWAYS LALISA",
+     "key": "always-lalisa",
+     "showtimes": [
+      "2026-10-12T19:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8494O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/always-lalisa/8494o2r",
+     "length": 100,
+     "release": "2026-10-12"
+    }
+   ]
+  },
+  {
+   "id": "cinemacity-1264",
+   "name": "Cinema City Русе",
+   "chain": "Cinema City",
+   "city": "Русе",
+   "url": "https://www.cinemacity.bg/cinemas/ruse",
+   "films": [
+    {
+     "title": "Островът на забравата",
+     "key": "ostrovat-na-zabravata",
+     "showtimes": [
+      "2026-10-06T14:00:00",
+      "2026-10-06T16:20:00",
+      "2026-10-06T18:50:00",
+      "2026-10-07T14:00:00",
+      "2026-10-07T16:20:00",
+      "2026-10-07T18:50:00",
+      "2026-10-08T14:00:00",
+      "2026-10-08T16:20:00",
+      "2026-10-08T18:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8095D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/forgotten-island/8095d2r",
+     "length": 110,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Верити",
+     "key": "veriti",
+     "showtimes": [
+      "2026-10-06T14:00:00",
+      "2026-10-06T16:50:00",
+      "2026-10-06T19:20:00",
+      "2026-10-06T21:50:00",
+      "2026-10-07T14:00:00",
+      "2026-10-07T16:50:00",
+      "2026-10-07T19:20:00",
+      "2026-10-07T21:50:00",
+      "2026-10-08T14:20:00",
+      "2026-10-08T16:50:00",
+      "2026-10-08T19:20:00",
+      "2026-10-08T21:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8244S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/verity/8244s2r",
+     "length": 114,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Паяци",
+     "key": "payatsi",
+     "showtimes": [
+      "2026-10-06T14:15:00",
+      "2026-10-06T20:00:00",
+      "2026-10-06T22:00:00",
+      "2026-10-07T14:15:00",
+      "2026-10-07T20:00:00",
+      "2026-10-07T22:00:00",
+      "2026-10-08T15:20:00",
+      "2026-10-08T20:00:00",
+      "2026-10-08T22:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8504S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/crawlers/8504s2r",
+     "length": 86,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Зооекспрес",
+     "key": "zooekspres",
+     "showtimes": [
+      "2026-10-06T14:30:00",
+      "2026-10-06T16:30:00",
+      "2026-10-06T18:30:00",
+      "2026-10-07T14:30:00",
+      "2026-10-07T16:30:00",
+      "2026-10-07T18:30:00",
+      "2026-10-08T14:30:00",
+      "2026-10-08T16:30:00",
+      "2026-10-08T18:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7492D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/pets-on-a-train/7492d2r",
+     "length": 90,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Сърцето на звяра",
+     "key": "sartseto-na-zvyara",
+     "showtimes": [
+      "2026-10-06T14:50:00",
+      "2026-10-06T17:00:00",
+      "2026-10-06T19:10:00",
+      "2026-10-06T21:20:00",
+      "2026-10-07T17:00:00",
+      "2026-10-07T19:10:00",
+      "2026-10-07T21:20:00",
+      "2026-10-08T14:50:00",
+      "2026-10-08T17:00:00",
+      "2026-10-08T19:10:00",
+      "2026-10-08T21:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8314S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heart-of-the-beast/8314s2r",
+     "length": 102,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "КОЙОТА срещу АКМЕ",
+     "key": "koyota-sreshtu-akme",
+     "showtimes": [
+      "2026-10-06T15:00:00",
+      "2026-10-07T14:45:00",
+      "2026-10-08T14:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8352D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/coyote-vs-acme/8352d2r",
+     "length": 104,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Наследникът",
+     "key": "naslednikat",
+     "showtimes": [
+      "2026-10-06T16:10:00",
+      "2026-10-06T18:40:00",
+      "2026-10-07T16:10:00",
+      "2026-10-07T18:40:00",
+      "2026-10-08T16:10:00",
+      "2026-10-08T18:40:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8406O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heir/8406o2r",
+     "length": 115,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Дигър",
+     "key": "digar",
+     "showtimes": [
+      "2026-10-06T16:20:00",
+      "2026-10-06T19:00:00",
+      "2026-10-06T21:40:00",
+      "2026-10-07T16:20:00",
+      "2026-10-07T19:00:00",
+      "2026-10-07T21:40:00",
+      "2026-10-08T16:20:00",
+      "2026-10-08T19:00:00",
+      "2026-10-08T21:40:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8221S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/digger/8221s2r",
+     "length": 129,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Спайдър-мен: Нов ден",
+     "key": "spaydar-men-nov-den",
+     "showtimes": [
+      "2026-10-06T17:00:00",
+      "2026-10-07T17:00:00",
+      "2026-10-08T17:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8085S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/spider-man-brand-new-day/8085s3r",
+     "length": 151,
+     "release": "2026-07-31"
+    },
+    {
+     "title": "Тайният свят на Финик 2",
+     "key": "tayniyat-svyat-na-finik-2",
+     "showtimes": [
+      "2026-10-06T17:10:00",
+      "2026-10-07T17:10:00",
+      "2026-10-08T17:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7853D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/finnick-2/7853d2r",
+     "length": 87,
+     "release": "2026-09-18"
+    },
+    {
+     "title": "Отмъстителите: Краят – Специално издание",
+     "key": "otmastitelite-krayat-spetsialno-izdanie",
+     "showtimes": [
+      "2026-10-06T17:20:00",
+      "2026-10-06T20:30:00",
+      "2026-10-07T16:00:00",
+      "2026-10-07T20:30:00",
+      "2026-10-08T17:20:00",
+      "2026-10-08T20:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8383S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/avengers-endgame-special-edition/8383s3r",
+     "length": 183,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Пес Патрул: Дино филмът",
+     "key": "pes-patrul-dino-filmat",
+     "showtimes": [
+      "2026-10-06T17:30:00",
+      "2026-10-07T17:30:00",
+      "2026-10-08T17:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8093D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/paw-patrol-the-dino-movie/8093d2r",
+     "length": 90,
+     "release": "2026-08-14"
+    },
+    {
+     "title": "Одисея",
+     "key": "odiseya",
+     "showtimes": [
+      "2026-10-06T19:15:00",
+      "2026-10-07T19:15:00",
+      "2026-10-08T19:15:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7460S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/odyssey/7460s2r",
+     "length": 172,
+     "release": "2026-07-17"
+    },
+    {
+     "title": "Заразно зло",
+     "key": "zarazno-zlo",
+     "showtimes": [
+      "2026-10-06T19:30:00",
+      "2026-10-06T21:30:00",
+      "2026-10-07T19:30:00",
+      "2026-10-07T21:30:00",
+      "2026-10-08T15:30:00",
+      "2026-10-08T19:30:00",
+      "2026-10-08T21:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8242S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/resident-evil/8242s2r",
+     "length": 93,
+     "release": "2026-09-18"
+    },
+    {
+     "title": "Куриерът",
+     "key": "kurierat",
+     "showtimes": [
+      "2026-10-06T21:00:00",
+      "2026-10-07T21:30:00",
+      "2026-10-08T21:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8325S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/runner/8325s2r",
+     "length": 97,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Падане 2: Мъртва точка",
+     "key": "padane-2-martva-tochka",
+     "showtimes": [
+      "2026-10-06T21:10:00",
+      "2026-10-07T21:10:00",
+      "2026-10-08T21:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8423S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/fall-2-deadpoint/8423s2r",
+     "length": 98,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Коварен капан: Бягство от отвъдното",
+     "key": "kovaren-kapan-byagstvo-ot-otvadnoto",
+     "showtimes": [
+      "2026-10-06T21:15:00",
+      "2026-10-07T21:15:00",
+      "2026-10-08T21:15:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8183S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/insidious-out-of-the-further/8183s2r",
+     "length": 106,
+     "release": "2026-08-21"
+    },
+    {
+     "title": "Queen Budapest",
+     "key": "queen-budapest",
+     "showtimes": [
+      "2026-10-07T19:30:00",
+      "2026-10-10T18:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8444O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/queen-budapest/8444o2r",
+     "length": 92,
+     "release": "2026-10-07"
+    },
+    {
+     "title": "Миньони & чудовища",
+     "key": "minoni-and-chudovishta",
+     "showtimes": [
+      "2026-10-08T15:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8023D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/minions-monsters/8023d2r",
+     "length": 90,
+     "release": "2026-07-01"
+    }
+   ]
+  },
+  {
+   "id": "cinemacity-1261",
+   "name": "Cinema City София - Мол София",
+   "chain": "Cinema City",
+   "city": "София",
+   "url": "https://www.cinemacity.bg/cinemas/mallofsofia",
+   "films": [
+    {
+     "title": "Островът на забравата",
+     "key": "ostrovat-na-zabravata",
+     "showtimes": [
+      "2026-10-06T13:00:00",
+      "2026-10-06T16:50:00",
+      "2026-10-06T19:10:00",
+      "2026-10-07T13:00:00",
+      "2026-10-07T16:50:00",
+      "2026-10-07T19:10:00",
+      "2026-10-08T14:20:00",
+      "2026-10-08T16:50:00",
+      "2026-10-08T19:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8095D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/forgotten-island/8095d2r",
+     "length": 110,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Сърцето на звяра",
+     "key": "sartseto-na-zvyara",
+     "showtimes": [
+      "2026-10-06T13:10:00",
+      "2026-10-06T15:20:00",
+      "2026-10-06T17:30:00",
+      "2026-10-06T19:40:00",
+      "2026-10-06T22:00:00",
+      "2026-10-07T13:10:00",
+      "2026-10-07T15:20:00",
+      "2026-10-07T17:30:00",
+      "2026-10-07T19:40:00",
+      "2026-10-07T22:00:00",
+      "2026-10-08T13:10:00",
+      "2026-10-08T15:20:00",
+      "2026-10-08T17:30:00",
+      "2026-10-08T19:40:00",
+      "2026-10-08T22:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8314S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heart-of-the-beast/8314s2r",
+     "length": 102,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Наследникът",
+     "key": "naslednikat",
+     "showtimes": [
+      "2026-10-06T13:40:00",
+      "2026-10-06T19:15:00",
+      "2026-10-07T13:40:00",
+      "2026-10-07T19:15:00",
+      "2026-10-08T13:45:00",
+      "2026-10-08T19:15:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8406O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heir/8406o2r",
+     "length": 115,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Отмъстителите: Краят – Специално издание",
+     "key": "otmastitelite-krayat-spetsialno-izdanie",
+     "showtimes": [
+      "2026-10-06T13:50:00",
+      "2026-10-06T17:30:00",
+      "2026-10-06T21:10:00",
+      "2026-10-07T13:50:00",
+      "2026-10-07T17:30:00",
+      "2026-10-07T21:10:00",
+      "2026-10-08T13:50:00",
+      "2026-10-08T17:30:00",
+      "2026-10-08T21:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8383S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/avengers-endgame-special-edition/8383s3r",
+     "length": 183,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Дигър",
+     "key": "digar",
+     "showtimes": [
+      "2026-10-06T14:10:00",
+      "2026-10-06T16:50:00",
+      "2026-10-06T18:30:00",
+      "2026-10-06T19:30:00",
+      "2026-10-06T21:10:00",
+      "2026-10-06T22:10:00",
+      "2026-10-07T14:10:00",
+      "2026-10-07T16:50:00",
+      "2026-10-07T18:30:00",
+      "2026-10-07T19:40:00",
+      "2026-10-07T21:10:00",
+      "2026-10-07T21:40:00",
+      "2026-10-07T22:15:00",
+      "2026-10-08T14:10:00",
+      "2026-10-08T15:45:00",
+      "2026-10-08T16:50:00",
+      "2026-10-08T18:30:00",
+      "2026-10-08T19:30:00",
+      "2026-10-08T21:10:00",
+      "2026-10-08T22:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8221S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/digger/8221s2r",
+     "length": 129,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Паяци",
+     "key": "payatsi",
+     "showtimes": [
+      "2026-10-06T14:15:00",
+      "2026-10-06T20:20:00",
+      "2026-10-06T22:30:00",
+      "2026-10-07T14:15:00",
+      "2026-10-07T20:20:00",
+      "2026-10-07T22:30:00",
+      "2026-10-08T14:15:00",
+      "2026-10-08T20:20:00",
+      "2026-10-08T22:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8504S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/crawlers/8504s2r",
+     "length": 86,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Зооекспрес",
+     "key": "zooekspres",
+     "showtimes": [
+      "2026-10-06T14:30:00",
+      "2026-10-06T16:30:00",
+      "2026-10-06T18:45:00",
+      "2026-10-07T14:30:00",
+      "2026-10-07T16:30:00",
+      "2026-10-07T18:45:00",
+      "2026-10-08T14:30:00",
+      "2026-10-08T16:30:00",
+      "2026-10-08T18:45:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7492D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/pets-on-a-train/7492d2r",
+     "length": 90,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Верити",
+     "key": "veriti",
+     "showtimes": [
+      "2026-10-06T14:50:00",
+      "2026-10-06T17:20:00",
+      "2026-10-06T18:50:00",
+      "2026-10-06T19:50:00",
+      "2026-10-06T21:15:00",
+      "2026-10-06T22:20:00",
+      "2026-10-07T14:50:00",
+      "2026-10-07T17:20:00",
+      "2026-10-07T18:50:00",
+      "2026-10-07T19:50:00",
+      "2026-10-07T21:15:00",
+      "2026-10-07T22:20:00",
+      "2026-10-08T14:50:00",
+      "2026-10-08T17:20:00",
+      "2026-10-08T18:50:00",
+      "2026-10-08T19:50:00",
+      "2026-10-08T21:15:00",
+      "2026-10-08T22:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8244S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/verity/8244s2r",
+     "length": 114,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Заразно зло",
+     "key": "zarazno-zlo",
+     "showtimes": [
+      "2026-10-06T15:20:00",
+      "2026-10-06T17:20:00",
+      "2026-10-06T19:20:00",
+      "2026-10-06T21:30:00",
+      "2026-10-07T15:20:00",
+      "2026-10-07T17:20:00",
+      "2026-10-07T19:20:00",
+      "2026-10-07T21:30:00",
+      "2026-10-08T13:20:00",
+      "2026-10-08T15:20:00",
+      "2026-10-08T17:20:00",
+      "2026-10-08T19:20:00",
+      "2026-10-08T21:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8242S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/resident-evil/8242s2r",
+     "length": 93,
+     "release": "2026-09-18"
+    },
+    {
+     "title": "Куриерът",
+     "key": "kurierat",
+     "showtimes": [
+      "2026-10-06T16:00:00",
+      "2026-10-06T21:50:00",
+      "2026-10-07T21:50:00",
+      "2026-10-08T15:50:00",
+      "2026-10-08T21:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8325S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/runner/8325s2r",
+     "length": 97,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Тайният свят на Финик 2",
+     "key": "tayniyat-svyat-na-finik-2",
+     "showtimes": [
+      "2026-10-06T16:00:00",
+      "2026-10-07T16:00:00",
+      "2026-10-08T13:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7853D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/finnick-2/7853d2r",
+     "length": 87,
+     "release": "2026-09-18"
+    },
+    {
+     "title": "Спайдър-мен: Нов ден",
+     "key": "spaydar-men-nov-den",
+     "showtimes": [
+      "2026-10-06T16:10:00",
+      "2026-10-07T16:10:00",
+      "2026-10-08T16:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8085S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/spider-man-brand-new-day/8085s3r",
+     "length": 151,
+     "release": "2026-07-31"
+    },
+    {
+     "title": "Пес Патрул: Дино филмът",
+     "key": "pes-patrul-dino-filmat",
+     "showtimes": [
+      "2026-10-06T16:15:00",
+      "2026-10-06T18:20:00",
+      "2026-10-07T16:15:00",
+      "2026-10-07T18:20:00",
+      "2026-10-08T16:15:00",
+      "2026-10-08T18:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8093D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/paw-patrol-the-dino-movie/8093d2r",
+     "length": 90,
+     "release": "2026-08-14"
+    },
+    {
+     "title": "Дяволът носи Прада 2",
+     "key": "dyavolat-nosi-prada-2",
+     "showtimes": [
+      "2026-10-06T16:20:00",
+      "2026-10-07T16:20:00",
+      "2026-10-08T16:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7795S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/devil-wears-prada-2/7795s2r",
+     "length": 123,
+     "release": "2026-04-29"
+    },
+    {
+     "title": "КОЙОТА срещу АКМЕ",
+     "key": "koyota-sreshtu-akme",
+     "showtimes": [
+      "2026-10-06T18:00:00",
+      "2026-10-07T17:10:00",
+      "2026-10-08T13:40:00",
+      "2026-10-08T18:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8352D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/coyote-vs-acme/8352d2r",
+     "length": 104,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Одисея",
+     "key": "odiseya",
+     "showtimes": [
+      "2026-10-06T18:20:00",
+      "2026-10-06T20:30:00",
+      "2026-10-07T17:00:00",
+      "2026-10-07T20:30:00",
+      "2026-10-08T15:00:00",
+      "2026-10-08T18:20:00",
+      "2026-10-08T20:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7460S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/odyssey/7460s2r",
+     "length": 172,
+     "release": "2026-07-17"
+    },
+    {
+     "title": "Приложна магия 2",
+     "key": "prilozhna-magiya-2",
+     "showtimes": [
+      "2026-10-06T20:45:00",
+      "2026-10-07T20:45:00",
+      "2026-10-08T13:30:00",
+      "2026-10-08T20:45:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8220S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/practical-magic-2/8220s2r",
+     "length": 131,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Падане 2: Мъртва точка",
+     "key": "padane-2-martva-tochka",
+     "showtimes": [
+      "2026-10-06T21:30:00",
+      "2026-10-07T21:30:00",
+      "2026-10-08T21:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8423S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/fall-2-deadpoint/8423s2r",
+     "length": 98,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Коварен капан: Бягство от отвъдното",
+     "key": "kovaren-kapan-byagstvo-ot-otvadnoto",
+     "showtimes": [
+      "2026-10-06T21:40:00",
+      "2026-10-08T21:40:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8183S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/insidious-out-of-the-further/8183s2r",
+     "length": 106,
+     "release": "2026-08-21"
+    },
+    {
+     "title": "Queen Budapest",
+     "key": "queen-budapest",
+     "showtimes": [
+      "2026-10-07T19:30:00",
+      "2026-10-10T19:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8444O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/queen-budapest/8444o2r",
+     "length": 92,
+     "release": "2026-10-07"
+    },
+    {
+     "title": "Миньони & чудовища",
+     "key": "minoni-and-chudovishta",
+     "showtimes": [
+      "2026-10-08T13:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8023D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/minions-monsters/8023d2r",
+     "length": 90,
+     "release": "2026-07-01"
+    },
+    {
+     "title": "ALWAYS LALISA",
+     "key": "always-lalisa",
+     "showtimes": [
+      "2026-10-12T19:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8494O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/always-lalisa/8494o2r",
+     "length": 100,
+     "release": "2026-10-12"
+    }
+   ]
+  },
+  {
+   "id": "cinemacity-1266",
+   "name": "Cinema City София - Парадайс Център",
+   "chain": "Cinema City",
+   "city": "София",
+   "url": "https://www.cinemacity.bg/cinemas/paradisecenter",
+   "films": [
+    {
+     "title": "Зооекспрес",
+     "key": "zooekspres",
+     "showtimes": [
+      "2026-10-06T13:00:00",
+      "2026-10-06T15:00:00",
+      "2026-10-06T17:00:00",
+      "2026-10-06T19:00:00",
+      "2026-10-07T13:00:00",
+      "2026-10-07T15:00:00",
+      "2026-10-07T17:00:00",
+      "2026-10-07T19:00:00",
+      "2026-10-08T13:00:00",
+      "2026-10-08T15:00:00",
+      "2026-10-08T17:00:00",
+      "2026-10-08T19:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7492D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/pets-on-a-train/7492d2r",
+     "length": 90,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Тайният свят на Финик 2",
+     "key": "tayniyat-svyat-na-finik-2",
+     "showtimes": [
+      "2026-10-06T13:00:00",
+      "2026-10-07T13:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7853D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/finnick-2/7853d2r",
+     "length": 87,
+     "release": "2026-09-18"
+    },
+    {
+     "title": "Заразно зло",
+     "key": "zarazno-zlo",
+     "showtimes": [
+      "2026-10-06T13:10:00",
+      "2026-10-06T15:15:00",
+      "2026-10-06T17:20:00",
+      "2026-10-06T19:30:00",
+      "2026-10-06T21:40:00",
+      "2026-10-07T13:10:00",
+      "2026-10-07T15:15:00",
+      "2026-10-07T17:20:00",
+      "2026-10-07T19:30:00",
+      "2026-10-07T22:10:00",
+      "2026-10-08T13:10:00",
+      "2026-10-08T15:15:00",
+      "2026-10-08T17:20:00",
+      "2026-10-08T19:30:00",
+      "2026-10-08T21:40:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8242S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/resident-evil/8242s2r",
+     "length": 93,
+     "release": "2026-09-18"
+    },
+    {
+     "title": "Островът на забравата",
+     "key": "ostrovat-na-zabravata",
+     "showtimes": [
+      "2026-10-06T13:20:00",
+      "2026-10-06T14:40:00",
+      "2026-10-06T17:00:00",
+      "2026-10-06T19:20:00",
+      "2026-10-07T13:20:00",
+      "2026-10-07T14:40:00",
+      "2026-10-07T17:00:00",
+      "2026-10-07T19:20:00",
+      "2026-10-08T13:20:00",
+      "2026-10-08T14:40:00",
+      "2026-10-08T17:00:00",
+      "2026-10-08T19:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8095D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/forgotten-island/8095d2r",
+     "length": 110,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Паяци",
+     "key": "payatsi",
+     "showtimes": [
+      "2026-10-06T13:30:00",
+      "2026-10-06T20:30:00",
+      "2026-10-06T22:30:00",
+      "2026-10-07T13:30:00",
+      "2026-10-07T20:00:00",
+      "2026-10-07T22:00:00",
+      "2026-10-08T13:30:00",
+      "2026-10-08T20:00:00",
+      "2026-10-08T22:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8504S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/crawlers/8504s2r",
+     "length": 86,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Сърцето на звяра",
+     "key": "sartseto-na-zvyara",
+     "showtimes": [
+      "2026-10-06T13:30:00",
+      "2026-10-06T15:45:00",
+      "2026-10-06T16:50:00",
+      "2026-10-06T18:00:00",
+      "2026-10-06T19:10:00",
+      "2026-10-06T20:15:00",
+      "2026-10-06T21:20:00",
+      "2026-10-06T22:30:00",
+      "2026-10-07T13:30:00",
+      "2026-10-07T15:45:00",
+      "2026-10-07T16:50:00",
+      "2026-10-07T18:00:00",
+      "2026-10-07T19:10:00",
+      "2026-10-07T20:15:00",
+      "2026-10-07T21:20:00",
+      "2026-10-07T22:30:00",
+      "2026-10-08T13:30:00",
+      "2026-10-08T15:45:00",
+      "2026-10-08T16:50:00",
+      "2026-10-08T18:00:00",
+      "2026-10-08T19:10:00",
+      "2026-10-08T20:15:00",
+      "2026-10-08T21:20:00",
+      "2026-10-08T22:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8314S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heart-of-the-beast/8314s2r",
+     "length": 102,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Наследникът",
+     "key": "naslednikat",
+     "showtimes": [
+      "2026-10-06T13:40:00",
+      "2026-10-06T18:10:00",
+      "2026-10-07T13:40:00",
+      "2026-10-07T18:10:00",
+      "2026-10-08T13:40:00",
+      "2026-10-08T18:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8406O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heir/8406o2r",
+     "length": 115,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Дигър",
+     "key": "digar",
+     "showtimes": [
+      "2026-10-06T14:00:00",
+      "2026-10-06T15:30:00",
+      "2026-10-06T16:40:00",
+      "2026-10-06T18:15:00",
+      "2026-10-06T19:20:00",
+      "2026-10-06T20:50:00",
+      "2026-10-06T22:00:00",
+      "2026-10-07T14:20:00",
+      "2026-10-07T15:30:00",
+      "2026-10-07T17:00:00",
+      "2026-10-07T18:15:00",
+      "2026-10-07T19:20:00",
+      "2026-10-07T20:50:00",
+      "2026-10-07T22:00:00",
+      "2026-10-08T14:00:00",
+      "2026-10-08T15:30:00",
+      "2026-10-08T16:40:00",
+      "2026-10-08T18:15:00",
+      "2026-10-08T19:20:00",
+      "2026-10-08T20:50:00",
+      "2026-10-08T22:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8221S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/digger/8221s2r",
+     "length": 129,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Отмъстителите: Краят – Специално издание",
+     "key": "otmastitelite-krayat-spetsialno-izdanie",
+     "showtimes": [
+      "2026-10-06T14:00:00",
+      "2026-10-06T17:40:00",
+      "2026-10-06T18:00:00",
+      "2026-10-06T21:10:00",
+      "2026-10-07T14:50:00",
+      "2026-10-07T18:00:00",
+      "2026-10-07T21:30:00",
+      "2026-10-08T14:50:00",
+      "2026-10-08T18:00:00",
+      "2026-10-08T21:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8383S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/avengers-endgame-special-edition/8383s3r",
+     "length": 183,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Одисея",
+     "key": "odiseya",
+     "showtimes": [
+      "2026-10-06T14:30:00",
+      "2026-10-06T18:10:00",
+      "2026-10-06T21:30:00",
+      "2026-10-07T14:45:00",
+      "2026-10-07T18:10:00",
+      "2026-10-07T20:30:00",
+      "2026-10-07T21:30:00",
+      "2026-10-08T14:45:00",
+      "2026-10-08T18:10:00",
+      "2026-10-08T20:30:00",
+      "2026-10-08T21:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7460S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/odyssey/7460s2r",
+     "length": 172,
+     "release": "2026-07-17"
+    },
+    {
+     "title": "КОЙОТА срещу АКМЕ",
+     "key": "koyota-sreshtu-akme",
+     "showtimes": [
+      "2026-10-06T14:30:00",
+      "2026-10-06T17:00:00",
+      "2026-10-07T13:15:00",
+      "2026-10-07T15:30:00",
+      "2026-10-07T17:45:00",
+      "2026-10-08T13:15:00",
+      "2026-10-08T15:30:00",
+      "2026-10-08T17:45:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8352D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/coyote-vs-acme/8352d2r",
+     "length": 104,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Миньони & чудовища",
+     "key": "minoni-and-chudovishta",
+     "showtimes": [
+      "2026-10-06T14:50:00",
+      "2026-10-07T14:50:00",
+      "2026-10-08T14:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8023D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/minions-monsters/8023d2r",
+     "length": 90,
+     "release": "2026-07-01"
+    },
+    {
+     "title": "Верити",
+     "key": "veriti",
+     "showtimes": [
+      "2026-10-06T15:00:00",
+      "2026-10-06T15:40:00",
+      "2026-10-06T17:30:00",
+      "2026-10-06T20:00:00",
+      "2026-10-06T21:00:00",
+      "2026-10-06T21:30:00",
+      "2026-10-06T22:20:00",
+      "2026-10-07T15:00:00",
+      "2026-10-07T15:40:00",
+      "2026-10-07T17:30:00",
+      "2026-10-07T18:40:00",
+      "2026-10-07T20:00:00",
+      "2026-10-07T21:00:00",
+      "2026-10-07T21:30:00",
+      "2026-10-07T22:20:00",
+      "2026-10-08T15:00:00",
+      "2026-10-08T15:40:00",
+      "2026-10-08T17:30:00",
+      "2026-10-08T18:40:00",
+      "2026-10-08T20:00:00",
+      "2026-10-08T21:00:00",
+      "2026-10-08T21:30:00",
+      "2026-10-08T22:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8244S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/verity/8244s2r",
+     "length": 114,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Спайдър-мен: Нов ден",
+     "key": "spaydar-men-nov-den",
+     "showtimes": [
+      "2026-10-06T15:40:00",
+      "2026-10-07T16:20:00",
+      "2026-10-07T21:00:00",
+      "2026-10-08T15:40:00",
+      "2026-10-08T20:45:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8085S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/spider-man-brand-new-day/8085s3r",
+     "length": 151,
+     "release": "2026-07-31"
+    },
+    {
+     "title": "Пес Патрул: Дино филмът",
+     "key": "pes-patrul-dino-filmat",
+     "showtimes": [
+      "2026-10-06T16:10:00",
+      "2026-10-07T16:10:00",
+      "2026-10-08T16:10:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8093D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/paw-patrol-the-dino-movie/8093d2r",
+     "length": 90,
+     "release": "2026-08-14"
+    },
+    {
+     "title": "Приложна магия 2",
+     "key": "prilozhna-magiya-2",
+     "showtimes": [
+      "2026-10-06T21:40:00",
+      "2026-10-07T21:40:00",
+      "2026-10-08T21:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8220S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/practical-magic-2/8220s2r",
+     "length": 131,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Queen Budapest",
+     "key": "queen-budapest",
+     "showtimes": [
+      "2026-10-07T20:00:00",
+      "2026-10-10T18:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8444O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/queen-budapest/8444o2r",
+     "length": 92,
+     "release": "2026-10-07"
+    },
+    {
+     "title": "Куриерът",
+     "key": "kurierat",
+     "showtimes": [
+      "2026-10-08T18:40:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8325S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/runner/8325s2r",
+     "length": 97,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "ALWAYS LALISA",
+     "key": "always-lalisa",
+     "showtimes": [
+      "2026-10-12T19:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8494O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/always-lalisa/8494o2r",
+     "length": 100,
+     "release": "2026-10-12"
+    }
+   ]
+  },
+  {
+   "id": "cinemacity-1263",
+   "name": "Cinema City Стара Загора",
+   "chain": "Cinema City",
+   "city": "Стара Загора",
+   "url": "https://www.cinemacity.bg/cinemas/starazagora",
+   "films": [
+    {
+     "title": "Наследникът",
+     "key": "naslednikat",
+     "showtimes": [
+      "2026-10-06T14:00:00",
+      "2026-10-06T18:20:00",
+      "2026-10-07T14:00:00",
+      "2026-10-07T18:20:00",
+      "2026-10-08T14:00:00",
+      "2026-10-08T18:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8406O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heir/8406o2r",
+     "length": 115,
+     "release": "2026-09-11"
+    },
+    {
+     "title": "Островът на забравата",
+     "key": "ostrovat-na-zabravata",
+     "showtimes": [
+      "2026-10-06T14:00:00",
+      "2026-10-06T16:20:00",
+      "2026-10-06T18:40:00",
+      "2026-10-07T14:00:00",
+      "2026-10-07T16:20:00",
+      "2026-10-07T18:40:00",
+      "2026-10-08T14:00:00",
+      "2026-10-08T16:20:00",
+      "2026-10-08T18:40:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8095D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/forgotten-island/8095d2r",
+     "length": 110,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Зооекспрес",
+     "key": "zooekspres",
+     "showtimes": [
+      "2026-10-06T14:40:00",
+      "2026-10-06T16:30:00",
+      "2026-10-06T18:30:00",
+      "2026-10-07T14:40:00",
+      "2026-10-07T16:30:00",
+      "2026-10-07T18:30:00",
+      "2026-10-08T14:30:00",
+      "2026-10-08T16:30:00",
+      "2026-10-08T18:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/7492D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/pets-on-a-train/7492d2r",
+     "length": 90,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Сърцето на звяра",
+     "key": "sartseto-na-zvyara",
+     "showtimes": [
+      "2026-10-06T15:00:00",
+      "2026-10-06T17:10:00",
+      "2026-10-06T19:20:00",
+      "2026-10-06T21:40:00",
+      "2026-10-07T15:00:00",
+      "2026-10-07T17:10:00",
+      "2026-10-07T19:20:00",
+      "2026-10-07T21:40:00",
+      "2026-10-08T15:00:00",
+      "2026-10-08T17:10:00",
+      "2026-10-08T19:20:00",
+      "2026-10-08T21:40:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8314S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/heart-of-the-beast/8314s2r",
+     "length": 102,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Дигър",
+     "key": "digar",
+     "showtimes": [
+      "2026-10-06T16:10:00",
+      "2026-10-06T18:50:00",
+      "2026-10-06T21:30:00",
+      "2026-10-07T16:50:00",
+      "2026-10-07T18:50:00",
+      "2026-10-07T21:30:00",
+      "2026-10-08T16:10:00",
+      "2026-10-08T18:50:00",
+      "2026-10-08T21:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8221S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/digger/8221s2r",
+     "length": 129,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Паяци",
+     "key": "payatsi",
+     "showtimes": [
+      "2026-10-06T16:20:00",
+      "2026-10-06T20:45:00",
+      "2026-10-07T16:20:00",
+      "2026-10-07T20:45:00",
+      "2026-10-08T16:20:00",
+      "2026-10-08T20:45:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8504S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/crawlers/8504s2r",
+     "length": 86,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "КОЙОТА срещу АКМЕ",
+     "key": "koyota-sreshtu-akme",
+     "showtimes": [
+      "2026-10-06T16:50:00",
+      "2026-10-07T16:40:00",
+      "2026-10-08T16:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8352D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/coyote-vs-acme/8352d2r",
+     "length": 104,
+     "release": "2026-09-04"
+    },
+    {
+     "title": "Верити",
+     "key": "veriti",
+     "showtimes": [
+      "2026-10-06T17:00:00",
+      "2026-10-06T19:30:00",
+      "2026-10-06T22:00:00",
+      "2026-10-07T17:00:00",
+      "2026-10-07T19:30:00",
+      "2026-10-07T22:00:00",
+      "2026-10-08T14:20:00",
+      "2026-10-08T17:00:00",
+      "2026-10-08T19:30:00",
+      "2026-10-08T22:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8244S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/verity/8244s2r",
+     "length": 114,
+     "release": "2026-10-02"
+    },
+    {
+     "title": "Заразно зло",
+     "key": "zarazno-zlo",
+     "showtimes": [
+      "2026-10-06T19:10:00",
+      "2026-10-06T21:20:00",
+      "2026-10-07T21:30:00",
+      "2026-10-08T19:10:00",
+      "2026-10-08T21:20:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8242S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/resident-evil/8242s2r",
+     "length": 93,
+     "release": "2026-09-18"
+    },
+    {
+     "title": "Отмъстителите: Краят – Специално издание",
+     "key": "otmastitelite-krayat-spetsialno-izdanie",
+     "showtimes": [
+      "2026-10-06T20:30:00",
+      "2026-10-07T20:30:00",
+      "2026-10-08T20:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8383S3R.jpg",
+     "url": "https://www.cinemacity.bg/films/avengers-endgame-special-edition/8383s3r",
+     "length": 183,
+     "release": "2026-09-25"
+    },
+    {
+     "title": "Коварен капан: Бягство от отвъдното",
+     "key": "kovaren-kapan-byagstvo-ot-otvadnoto",
+     "showtimes": [
+      "2026-10-06T21:00:00",
+      "2026-10-07T21:00:00",
+      "2026-10-08T21:00:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8183S2R.jpg",
+     "url": "https://www.cinemacity.bg/films/insidious-out-of-the-further/8183s2r",
+     "length": 106,
+     "release": "2026-08-21"
+    },
+    {
+     "title": "Queen Budapest",
+     "key": "queen-budapest",
+     "showtimes": [
+      "2026-10-07T19:30:00",
+      "2026-10-10T18:30:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8444O2R.jpg",
+     "url": "https://www.cinemacity.bg/films/queen-budapest/8444o2r",
+     "length": 92,
+     "release": "2026-10-07"
+    },
+    {
+     "title": "Миньони & чудовища",
+     "key": "minoni-and-chudovishta",
+     "showtimes": [
+      "2026-10-08T14:50:00"
+     ],
+     "poster": "https://www.cinemacity.bg/xmedia-cw/repo/feats/posters/8023D2R.jpg",
+     "url": "https://www.cinemacity.bg/films/minions-monsters/8023d2r",
+     "length": 90,
+     "release": "2026-07-01"
+    }
+   ]
+  },
+  {
+   "id": "kinoarena",
+   "name": "Кино Арена",
+   "chain": "Kino Arena",
+   "city": "Няколко града",
+   "url": "https://www.kinoarena.com/bg/program/view/kino-arena-the-mall",
+   "films": [
+    {
+     "title": "Одисея",
+     "key": "odiseya",
+     "showtimes": [
+      "15:10",
+      "20:20"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/the-odyssey"
+    },
+    {
+     "title": "Спайдър-мен: Нов ден",
+     "key": "spaydar-men-nov-den",
+     "showtimes": [
+      "17:20",
+      "16:50"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/spajd-r-men-nov-den"
+    },
+    {
+     "title": "Пес Патрул: Дино Филмът",
+     "key": "pes-patrul-dino-filmat",
+     "showtimes": [
+      "15:50"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/pes-patrul-dino-film-t"
+    },
+    {
+     "title": "Бунтовникът",
+     "key": "buntovnikat",
+     "showtimes": [
+      "20:45"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/mutiny"
+    },
+    {
+     "title": "Коварен капан: Бягство от отвъдното",
+     "key": "kovaren-kapan-byagstvo-ot-otvadnoto",
+     "showtimes": [
+      "21:50",
+      "22:40",
+      "22:30"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/kovaren-kapan-bagstvo-ot-otv-dnoto"
+    },
+    {
+     "title": "Койота срещу Акме",
+     "key": "koyota-sreshtu-akme",
+     "showtimes": [
+      "13:10"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/koiota-sreshtu-akme"
+    },
+    {
+     "title": "Падане 2",
+     "key": "padane-2",
+     "showtimes": [
+      "19:00",
+      "21:00"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/kulata-2-murtva-tochka"
+    },
+    {
+     "title": "Приложна магия 2",
+     "key": "prilozhna-magiya-2",
+     "showtimes": [
+      "17:50"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/prilozhna-magiya-2"
+    },
+    {
+     "title": "Куриерът",
+     "key": "kurierat",
+     "showtimes": [
+      "18:50"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/kurierut"
+    },
+    {
+     "title": "Наследникът",
+     "key": "naslednikat",
+     "showtimes": [
+      "15:20",
+      "15:30",
+      "14:40",
+      "12:20"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/the-heir"
+    },
+    {
+     "title": "Заразно зло",
+     "key": "zarazno-zlo",
+     "showtimes": [
+      "14:50",
+      "20:30",
+      "22:40",
+      "16:30",
+      "22:15"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/zarazno-zlo"
+    },
+    {
+     "title": "Тайният свят на Финик 2",
+     "key": "tayniyat-svyat-na-finik-2",
+     "showtimes": [
+      "14:00"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/tainiyat-svyat-na-finik-2"
+    },
+    {
+     "title": "Сърцето на звяра",
+     "key": "sartseto-na-zvyara",
+     "showtimes": [
+      "17:40",
+      "20:10",
+      "22:10",
+      "18:00",
+      "13:30",
+      "18:10",
+      "20:30",
+      "13:40",
+      "18:40"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/surtseto-na-zvyara"
+    },
+    {
+     "title": "Островът на забравата",
+     "key": "ostrovat-na-zabravata",
+     "showtimes": [
+      "14:20",
+      "16:40",
+      "16:30",
+      "14:10",
+      "14:00"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/ostrov-t-na-zabravata"
+    },
+    {
+     "title": "Отмъстителите: Краят – Специално издание",
+     "key": "otmastitelite-krayat-spetsialno-izdanie",
+     "showtimes": [
+      "13:50",
+      "18:30",
+      "21:40",
+      "13:20",
+      "21:00",
+      "20:45"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/otmustitelite-krayat-encore"
+    },
+    {
+     "title": "Верити",
+     "key": "veriti",
+     "showtimes": [
+      "13:00",
+      "14:40",
+      "17:00",
+      "19:20",
+      "21:30",
+      "15:45",
+      "19:00",
+      "21:20",
+      "16:30",
+      "15:50",
+      "16:10"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/veriti"
+    },
+    {
+     "title": "Дигър",
+     "key": "digar",
+     "showtimes": [
+      "13:40",
+      "15:00",
+      "16:10",
+      "17:30",
+      "18:40",
+      "20:00",
+      "21:10",
+      "22:30",
+      "17:15",
+      "19:50",
+      "22:20",
+      "19:45",
+      "22:10"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/digger"
+    },
+    {
+     "title": "Зооекспрес",
+     "key": "zooekspres",
+     "showtimes": [
+      "13:15",
+      "14:30",
+      "16:30",
+      "18:20",
+      "16:20",
+      "13:00",
+      "15:00",
+      "15:10"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/zooekspres"
+    },
+    {
+     "title": "Паяци",
+     "key": "payatsi",
+     "showtimes": [
+      "16:50",
+      "19:45",
+      "22:20",
+      "16:40",
+      "19:50",
+      "17:00",
+      "21:50",
+      "14:50",
+      "15:00"
+     ],
+     "poster": "https://www.kinoarena.com/uploads/media/stenik_attributes/0001/02/f1551f1963b9f2ca8058281b9006aea178968f5a.png",
+     "url": "https://www.kinoarena.com/bg/movie/payatsi"
+    }
+   ]
+  },
+  {
+   "id": "cineland",
+   "name": "Cineland",
+   "chain": "Cineland",
+   "city": "София",
+   "url": "https://www.cineland.bg/",
+   "films": []
+  },
+  {
+   "id": "cinegrand",
+   "name": "Cine Grand",
+   "chain": "Cine Grand",
+   "city": "София",
+   "url": "https://www.cinegrand.bg/",
+   "films": [
+    {
+     "title": "ДЮН: ЧАСТ ТРЕТА",
+     "key": "dyun-chast-treta",
+     "showtimes": [],
+     "poster": "https://www.cinegrand.bg/files/movie-image/BGSOFCG1/12/53/1253/5228_thumbnail_1-bx200x286.jpg?_s=9e3c27ab362f30b4767671dc5dc7a8cd"
+    },
+    {
+     "title": "AVENGERS: DOOMSDAY",
+     "key": "avengers-doomsday",
+     "showtimes": [],
+     "poster": "https://www.cinegrand.bg/files/movie-image/BGSOFCG1/12/73/1273/5312_thumbnail_1-bx200x286.jpg?_s=ebafbf41ad2c25b6c2fa5c00824b87bb"
+    },
+    {
+     "title": "ВЕРИТИ",
+     "key": "veriti",
+     "showtimes": [],
+     "poster": "https://www.cinegrand.bg/files/movie-image/BGSOFCG1/12/68/1268/5292_thumbnail_1-bx200x286.jpg?_s=87b143b8bb34a64f7bf8bac6e7447e6a"
+    },
+    {
+     "title": "ДИГЪР",
+     "key": "digar",
+     "showtimes": [],
+     "poster": "https://www.cinegrand.bg/files/movie-image/BGSOFCG1/12/69/1269/5296_thumbnail_1-bx200x286.jpg?_s=807829efff25095e30e364164c93f055"
+    },
+    {
+     "title": "ПАЯЦИ",
+     "key": "payatsi",
+     "showtimes": [],
+     "poster": "https://www.cinegrand.bg/files/movie-image/BGSOFCG1/12/70/1270/5300_thumbnail_1-bx200x286.jpg?_s=e79d2caec869a612ae32f3a03ff42a81"
+    },
+    {
+     "title": "ЗООЕКСПРЕС",
+     "key": "zooekspres",
+     "showtimes": [],
+     "poster": "https://www.cinegrand.bg/files/movie-image/BGSOFCG1/12/71/1271/5304_thumbnail_1-bx200x286.jpg?_s=8eb906e6e61f722548a116ecd8c668a9"
+    },
+    {
+     "title": "ГЕРОЯТ ОТ ГАРА „ФРИДРИХЩРАСЕ\"",
+     "key": "geroyat-ot-gara-fridrihshtrase",
+     "showtimes": [],
+     "poster": "https://www.cinegrand.bg/files/movie-image/BGSOFCG1/12/58/1258/5248_thumbnail_1-bx200x286.jpg?_s=00a8881d46bc2132a1207691939efe51"
+    },
+    {
+     "title": "СВАТБА С ВКУС НА ПОРТОКАЛ",
+     "key": "svatba-s-vkus-na-portokal",
+     "showtimes": [],
+     "poster": "https://www.cinegrand.bg/files/movie-image/BGSOFCG1/12/59/1259/5250_thumbnail_1-bx200x286.jpg?_s=668fc65c451aeaa43828506091a40d5d"
+    }
+   ]
+  },
+  {
+   "id": "domnakinoto",
+   "name": "Дом на киното",
+   "chain": "Независимо",
+   "city": "София",
+   "url": "https://www.domnakinoto.com/",
+   "films": [
+    {
+     "title": "Дигър",
+     "key": "digar",
+     "showtimes": [],
+     "poster": "https://softwareforcinema.com/f/movies/q/7/7ba25f6fad48c2ba6390f9e5800fca33.jpeg",
+     "url": "https://domnakinoto.com/digar-movie7083.html?a="
+    },
+    {
+     "title": "ХОУП",
+     "key": "houp",
+     "showtimes": [],
+     "poster": "https://softwareforcinema.com/f/movies/q/7/b51b229b25462cf5bb26bf0e24cbc68f.jpeg",
+     "url": "https://domnakinoto.com/houp-movie7103.html?a="
+    },
+    {
+     "title": "Oasis: Don't Look Back In Anger",
+     "key": "oasis-don-t-look-back-in-anger",
+     "showtimes": [],
+     "poster": "https://softwareforcinema.com/f/movies/q/7/b8782f559abd6dff1bcb4d262770c027.jpeg",
+     "url": "https://domnakinoto.com/oasis-dont-look-back-in-anger-movie7064.html?a="
+    },
+    {
+     "title": "В Брюж",
+     "key": "v-bryuzh",
+     "showtimes": [],
+     "poster": "https://softwareforcinema.com/f/movies/q/7/fd5fac3dfee3e9ce88b6b0facdc71a66.jpeg",
+     "url": "https://domnakinoto.com/v-bryuzh-movie7027.html?a="
+    },
+    {
+     "title": "ПАЛЕСТИНА 36",
+     "key": "palestina-36",
+     "showtimes": [],
+     "poster": "https://softwareforcinema.com/f/movies/q/7/de863ff78e0cb1d9368eba113fc12feb.png",
+     "url": "https://domnakinoto.com/palestina-36-movie7071.html?a="
+    }
+   ]
+  }
+ ]
 }
