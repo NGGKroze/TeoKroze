@@ -1,0 +1,54 @@
+name: Android APK
+
+on:
+  push:
+    paths:
+      - "RealEstateApp/**"
+      - ".github/workflows/android-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: RealEstateApp
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Parser tests
+        run: ./gradlew :core:test --no-daemon
+
+      - name: Build APK
+        run: ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Rename APK
+        run: cp app/build/outputs/apk/release/app-release.apk ImotiRuse.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ImotiRuse-apk
+          path: RealEstateApp/ImotiRuse.apk
+
+      # A fixed release link that is easy to open from the phone.
+      - name: Publish to "apk-latest" release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: Имоти Русе – последен APK
+          prerelease: true
+          target_commitish: ${{ github.sha }}
+          files: RealEstateApp/ImotiRuse.apk
+          body: |
+            Автоматично сглобен от ${{ github.ref_name }} (${{ github.sha }}).
+            Отвори от телефона и инсталирай ImotiRuse.apk (разреши „Инсталиране от неизвестни източници“).
