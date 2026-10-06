@@ -1,0 +1,36 @@
+{
+  "_comment": "Edit this file to add/fix sources. type=cinemacity uses the Cinema City JSON API; type=html reads schema.org JSON-LD and optional CSS selectors {film,title,time}. URLs marked 'verify' were not reachable from the build environment and may need adjusting – check the 'Кина' tab in the app for per-source status.",
+  "showtime_days": 7,
+  "forum": {
+    "enabled": true,
+    "thread_url": "https://forums.boxofficetheory.com/topic/30981-bulgaria-box-office-thread-verity-breaks-out-heart-of-the-beast-going-strong-doomsday-with-astonishing-presales/"
+  },
+  "nfc": {
+    "enabled": true,
+    "seed_urls": ["https://www.nfc.bg/", "https://www.nfc.bg/bg/box-office/"],
+    "max_pages": 80,
+    "max_depth": 2
+  },
+  "cinemas": [
+    {"id": "cinemacity", "name": "Cinema City", "chain": "Cinema City", "type": "cinemacity",
+     "api": "https://www.cinemacity.bg/bg/data-api-service/v1/quickbook", "lang": "bg_BG"},
+    {"id": "kinoarena", "name": "Кино Арена", "chain": "Kino Arena", "type": "html", "city": "Няколко града",
+     "urls": ["https://www.kinoarena.com/bg/program"], "verify": true},
+    {"id": "cineland", "name": "Cineland", "chain": "Cineland", "type": "html", "city": "София",
+     "urls": ["https://www.cineland.bg/"], "verify": true},
+    {"id": "cinegrand", "name": "Cine Grand", "chain": "Cine Grand", "type": "html", "city": "София",
+     "urls": ["https://www.cinegrand.bg/"], "verify": true},
+    {"id": "cinemax", "name": "Cinemax", "chain": "Cinemax", "type": "html", "city": "Няколко града",
+     "urls": ["https://www.cinemax.bg/"], "verify": true},
+    {"id": "eurocinema", "name": "Евро Синема", "chain": "Euro Cinema", "type": "html", "city": "София",
+     "urls": ["https://www.eurocinema.bg/"], "verify": true},
+    {"id": "domnakinoto", "name": "Дом на киното", "chain": "Независимо", "type": "html", "city": "София",
+     "urls": ["https://www.domnakinoto.com/"], "verify": true},
+    {"id": "odeon", "name": "Кино Одеон", "chain": "НФЦ", "type": "html", "city": "София",
+     "urls": ["https://www.odeon-bg.com/"], "verify": true},
+    {"id": "lumiere", "name": "Кино Люмиер", "chain": "Независимо", "type": "html", "city": "София",
+     "urls": ["https://www.lumierecinema.bg/"], "verify": true},
+    {"id": "g8", "name": "G8 Cinema", "chain": "Независимо", "type": "html", "city": "София",
+     "urls": ["https://www.g8cinema.bg/"], "verify": true}
+  ]
+}

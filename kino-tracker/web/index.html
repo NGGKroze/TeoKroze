@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Кино Тракер България</title>
+  <meta name="description" content="Филми в българските кина, бокс офис от НФЦ и архив от BoxOfficeTheory.">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">🎬 <strong>Кино Тракер</strong> <span class="muted">България</span></div>
+    <nav id="tabs">
+      <button data-tab="now" class="active">В кината</button>
+      <button data-tab="charts">Бокс офис</button>
+      <button data-tab="films">Всички филми</button>
+      <button data-tab="cinemas">Кина</button>
+      <button data-tab="forum">Форум архив</button>
+    </nav>
+    <div class="muted small" id="updated"></div>
+  </header>
+
+  <main>
+    <section id="tab-now" class="tab active">
+      <div class="toolbar">
+        <input id="now-q" type="search" placeholder="Търси филм…">
+        <select id="now-city"><option value="">Всички градове</option></select>
+        <select id="now-sort">
+          <option value="screenings">По брой прожекции</option>
+          <option value="venues">По брой кина</option>
+          <option value="title">По заглавие</option>
+        </select>
+      </div>
+      <div id="now-grid" class="grid"></div>
+    </section>
+
+    <section id="tab-charts" class="tab">
+      <div class="toolbar">
+        <select id="chart-source">
+          <option value="">Всички източници</option>
+          <option value="nfc">НФЦ (официален)</option>
+          <option value="forum">BoxOfficeTheory форум</option>
+        </select>
+        <select id="chart-week"></select>
+        <button id="chart-prev">←</button><button id="chart-next">→</button>
+      </div>
+      <div id="chart-meta" class="muted"></div>
+      <div class="table-wrap"><table id="chart-table"></table></div>
+    </section>
+
+    <section id="tab-films" class="tab">
+      <div class="toolbar">
+        <input id="films-q" type="search" placeholder="Търси във всички филми…">
+        <select id="films-year"><option value="">Всички години</option></select>
+        <select id="films-sort">
+          <option value="gross">По приходи</option>
+          <option value="adm">По зрители</option>
+          <option value="recent">Най-нови</option>
+          <option value="title">По заглавие</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table id="films-table"></table></div>
+    </section>
+
+    <section id="tab-cinemas" class="tab">
+      <h2>Източници</h2>
+      <div class="table-wrap"><table id="status-table"></table></div>
+      <h2>Кина и програма</h2>
+      <div id="cinema-list"></div>
+    </section>
+
+    <section id="tab-forum" class="tab">
+      <div class="toolbar">
+        <input id="forum-q" type="search" placeholder="Търси в постовете…">
+        <label class="small"><input type="checkbox" id="forum-charts-only"> само постове с класации</label>
+      </div>
+      <div id="forum-list"></div>
+      <button id="forum-more" class="more">Още…</button>
+    </section>
+  </main>
+
+  <dialog id="film-dialog">
+    <form method="dialog"><button class="close" aria-label="Затвори">✕</button></form>
+    <div id="film-body"></div>
+  </dialog>
+
+  <footer class="muted small">
+    Данни: кината (програми), <a href="https://www.nfc.bg/" rel="noopener">Национален филмов център</a>,
+    <a href="https://forums.boxofficetheory.com/topic/30981-bulgaria-box-office-thread-verity-breaks-out-heart-of-the-beast-going-strong-doomsday-with-astonishing-presales/" rel="noopener">BoxOfficeTheory</a>.
+    Сумите в BGN са превърнати в EUR по курс 1.95583.
+  </footer>
+</body>
+</html>

@@ -1,0 +1,72 @@
+name: Kino Tracker – scrape & publish
+
+on:
+  schedule:
+    - cron: "23 4 * * *"   # daily, ~07:23 Sofia time
+  workflow_dispatch:
+    inputs:
+      full_forum:
+        description: "Re-crawl the whole BoxOfficeTheory thread from page 1"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths: ["kino-tracker/**", ".github/workflows/kino-tracker.yml"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: kino-tracker
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kino-tracker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: kino-tracker/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Tests
+        run: python -m unittest discover -s tests
+      - name: Scrape
+        run: |
+          ARGS=""
+          if [ "${{ inputs.full_forum }}" = "true" ] || [ ! -f data/forum_posts.json ]; then ARGS="--full-forum"; fi
+          python -m scraper.run $ARGS
+      - name: Commit data
+        run: |
+          git config user.name "kino-tracker-bot"
+          git config user.email "kino-tracker-bot@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "data: update $(date -u +%F)"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+      - name: Build site
+        run: |
+          mkdir -p ../_site
+          cp -r web/* ../_site/
+          cp -r data ../_site/data
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: scrape
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
