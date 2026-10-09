@@ -124,3 +124,5 @@ Python модулите (ACNE, ASPHALTE, COURREGES) ползват същия Te
 dotnet test tests/LogisticsPacking.Core.Tests                       # ядро
 PLAYWRIGHT_PATH=$(npm root -g)/playwright node tools/test_offline.mjs   # всички HTML модули без интернет
 ```
+
+`SPEC=spec.json PLAYWRIGHT_PATH=$(npm root -g)/playwright node tools/sweep.mjs [модул ...]` - пуска модул с много реални файлове (виж заглавния коментар в `tools/sweep.mjs`) и показва грешките/прегледа за всеки.
