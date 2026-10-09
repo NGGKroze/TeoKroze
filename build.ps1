@@ -51,17 +51,26 @@ try {
 
     # Проверка на нужните компоненти на Visual Studio (по-ясно от грешките на MSBuild)
     $msbRoot = Split-Path (Split-Path (Split-Path $msbuild))          # ...\MSBuild
-    $missing = @()
-    if (-not (Test-Path (Join-Path $msbRoot 'Sdks\Microsoft.NET.Sdk\Sdk'))) { $missing += '.NET desktop build tools (Microsoft.VisualStudio.Workload.ManagedDesktopBuildTools)' }
-    if (-not (Get-ChildItem (Join-Path $msbRoot 'Microsoft\VisualStudio') -Recurse -Filter 'Microsoft.Build.Packaging.Pri.Tasks.dll' -ErrorAction SilentlyContinue | Select-Object -First 1)) {
-        $missing += 'WinUI application development build tools (във VS 17.14 е заместил "Universal Windows Platform build tools")'
+    $vsSdk = Join-Path $msbRoot 'Sdks\Microsoft.NET.Sdk\Sdk'
+    if (-not (Test-Path $vsSdk)) {
+        # Резерв: MSBuild на VS да ползва Microsoft.NET.Sdk от инсталирания .NET SDK (същият, с който минаха тестовете)
+        $dotnetExe = (Get-Command dotnet -ErrorAction SilentlyContinue).Source
+        $dotnetVer = if ($dotnetExe) { (& dotnet --version) | Select-Object -First 1 } else { $null }
+        $dnSdks = if ($dotnetVer) { Join-Path (Split-Path $dotnetExe) "sdk\$dotnetVer\Sdks" } else { $null }
+        if ($dnSdks -and (Test-Path (Join-Path $dnSdks 'Microsoft.NET.Sdk\Sdk'))) {
+            $env:MSBuildSDKsPath = $dnSdks
+            $env:DOTNET_HOST_PATH = $dotnetExe
+            Write-Host "VS няма Microsoft.NET.Sdk; ползва се .NET SDK $dotnetVer ($dnSdks)" -ForegroundColor Yellow
+        } else {
+            Write-Host "Липсва Microsoft.NET.Sdk: нито във VS ($vsSdk), нито в .NET SDK." -ForegroundColor Yellow
+            Write-Host 'Visual Studio Installer -> Modify (Build Tools 2022) -> ".NET desktop build tools" (с отметнато ".NET SDK") -> Modify.' -ForegroundColor Yellow
+            throw 'Липсва .NET SDK за MSBuild.'
+        }
     }
-    if ($missing.Count -gt 0) {
-        Write-Host ''
-        Write-Host 'Във Visual Studio липсват нужните компоненти:' -ForegroundColor Yellow
-        $missing | ForEach-Object { Write-Host "  - $_" -ForegroundColor Yellow }
-        Write-Host 'Visual Studio Installer -> Modify (на Build Tools 2022) -> отметнете горните workloads -> Modify.' -ForegroundColor Yellow
-        throw 'Липсват компоненти на Visual Studio.'
+    if (-not (Get-ChildItem (Join-Path $msbRoot 'Microsoft\VisualStudio') -Recurse -Filter 'Microsoft.Build.Packaging.Pri.Tasks.dll' -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+        Write-Host 'Липсват инструментите за WinUI (Microsoft.Build.Packaging.Pri.Tasks.dll).' -ForegroundColor Yellow
+        Write-Host 'Visual Studio Installer -> Modify (Build Tools 2022) -> "WinUI application development build tools" -> Modify.' -ForegroundColor Yellow
+        throw 'Липсват WinUI build tools.'
     }
     $msbLog = Join-Path $PSScriptRoot 'dist\msbuild.log'
     # ВАЖНО: PublishDir без краен "\" - иначе \" се чете като екранирана кавичка и счупва командата.
