@@ -46,31 +46,38 @@ def marble(w=2048, h=1280):
 
 
 def granite(w=1024, h=640):
-    base = 0.20 + 0.10 * fbm(w, h, 160, 5)
-    grain = noise(w, h, 3) * 0.10 + noise(w, h, 7) * 0.06
-    lum = base + grain - 0.08
-    arr = np.stack([lum * 1.00, lum * 1.00, lum * 1.03], -1)
+    """Светъл, лъскав сив гранит: полиран камък с фини тъмни и светли кристали и мек отблясък."""
+    base = 0.70 + 0.08 * fbm(w, h, 170, 5)
+    grain = (noise(w, h, 3) - 0.5) * 0.10 + (noise(w, h, 8) - 0.5) * 0.07
+    lum = base + grain
+    arr = np.stack([lum * 0.985, lum * 0.99, lum * 1.0], -1)
     img = Image.fromarray((np.clip(arr, 0, 1) * 255).astype(np.uint8))
     d = ImageDraw.Draw(img)
-    for _ in range(int(w * h / 55)):               # петънца: светли и тъмни кристали
+    for _ in range(int(w * h / 60)):               # кристали: тъмни, светли и топли
         px, py = int(rng.integers(0, w)), int(rng.integers(0, h))
-        s = float(rng.choice([0.6, 0.9, 1.3, 1.8]))
+        s = float(rng.choice([0.6, 0.9, 1.3, 1.7]))
         t = rng.random()
-        col = (150, 148, 144) if t < 0.38 else (28, 28, 30) if t < 0.72 else (120, 104, 98)
+        col = (246, 246, 244) if t < 0.30 else (82, 84, 90) if t < 0.62 else (150, 138, 130) if t < 0.82 else (40, 41, 45)
         d.ellipse([px, py, px + s, py + s], fill=col)
-    return img.filter(ImageFilter.GaussianBlur(0.55))
+    img = img.filter(ImageFilter.GaussianBlur(0.5))
+    # лъскав отблясък: диагонална светла ивица + лек преход
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    streak = np.exp(-(((xx / w) * 0.9 + (yy / h) * 0.55 - 0.62) ** 2) / 0.012) * 0.16
+    glow = np.clip(1.0 - yy / h, 0, 1) * 0.07
+    out = np.asarray(img, dtype=np.float32) / 255.0 + (streak + glow)[..., None]
+    return Image.fromarray((np.clip(out, 0, 1) * 255).astype(np.uint8))
 
 
 def icon():
     s = 512
     img = granite(s, s).convert("RGBA")
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle([14, 14, s - 15, s - 15], radius=70, outline=(176, 141, 87, 255), width=10)
+    d.rounded_rectangle([14, 14, s - 15, s - 15], radius=70, outline=(141, 109, 60, 255), width=10)
     try:
         font = ImageFont.truetype("DejaVuSans-Bold.ttf", 190)
     except OSError:
         font = ImageFont.load_default()
-    d.text((s / 2, s / 2), "LPS", font=font, fill=(236, 230, 214, 255), anchor="mm")
+    d.text((s / 2, s / 2), "LPS", font=font, fill=(38, 39, 43, 255), anchor="mm")
     mask = Image.new("L", (s, s), 0)
     ImageDraw.Draw(mask).rounded_rectangle([0, 0, s - 1, s - 1], radius=84, fill=255)
     out = Image.new("RGBA", (s, s), (0, 0, 0, 0))

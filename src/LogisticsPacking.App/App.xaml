@@ -15,8 +15,17 @@
             <SolidColorBrush x:Key="InkSoftBrush" Color="#5B5C62" />
             <SolidColorBrush x:Key="StoneTextBrush" Color="#F4F1EA" />
             <SolidColorBrush x:Key="StoneSoftTextBrush" Color="#C9C5BC" />
+            <SolidColorBrush x:Key="TileTextBrush" Color="#202125" />
+            <SolidColorBrush x:Key="TileSoftTextBrush" Color="#44454B" />
             <SolidColorBrush x:Key="BrassBrush" Color="#B08D57" />
-            <SolidColorBrush x:Key="TileBorderBrush" Color="#55FFFFFF" />
+            <SolidColorBrush x:Key="TileEdgeBrush" Color="#99FFFFFF" />
+            <LinearGradientBrush x:Key="GlossBrush" StartPoint="0,0" EndPoint="0.35,1">
+                <GradientStop Color="#66FFFFFF" Offset="0" />
+                <GradientStop Color="#1AFFFFFF" Offset="0.45" />
+                <GradientStop Color="#00FFFFFF" Offset="0.5" />
+                <GradientStop Color="#0FFFFFFF" Offset="1" />
+            </LinearGradientBrush>
+            <SolidColorBrush x:Key="TileBorderBrush" Color="#8C8F96" />
             <SolidColorBrush x:Key="BarBrush" Color="#F01F2023" />
 
             <!-- Голяма гранитна плочка за клиент -->
@@ -36,7 +45,8 @@
                                 <Grid.RenderTransform>
                                     <ScaleTransform x:Name="TileScale" ScaleX="1" ScaleY="1" />
                                 </Grid.RenderTransform>
-                                <Border x:Name="TileShine" Background="#18FFFFFF" CornerRadius="14" Opacity="0" />
+                                <Border x:Name="TileGloss" Background="{StaticResource GlossBrush}" CornerRadius="14" IsHitTestVisible="False" />
+                                <Border x:Name="TileShine" Background="#22FFFFFF" CornerRadius="14" Opacity="0" />
                                 <ContentPresenter HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                                   VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
                                 <VisualStateManager.VisualStateGroups>

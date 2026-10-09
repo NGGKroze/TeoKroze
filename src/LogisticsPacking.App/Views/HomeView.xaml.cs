@@ -70,7 +70,7 @@ public sealed partial class HomeView : UserControl
         var name = new TextBlock
         {
             Text = t.Title, FontSize = 34, FontWeight = FontWeights.SemiBold,
-            Foreground = (Brush)Application.Current.Resources["StoneTextBrush"],
+            Foreground = (Brush)Application.Current.Resources["TileTextBrush"],
             TextAlignment = Microsoft.UI.Xaml.TextAlignment.Center, TextWrapping = TextWrapping.Wrap,
         };
         var rule = new Border
@@ -81,7 +81,7 @@ public sealed partial class HomeView : UserControl
         var sub = new TextBlock
         {
             Text = t.IsGroup ? string.Join(" · ", t.Module.Manifest.Variants.Select(v => v.Name)) : t.Subtitle,
-            FontSize = 14, Foreground = (Brush)Application.Current.Resources["StoneSoftTextBrush"],
+            FontSize = 14, Foreground = (Brush)Application.Current.Resources["TileSoftTextBrush"],
             TextAlignment = Microsoft.UI.Xaml.TextAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxLines = 2,
         };
         var stack = new StackPanel { Width = 300, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
