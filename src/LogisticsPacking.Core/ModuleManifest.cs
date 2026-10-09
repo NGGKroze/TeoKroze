@@ -10,7 +10,7 @@ public sealed class ModuleManifest
     public string Id { get; init; } = "";
     public string Name { get; init; } = "";
     public string Version { get; init; } = "1.0.0";
-    /// <summary>"html" (статични файлове в WebView2) или "python" (локален сървър).</summary>
+    /// <summary>"html" (статични файлове в WebView2), "python" (локален сървър на модула) или "engine" (страница на общия engine, напр. /lab).</summary>
     public string Type { get; init; } = "html";
     /// <summary>html: входен файл (index.html). python: скрипт за стартиране (run.py).</summary>
     public string Entry { get; init; } = "index.html";
@@ -32,6 +32,7 @@ public sealed class ModuleManifest
     /// <summary>JS грешки на страницата, които са известни от оригинала (само за тестове).</summary>
     public List<string> KnownPageErrors { get; init; } = new();
 
+    [JsonIgnore] public bool IsEngine => string.Equals(Type, "engine", StringComparison.OrdinalIgnoreCase);
     [JsonIgnore] public bool IsPython => string.Equals(Type, "python", StringComparison.OrdinalIgnoreCase);
     [JsonIgnore] public bool HasVariants => Variants.Count > 0;
 

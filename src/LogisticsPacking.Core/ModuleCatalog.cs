@@ -72,6 +72,8 @@ public sealed class ModuleCatalog
         if (string.IsNullOrWhiteSpace(m.Id)) return "липсва id";
         if (m.Id.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '-' or '_'))) return $"невалидно id '{m.Id}'";
         if (string.IsNullOrWhiteSpace(m.Name)) return "липсва name";
+        if (m.IsEngine)
+            return m.Entry.StartsWith('/') ? null : $"engine модулът иска entry, започващ с '/' (получено '{m.Entry}')";
         if (!m.Type.Equals("html", StringComparison.OrdinalIgnoreCase) && !m.IsPython) return $"непознат type '{m.Type}'";
         var entry = m.IsPython ? (m.Python?.Script ?? m.Entry) : m.Entry;
         if (Path.IsPathRooted(entry) || entry.Contains("..")) return $"невалиден entry '{entry}'";

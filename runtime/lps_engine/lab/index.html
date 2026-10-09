@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Лаборатория за файлове</title>
+<style>
+  :root { --ink:#26272b; --soft:#5b5c62; --brass:#b08d57; --line:#d8d3c8; --bg:#ebe8e2; --graphite:#2f3034; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif; font-size: 14px; color: var(--ink); background: var(--bg); }
+  header { position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,.95); border-bottom: 2px solid var(--brass); padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  header h1 { margin: 0; font-size: 20px; } header p { margin: 2px 0 0; color: var(--soft); font-size: 13px; }
+  header .sp { flex: 1; }
+  main { padding: 20px 24px 40px; max-width: 1500px; margin: 0 auto; }
+  .drop { display: block; border: 2px dashed #b8b2a4; border-radius: 14px; background: #f6f3ec; padding: 28px; text-align: center; cursor: pointer; }
+  .drop.over { border-color: var(--brass); background: #f3ede0; }
+  .drop strong { display: block; font-size: 16px; margin-bottom: 4px; } .drop span { color: var(--soft); }
+  button, .btn { height: 38px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--graphite); background: #fff; color: var(--graphite); font: 600 13px inherit; cursor: pointer; }
+  button.primary { background: var(--graphite); color: #fff; } button:disabled { opacity: .45; cursor: not-allowed; }
+  select, input[type=number] { height: 38px; border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; background: #fff; font: inherit; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 14px 0; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+  .tab { height: 34px; background: #fff; border-color: var(--line); color: var(--ink); } .tab.active { background: var(--graphite); color: #fff; border-color: var(--graphite); }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(31,32,35,.05); }
+  .meta { color: var(--soft); font-size: 13px; }
+  pre.layout { margin: 0; font: 12.5px/1.45 Consolas, "Cascadia Mono", monospace; white-space: pre; overflow: auto; max-height: 70vh; background: #fbfaf7; border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  table.t { border-collapse: collapse; font: 12px Consolas, monospace; } table.t td, table.t th { border: 1px solid #e2ddd2; padding: 3px 7px; white-space: nowrap; max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
+  table.t th { background: #f0ece3; position: sticky; top: 0; } table.t td.rn { background: #f0ece3; color: var(--soft); text-align: right; }
+  .scroll { overflow: auto; max-height: 70vh; border: 1px solid var(--line); border-radius: 10px; }
+  .pagewrap { position: relative; display: inline-block; border: 1px solid var(--line); background: #fff; }
+  .pagewrap img { display: block; } .box { position: absolute; border: 1px solid rgba(176,141,87,.9); background: rgba(176,141,87,.15); pointer-events: none; }
+  .hl { background: #fff1c2; } .warn { background: #fff4dc; border: 1px solid #ecd49a; padding: 8px 12px; border-radius: 10px; margin: 8px 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } @media (max-width: 1100px) { .grid2 { grid-template-columns: 1fr; } }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Лаборатория за файлове</h1><p>Пуснете PDF, Excel или CSV и вижте как се „чете“ – за настройване и подобряване на парсването.</p></div>
+  <div class="sp"></div>
+  <button id="btnCopy" class="hidden">Копирай JSON</button>
+  <button id="btnSave" class="primary hidden">Запази пакет за анализ</button>
+</header>
+<main>
+  <label class="drop" id="drop"><strong>Пуснете файл тук или кликнете за избор</strong><span>PDF (с текст или сканиран), XLSX / XLS / CSV</span>
+    <input id="file" type="file" accept=".pdf,.xlsx,.xlsm,.xls,.csv,.txt" class="hidden"></label>
+  <div id="status" class="meta" style="margin-top:10px"></div>
+  <div id="pdfUI" class="hidden">
+    <div class="bar">
+      <label>OCR:
+        <select id="ocrMode"><option value="auto">Автоматично (само ако няма текст)</option><option value="off">Изключен</option><option value="force">Принудителен (всички страници)</option></select></label>
+      <label>Език: <select id="lang"><option>eng</option><option>fra</option><option>bul</option></select></label>
+      <button id="btnReparse">Прочети наново</button>
+      <label>Страница: <select id="pageSel"></select></label>
+      <label>Допуск за ред (pt): <input id="ytol" type="number" value="3" min="0.5" max="12" step="0.5" style="width:80px"></label>
+    </div>
+    <div class="tabs" id="pdfTabs"></div>
+    <div id="pdfBody"></div>
+  </div>
+  <div id="tblUI" class="hidden">
+    <div class="tabs" id="sheetTabs"></div>
+    <div id="tblBody"></div>
+  </div>
+</main>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { file: null, name: '', kind: null, pdf: null, tbl: null, view: 'layout', page: 0, sheet: 0 };
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function status(t, warn) { $('status').innerHTML = warn ? '<div class="warn">' + esc(t) + '</div>' : esc(t); }
+
+  function api(path, body, type) {
+    return fetch(path, { method: 'POST', body: body, headers: { 'Content-Type': type || 'application/octet-stream' } })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status)); return j; }); });
+  }
+
+  // ---- избор на файл ----
+  var drop = $('drop');
+  ['dragenter', 'dragover'].forEach(function (e) { drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (e) { drop.addEventListener(e, function (ev) { ev.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (ev) { if (ev.dataTransfer.files[0]) load(ev.dataTransfer.files[0]); });
+  $('file').addEventListener('change', function (ev) { if (ev.target.files[0]) load(ev.target.files[0]); });
+
+  function load(f) {
+    state.file = f; state.name = f.name;
+    $('pdfUI').classList.add('hidden'); $('tblUI').classList.add('hidden');
+    $('btnCopy').classList.add('hidden'); $('btnSave').classList.add('hidden');
+    var n = f.name.toLowerCase();
+    if (/\.pdf$/.test(n)) { state.kind = 'pdf'; state.pdfId = null; readPdf(); }
+    else { state.kind = 'table'; readTable(); }
+  }
+
+  // ---- PDF ----
+  function readPdf() {
+    status('Чете се PDF… (при OCR може да отнеме по-дълго)');
+    state.file.arrayBuffer().then(function (buf) {
+      var q = '?ocr=' + $('ocrMode').value + '&lang=' + $('lang').value + '&dpi=300' + (state.pdfId ? '&id=' + state.pdfId : '');
+      return api('/api/lab/pdf' + q, buf, 'application/pdf');
+    }).then(function (res) {
+      state.pdf = res; state.pdfId = res.id; state.page = 0;
+      var sel = $('pageSel'); sel.innerHTML = '';
+      res.pages.forEach(function (p, i) { var o = document.createElement('option'); o.value = i; o.textContent = (i + 1) + (p.ocr ? ' (OCR)' : ''); sel.appendChild(o); });
+      var ocrPages = res.pages.filter(function (p) { return p.ocr; }).length;
+      status(state.name + ' – ' + res.pages.length + ' стр.' + (ocrPages ? ', OCR на ' + ocrPages : ', има текстов слой') + (res.ocr_available ? '' : ' (OCR не е наличен)'), res.warnings && res.warnings.length ? false : false);
+      if (res.warnings && res.warnings.length) status(res.warnings.join(' '), true);
+      $('pdfUI').classList.remove('hidden'); $('btnCopy').classList.remove('hidden'); $('btnSave').classList.remove('hidden');
+      renderPdf();
+    }).catch(function (e) { status('Грешка: ' + e.message, true); });
+  }
+  $('btnReparse').addEventListener('click', function () { if (state.kind === 'pdf') readPdf(); });
+  $('pageSel').addEventListener('change', function () { state.page = Number(this.value); renderPdf(); });
+  $('ytol').addEventListener('change', renderPdf);
+
+  function regroup(words, tol) {
+    var ws = words.slice().sort(function (a, b) { return ((a[1] + a[3]) / 2 - (b[1] + b[3]) / 2) || (a[0] - b[0]); });
+    var lines = [];
+    ws.forEach(function (w) {
+      var yc = (w[1] + w[3]) / 2, last = lines[lines.length - 1];
+      if (last && Math.abs(last.y - yc) <= tol) { last.w.push(w); last.y = (last.y * (last.w.length - 1) + yc) / last.w.length; }
+      else lines.push({ y: yc, w: [w] });
+    });
+    lines.forEach(function (l) { l.w.sort(function (a, b) { return a[0] - b[0]; }); });
+    return lines;
+  }
+  function layoutOf(lines, width) {
+    var cols = 150, sc = cols / Math.max(width, 1);
+    return lines.map(function (l) {
+      var s = '';
+      l.w.forEach(function (w) { var pos = Math.floor(w[0] * sc); if (pos > s.length) s += ' '.repeat(pos - s.length); else if (s) s += ' '; s += w[4]; });
+      return s.replace(/\s+$/, '');
+    }).join('\n');
+  }
+
+  var VIEWS = [['layout', 'Текст по колони'], ['lines', 'Редове (с позиции)'], ['words', 'Думи (таблица)'], ['page', 'Страница с рамки']];
+  function renderPdf() {
+    var p = state.pdf.pages[state.page]; var tol = Number($('ytol').value) || 3;
+    var tabs = $('pdfTabs'); tabs.innerHTML = '';
+    VIEWS.forEach(function (v) { var b = document.createElement('button'); b.className = 'tab' + (state.view === v[0] ? ' active' : ''); b.textContent = v[1]; b.onclick = function () { state.view = v[0]; renderPdf(); }; tabs.appendChild(b); });
+    var lines = regroup(p.words, tol), h = '';
+    if (state.view === 'layout') h = '<div class="card"><div class="meta">Размер ' + p.width + '×' + p.height + ' pt · ' + p.words.length + ' думи · ' + lines.length + ' реда' + (p.ocr ? ' · OCR' : '') + '</div><pre class="layout">' + esc(layoutOf(lines, p.width)) + '</pre></div>';
+    else if (state.view === 'lines') {
+      h = '<div class="card"><div class="scroll"><table class="t"><tr><th>№</th><th>y</th><th>Редът (x → дума)</th></tr>' + lines.map(function (l, i) {
+        return '<tr><td class="rn">' + (i + 1) + '</td><td>' + l.y.toFixed(1) + '</td><td>' + l.w.map(function (w) { return '<span title="x=' + w[0].toFixed(1) + '">' + esc(w[4]) + '<sub style="color:#999"> ' + Math.round(w[0]) + '</sub></span>'; }).join(' &nbsp;') + '</td></tr>';
+      }).join('') + '</table></div></div>';
+    } else if (state.view === 'words') {
+      h = '<div class="card"><div class="scroll"><table class="t"><tr><th>#</th><th>x0</th><th>y0</th><th>x1</th><th>y1</th><th>Дума</th></tr>' + p.words.map(function (w, i) {
+        return '<tr><td class="rn">' + (i + 1) + '</td><td>' + w[0].toFixed(1) + '</td><td>' + w[1].toFixed(1) + '</td><td>' + w[2].toFixed(1) + '</td><td>' + w[3].toFixed(1) + '</td><td>' + esc(w[4]) + '</td></tr>';
+      }).join('') + '</table></div></div>';
+    } else {
+      var dpi = 90, k = dpi / 72;
+      h = '<div class="card"><div class="pagewrap" id="pw"><img src="/api/lab/render?id=' + state.pdfId + '&page=' + (state.page + 1) + '&dpi=' + dpi + '" width="' + Math.round(p.width * k) + '">' +
+        p.words.map(function (w) { return '<div class="box" title="' + esc(w[4]) + '" style="left:' + (w[0] * k) + 'px;top:' + (w[1] * k) + 'px;width:' + ((w[2] - w[0]) * k) + 'px;height:' + ((w[3] - w[1]) * k) + 'px"></div>'; }).join('') + '</div></div>';
+    }
+    $('pdfBody').innerHTML = h;
+  }
+
+  // ---- Таблици ----
+  function readTable() {
+    status('Чете се файлът…');
+    state.file.arrayBuffer().then(function (buf) { return api('/api/lab/table?name=' + encodeURIComponent(state.name), buf); }).then(function (res) {
+      state.tbl = res; state.sheet = 0;
+      status(state.name + ' – ' + res.sheets.length + ' ' + (res.sheets.length === 1 ? 'лист' : 'листа'));
+      $('tblUI').classList.remove('hidden'); $('btnCopy').classList.remove('hidden'); $('btnSave').classList.remove('hidden');
+      renderTable();
+    }).catch(function (e) { status('Грешка: ' + e.message, true); });
+  }
+  function colName(i) { var s = ''; i++; while (i > 0) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+  function renderTable() {
+    var tabs = $('sheetTabs'); tabs.innerHTML = '';
+    state.tbl.sheets.forEach(function (s, i) { var b = document.createElement('button'); b.className = 'tab' + (i === state.sheet ? ' active' : ''); b.textContent = s.name + (s.state !== 'visible' ? ' (скрит)' : ''); b.onclick = function () { state.sheet = i; renderTable(); }; tabs.appendChild(b); });
+    var s = state.tbl.sheets[state.sheet]; var cols = Math.min(s.cols_total, 60);
+    var hdr = {}; (s.header_candidates || []).forEach(function (c) { hdr[c.row] = c.hits; });
+    var h = '<div class="card"><div class="meta">' + s.rows_total + ' реда × ' + s.cols_total + ' колони' + (s.rows_total > s.rows.length ? ' (показани първите ' + s.rows.length + ')' : '') + (s.merged.length ? ' · обединени клетки: ' + s.merged.length : '') +
+      (s.header_candidates && s.header_candidates.length ? ' · вероятни заглавни редове: ' + s.header_candidates.map(function (c) { return c.row; }).join(', ') : '') + '</div><div class="scroll"><table class="t"><tr><th></th>';
+    for (var c = 0; c < cols; c++) h += '<th>' + colName(c) + '</th>';
+    h += '</tr>';
+    s.rows.forEach(function (r, i) { h += '<tr' + (hdr[i + 1] ? ' class="hl"' : '') + '><td class="rn">' + (i + 1) + '</td>'; for (var c = 0; c < cols; c++) h += '<td title="' + esc(r[c]) + '">' + esc(r[c]) + '</td>'; h += '</tr>'; });
+    $('tblBody').innerHTML = h + '</table></div></div>';
+  }
+
+  // ---- Пакет ----
+  function report() {
+    var r = { file: state.name, kind: state.kind, created: new Date().toISOString() };
+    if (state.kind === 'pdf') r.pdf = state.pdf; else r.table = state.tbl;
+    return r;
+  }
+  $('btnCopy').addEventListener('click', function () {
+    var t = JSON.stringify(report(), null, 1);
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { status('JSON е копиран в клипборда.'); }, function () { status('Копирането не успя – ползвайте „Запази пакет“.', true); });
+  });
+  $('btnSave').addEventListener('click', function () {
+    status('Записва се пакетът…');
+    state.file.arrayBuffer().then(function (buf) {
+      var b = ''; var u = new Uint8Array(buf); for (var i = 0; i < u.length; i += 32768) b += String.fromCharCode.apply(null, u.subarray(i, i + 32768));
+      return api('/api/lab/save', JSON.stringify({ name: state.name, report: report(), file_b64: btoa(b), file_name: state.name }), 'application/json');
+    }).then(function (r) { status('Пакетът е записан: ' + r.path); }).catch(function (e) { status('Грешка: ' + e.message, true); });
+  });
+})();
+</script>
+</body>
+</html>

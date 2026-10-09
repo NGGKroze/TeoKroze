@@ -22,7 +22,11 @@ internal static class AppServices
         Catalog = ModuleCatalog.Load(Paths);
         Sidecars = new SidecarManager(Paths);
         Engine = new EngineService(Paths, Sidecars);
+        ApplySettings();
     }
+
+    /// <summary>Настройките, които Python процесите четат при стартиране (папка за резултати).</summary>
+    public static void ApplySettings() => Sidecars.ExtraEnvironment["TEOKROZE_OUTPUT_DIR"] = Settings.ResolveOutputDirectory();
 
     public static void ReloadCatalog() => Catalog = ModuleCatalog.Load(Paths);
 

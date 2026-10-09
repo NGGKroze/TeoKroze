@@ -37,14 +37,19 @@ public sealed partial class ModuleView : UserControl, IDisposable
     public async Task LoadAsync()
     {
         if (_disposed) return;
-        ShowLoading(_module.Manifest.IsPython ? "Стартира се модулът…" : "Зарежда се…");
+        ShowLoading(_module.Manifest.IsPython || _module.Manifest.IsEngine ? "Стартира се модулът…" : "Зарежда се…");
         try
         {
             await Web.EnsureCoreWebView2Async();
             if (!_coreReady) SetupCore();
 
             Uri target;
-            if (_module.Manifest.IsPython)
+            if (_module.Manifest.IsEngine)
+            {
+                var engineBase = await AppServices.Engine.EnsureStartedAsync();
+                target = new Uri(engineBase, _module.Manifest.Entry.TrimStart('/'));
+            }
+            else if (_module.Manifest.IsPython)
             {
                 _sidecar = await AppServices.Sidecars.StartAsync(_module);
                 _logPath = _sidecar.LogPath;

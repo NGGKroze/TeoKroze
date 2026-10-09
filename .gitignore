@@ -12,3 +12,4 @@ installer/redist/
 modules/**/_data/
 modules/**/__pycache__/
 __pycache__/
+tests/corpus/

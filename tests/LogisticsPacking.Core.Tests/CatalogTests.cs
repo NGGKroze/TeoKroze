@@ -213,7 +213,7 @@ public class I18nTests
         while (dir != null && !Directory.Exists(Path.Combine(dir, "modules"))) dir = Path.GetDirectoryName(dir);
         var paths = new AppPaths(dir!, Path.Combine(Path.GetTempPath(), "lps-x"));
         var catalog = ModuleCatalog.Load(paths);
-        foreach (var m in catalog.Modules)
+        foreach (var m in catalog.Modules.Where(m => m.Manifest.Translate && !m.Manifest.IsEngine))
         {
             var d = new I18nDictionary();
             d.Merge(Path.Combine(m.Directory, "bg.json"));
@@ -260,11 +260,37 @@ public class LayoutTests
         var dir = AppContext.BaseDirectory;
         while (dir != null && !Directory.Exists(Path.Combine(dir, "modules"))) dir = Path.GetDirectoryName(dir);
         var paths = new AppPaths(dir!, Path.Combine(Path.GetTempPath(), "lps-y"));
-        foreach (var m in ModuleCatalog.Load(paths).Modules)
+        foreach (var m in ModuleCatalog.Load(paths).Modules.Where(m => m.Manifest.Layout && !m.Manifest.IsEngine))
         {
             var js = ThemeInjector.BuildLayoutScript(paths, m);
             Assert.NotNull(js);
             Assert.DoesNotContain("{{LAYOUT}}", js);
         }
+    }
+}
+
+public class EngineModuleTests
+{
+    [Fact]
+    public void EngineModuleNeedsSlashEntryAndNoFile()
+    {
+        using var t = new TempDir();
+        t.Module("modules", "lab", """{"id":"lab","name":"Lab","type":"engine","entry":"/lab"}""", entry: "");
+        t.Module("modules", "bad", """{"id":"bad","name":"Bad","type":"engine","entry":"lab"}""", entry: "");
+        var c = ModuleCatalog.Load(Path.Combine(t.Path, "modules"), null);
+        Assert.True(c.Find("lab")!.Manifest.IsEngine);
+        Assert.Null(c.Find("bad"));
+        Assert.Single(c.Problems);
+    }
+
+    [Fact]
+    public void RealLabModuleExists()
+    {
+        var dir = AppContext.BaseDirectory;
+        while (dir != null && !Directory.Exists(Path.Combine(dir, "modules"))) dir = Path.GetDirectoryName(dir);
+        var c = ModuleCatalog.Load(Path.Combine(dir!, "modules"), null);
+        Assert.NotNull(c.Find("lab"));
+        Assert.True(c.Modules.Count >= 20);
+        Assert.True(File.Exists(Path.Combine(dir!, "runtime", "lps_engine", "lab", "index.html")));
     }
 }

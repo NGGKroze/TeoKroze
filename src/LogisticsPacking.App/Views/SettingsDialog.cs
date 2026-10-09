@@ -94,6 +94,7 @@ internal static class SettingsDialog
             settings.UnifiedLayout = layout.IsOn;
             try { settings.Save(AppServices.Paths); }
             catch (Exception ex) { AppServices.Log("Запис на настройки: " + ex.Message); }
+            AppServices.ApplySettings();
             onSaved();
         }
     }

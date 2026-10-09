@@ -30,6 +30,9 @@ public sealed class SidecarManager : IDisposable
 
     public SidecarManager(AppPaths paths) => _paths = paths;
 
+    /// <summary>Допълнителни променливи на средата за всички Python процеси (напр. TEOKROZE_OUTPUT_DIR).</summary>
+    public Dictionary<string, string> ExtraEnvironment { get; } = new();
+
     public async Task<SidecarHandle> StartAsync(ModuleInfo module, CancellationToken ct = default)
     {
         if (!module.Manifest.IsPython) throw new ArgumentException("Модулът не е Python.", nameof(module));
@@ -69,6 +72,7 @@ public sealed class SidecarManager : IDisposable
             psi.ArgumentList.Add(script);
             psi.Environment["TEOKROZE_PORT"] = port.ToString();
             psi.Environment["TEOKROZE_DATA_DIR"] = dataDir;
+            foreach (var kv in ExtraEnvironment) psi.Environment[kv.Key] = kv.Value;
             psi.Environment["PYTHONUTF8"] = "1";
             psi.Environment["PYTHONDONTWRITEBYTECODE"] = "1";
             psi.Environment["TEOKROZE_RUNTIME"] = _paths.RuntimeDir;

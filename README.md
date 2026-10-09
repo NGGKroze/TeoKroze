@@ -84,6 +84,11 @@ tests/                      xUnit тестове на ядрото
 Python модулите (ACNE, ASPHALTE, COURREGES) ползват същия Tesseract (път през `TESSERACT_CMD`) и могат да `import lps_engine`.
 Тестове: `python -m unittest discover -s tests/engine`, `node tools/test_engine_bridge.mjs`.
 
+### Лаборатория и корпус за подобряване на парсването
+Плочката **Лаборатория** (страница на engine-а) показва как се чете всеки PDF/Excel (координати, OCR, заглавни редове) и
+пакетира файла + анализа за разработка. `tools/corpus.mjs` държи реални файлове като регресионен корпус (златни снимки).
+Виж `docs/PARSING.md`.
+
 ### Поправка на един клиент без нов инсталатор
 Сложете обновената папка на модула в `%LOCALAPPDATA%\LogisticsPacking\modules\<id>\` (бутон в Настройки).
 Тя има предимство пред вградената със същото `id`. Изтриете ли я - връща се вграденият.

@@ -10,9 +10,17 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import __version__, ocr, pdf
+import os
+import uuid
+from collections import OrderedDict
+from pathlib import Path
 
-MAX_BODY = 200 * 1024 * 1024
+from . import __version__, lab, ocr, pdf
+
+MAX_BODY = 300 * 1024 * 1024
+LAB_DIR = Path(__file__).resolve().parent / "lab"
+DOCS = OrderedDict()   # кеш на отворените в лабораторията PDF-и (за рендиране на страници)
+MIME = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8"}
 # Разрешени са само страниците на програмата (https://<модул>.lps.local) и локалният сървис.
 ORIGIN_OK = re.compile(r"^(https://[a-z0-9_-]+\.lps\.local|http://127\.0\.0\.1(:\d+)?|http://localhost(:\d+)?)$")
 
@@ -66,9 +74,32 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self._forbidden():
             return self._json({"error": "origin"}, 403)
-        if urlparse(self.path).path == "/health":
+        path = urlparse(self.path).path
+        if path == "/lab" or path.startswith("/lab/"):
+            return self._lab_static(path)
+        if path == "/api/lab/render":
+            q = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
+            data = DOCS.get(q.get("id", ""))
+            if data is None:
+                return self._json({"error": "документът не е в кеша - качете го наново"}, 404)
+            try:
+                png = lab.render_page(data, int(q.get("page", 1)), int(q.get("dpi", 80)))
+            except Exception as exc:
+                return self._json({"error": str(exc)}, 500)
+            self._headers(200, "image/png", len(png))
+            return self.wfile.write(png)
+        if path == "/health":
             return self._json({"ok": True, "app": "lps-engine", "version": __version__, "tesseract": ocr.tesseract_info()})
         self._json({"error": "not found"}, 404)
+
+    def _lab_static(self, path):
+        name = "index.html" if path in ("/lab", "/lab/") else path[len("/lab/"):]
+        f = (LAB_DIR / name).resolve()
+        if LAB_DIR.resolve() not in f.parents or not f.is_file():
+            return self._json({"error": "not found"}, 404)
+        body = f.read_bytes()
+        self._headers(200, MIME.get(f.suffix, "application/octet-stream"), len(body))
+        self.wfile.write(body)
 
     def do_POST(self):
         if self._forbidden():
@@ -82,6 +113,20 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if u.path == "/api/pdf/text":
                 return self._json(pdf.extract_pdf(data, q.get("ocr", "auto"), q.get("lang", "eng"), int(q.get("dpi", 300))))
+            if u.path == "/api/lab/pdf":
+                res = lab.analyze_pdf(data, q.get("ocr", "auto"), q.get("lang", "eng"), int(q.get("dpi", 300)))
+                doc_id = q.get("id") or uuid.uuid4().hex[:12]
+                DOCS[doc_id] = data
+                while len(DOCS) > 6:
+                    DOCS.popitem(last=False)
+                res["id"] = doc_id
+                return self._json(res)
+            if u.path == "/api/lab/table":
+                return self._json(lab.analyze_table(data, q.get("name", "file.xlsx")))
+            if u.path == "/api/lab/save":
+                p = json.loads(data.decode("utf-8"))
+                out = os.environ.get("TEOKROZE_OUTPUT_DIR") or str(Path.home() / "Documents" / "Logistics Packing")
+                return self._json({"path": lab.save_package(out, p.get("name", "file"), p.get("report", {}), p.get("file_b64", ""), p.get("file_name", ""))})
             if u.path == "/api/ocr/image":
                 return self._json(ocr.ocr_image_bytes(data, q.get("lang", "eng"), int(q.get("psm", 6))))
         except Exception as exc:  # връщаме разбираема грешка на страницата
