@@ -49,16 +49,22 @@ try {
     $msbuild = Find-MSBuild
     Write-Host "MSBuild: $msbuild"
     $msbLog = Join-Path $PSScriptRoot 'dist\msbuild.log'
-    $msbErr = Join-Path $PSScriptRoot 'dist\msbuild-errors.log'
-    & $msbuild src\LogisticsPacking.App\LogisticsPacking.App.csproj /restore /t:Publish `
-        /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64 /p:SelfContained=true `
-        /p:Version=$Version /p:PublishDir="$out\" /v:minimal `
-        "/flp1:logfile=$msbLog;verbosity=detailed" "/flp2:logfile=$msbErr;errorsonly"
-    if ($LASTEXITCODE -ne 0) {
+    # ВАЖНО: PublishDir без краен "\" - иначе \" се чете като екранирана кавичка и счупва командата.
+    $msbArgs = @(
+        'src\LogisticsPacking.App\LogisticsPacking.App.csproj', '/restore', '/t:Publish', '/nologo',
+        '/p:Configuration=Release', '/p:Platform=x64', '/p:RuntimeIdentifier=win-x64', '/p:SelfContained=true',
+        "/p:Version=$Version", "/p:PublishDir=$out", '/v:minimal'
+    )
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    & $msbuild @msbArgs 2>&1 | Tee-Object -FilePath $msbLog | ForEach-Object { Write-Host $_ }
+    $msbCode = $LASTEXITCODE
+    $ErrorActionPreference = $prevEap
+    if ($msbCode -ne 0) {
         Write-Host ''
         Write-Host '--- Грешки от MSBuild ---' -ForegroundColor Red
-        if (Test-Path $msbErr) { Get-Content $msbErr | Select-Object -Unique | ForEach-Object { Write-Host $_ } }
-        Write-Host "Подробен лог: $msbLog" -ForegroundColor Yellow
+        Get-Content $msbLog | Where-Object { $_ -match 'error|MSB\d+' } | Select-Object -Unique | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+        Write-Host "Целият изход на MSBuild: $msbLog" -ForegroundColor Yellow
         throw 'Билдът на приложението се провали.'
     }
 
