@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+<html lang="bg" xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sezane Калкулатор Тегло</title>
+  <style>
+    body { position: relative; font-family: Tahoma, Verdana, sans-serif; margin: 0; padding: 0; background: url('painting.jpg') center/cover no-repeat; }
+    body::before { content: 'Sezane'; position: absolute; top: 20%; left: 50%; transform: translate(-50%, -20%); font-size: 8rem; color: rgba(255,255,255,0.2); z-index: 0; }
+    .container { display: flex; background: rgba(255,255,255,0.85); border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 85%; max-width: 900px; margin: 1.5rem auto; z-index: 1; }
+    .panel { flex: 1; padding: 1.5rem; box-sizing: border-box; }
+    .panel:not(:last-child) { border-right: 1px solid #ccc; }
+    .brand { font-size: 2.2rem; color: #d14d72; text-align: center; margin-bottom: 1rem; }
+    label { display: block; margin: 0.5rem 0; color: #333; }
+    input { width: 100%; padding: 0.5rem; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    .result { margin-top: 1rem; padding: 0.75rem; background: #fff; border-left: 4px solid #d14d72; border-radius: 4px; font-family: monospace; color: #222; white-space: pre-line; font-size: 0.95rem; }
+    .highlight-red { color: #e74c3c; }
+    .highlight-green { color: #27ae60; font-weight: bold; }
+    .influence-yes { color: #e74c3c; font-weight: bold; }
+    .influence-no { color: #27ae60; font-weight: bold; }
+    .note { margin-top: 0.5rem; font-size: 0.85rem; color: #333; text-align: center; }
+    .steps { margin-top: 1rem; background: #f5f5f5; padding: 0.75rem; border-radius: 4px; font-family: monospace; color: #333; font-size: 0.9rem; }
+    .steps li { margin-bottom: 0.4rem; }
+    .sub-steps { margin-left: 1rem; list-style-type: lower-alpha; }
+  </style>
+
+<!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_dlc_DocId msdt:dt="string">K4YRX6A22AWW-817610420-1103453</mso:_dlc_DocId>
+<mso:_dlc_DocIdItemGuid msdt:dt="string">15d261f8-3f13-435b-8366-06a31e96300f</mso:_dlc_DocIdItemGuid>
+<mso:_dlc_DocIdUrl msdt:dt="string">https://pelintex.sharepoint.com/sites/Bulgaria/_layouts/15/DocIdRedir.aspx?ID=K4YRX6A22AWW-817610420-1103453, K4YRX6A22AWW-817610420-1103453</mso:_dlc_DocIdUrl>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+<body>
+  <!-- Weight Calculator -->
+  <div class="container">
+    <div class="panel">
+      <div class="brand">Sezane</div>
+      <label>Обща тежест (кг)
+        <input type="number" id="total-weight" placeholder="напр. 12.345" step="any" min="0" />
+      </label>
+      <label>Бройки
+        <input type="number" id="pieces" placeholder="напр. 50" step="1" min="1" />
+      </label>
+      <div id="result" class="result"></div>
+      <div class="note">Копирай двете клетки от Excel (тежест, бройки) и натисни Ctrl+V тук</div>
+      <div class="note">(Сезан платформата отчита само до вторият десетичен знак)</div>
+    </div>
+    <div class="panel">
+      <div class="brand">Стъпки на изчислението</div>
+      <ul class="steps" id="steps-list"></ul>
+    </div>
+  </div>
+
+  <script>
+    const totalInput = document.getElementById('total-weight');
+    const piecesInput = document.getElementById('pieces');
+    const resultDiv = document.getElementById('result');
+    const stepsList = document.getElementById('steps-list');
+
+    function calculate() {
+      const totalKg = parseFloat(totalInput.value);
+      const pieces = parseInt(piecesInput.value, 10);
+      if (isNaN(totalKg) || totalKg <= 0 || isNaN(pieces) || pieces < 1) {
+        resultDiv.textContent = '';
+        stepsList.innerHTML = '';
+        return;
+      }
+
+      const rawG = (totalKg * 1000) / pieces;
+      const fixed5 = rawG.toFixed(5);
+      const [intPart, decPart] = fixed5.split('.');
+
+      // Decorated: first 2 decimals black, last 3 red
+      const decorated = `${intPart}.${decPart.slice(0,2)}<span class="highlight-red">${decPart.slice(2,5)}</span>`;
+      
+      // Rounded 2dp for steps 4-5
+      const rounded2 = Math.round(rawG * 100) / 100;
+      
+      // Step 6: use unrounded rawG truncated to 2dp
+      const unrounded2 = Math.trunc(rawG * 100) / 100;
+      const totalCalc2 = ((unrounded2 * pieces) / 1000).toFixed(2);
+      
+      resultDiv.innerHTML =
+        `Тегло на бройка (5дп): ${decorated} g\n` +
+        `Необходимо тегло (2дп): <span class="highlight-green">${rounded2.toFixed(2)}</span> g\n` +
+        `<span class="note">въведи в платформата</span>`;
+      
+      // Influence: 5→4, 4→3, 3→2
+      const d5 = parseInt(decPart.charAt(4),10);
+      const d4 = parseInt(decPart.charAt(3),10);
+      const d3 = parseInt(decPart.charAt(2),10);
+      const d2 = parseInt(decPart.charAt(1),10);
+
+      const inf5 = d5 >= 5;
+      const new4 = inf5 ? d4 + 1 : d4;
+      const inf4 = new4 >= 5;
+      const new3 = inf4 ? d3 + 1 : d3;
+      const inf3 = new3 >= 5;
+      const new2 = inf3 ? d2 + 1 : d2;
+
+      stepsList.innerHTML =
+        `<li>1. Конвертиране: ${totalKg} кг × 1000 = ${totalKg * 1000} г</li>` +
+        `<li>2. Деление: ${totalKg * 1000} г ÷ ${pieces} = ${decorated} г (5дп)</li>` +
+        `<li>3. Влияние на закръглянето:</li>` +
+        `<ul class="sub-steps">` +
+        `<li>5-ти (${d5}) → 4-ти: <span class="${inf5?'influence-yes':'influence-no'}">${inf5?'Добавя +1 към 4-ти, дава '+new4:`Няма промяна (4-ти остава ${d4})`}</span></li>` +
+        `<li>4-ти (${d4}) → 3-ти: <span class="${inf4?'influence-yes':'influence-no'}">${inf4?'Добавя +1 към 3-ти, дава '+new3:`Няма промяна (3-ти остава ${d3})`}</span></li>` +
+        `<li>3-ти (${d3}) → 2-ри: <span class="${inf3?'influence-yes':'influence-no'}">${inf3?'Добавя +1 към 2-ри, дава '+new2:`Няма промяна (2-ри остава ${d2})`}</span></li>` +
+        `</ul>` +
+        `<li>4. Резултат (rounded 2дп): ${rounded2.toFixed(2)} г</li>` +
+        `<li>5. Проверка: (${rounded2.toFixed(2)} г × ${pieces}) ÷ 1000 = ${(rounded2 * pieces / 1000).toFixed(3)} кг</li>` +
+        `<li>6. Изчисление до 2дп: (${unrounded2.toFixed(2)} г × ${pieces}) ÷ 1000 = <span class="highlight-red">${totalCalc2} кг</span></li>`;
+    }
+    // Paste from Excel: two cells (weight, pieces) fill both fields at once
+    function parseNum(t) {
+      t = t.replace(/[\s\u00a0]/g, '');
+      const c = t.lastIndexOf(','), d = t.lastIndexOf('.');
+      if (c > -1 && d > -1) {
+        // last separator is the decimal one, the other is thousands
+        t = c > d ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+      } else {
+        t = t.replace(',', '.');
+      }
+      return t;
+    }
+    document.addEventListener('paste', e => {
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      const parts = text.split(/[\t\r\n;]+/).map(x => x.trim()).filter(Boolean);
+      if (!parts.length) return;
+      e.preventDefault();
+      if (parts.length >= 2) {
+        totalInput.value = parseNum(parts[0]);
+        piecesInput.value = parseNum(parts[1]);
+      } else {
+        const target = document.activeElement === piecesInput ? piecesInput : totalInput;
+        target.value = parseNum(parts[0]);
+      }
+      calculate();
+    });
+    totalInput.addEventListener('input', calculate);
+    piecesInput.addEventListener('input', calculate);
+  </script>
+</body>
+</html>
