@@ -48,6 +48,24 @@ try {
     if (Test-Path $out) { Remove-Item -Recurse -Force $out }
     $msbuild = Find-MSBuild
     Write-Host "MSBuild: $msbuild"
+
+    # Проверка на нужните компоненти на Visual Studio (по-ясно от грешките на MSBuild)
+    $msbRoot = Split-Path (Split-Path (Split-Path $msbuild))          # ...\MSBuild
+    $missing = @()
+    if (-not (Test-Path (Join-Path $msbRoot 'Sdks\Microsoft.NET.Sdk\Sdk'))) { $missing += '.NET desktop build tools (Microsoft.VisualStudio.Workload.ManagedDesktopBuildTools)' }
+    if (-not (Get-ChildItem (Join-Path $msbRoot 'Microsoft\VisualStudio') -Recurse -Filter 'Microsoft.Build.Packaging.Pri.Tasks.dll' -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+        $missing += 'Universal Windows Platform build tools (Microsoft.VisualStudio.Workload.UniversalBuildTools)'
+    }
+    if ($missing.Count -gt 0) {
+        $vsPath = Split-Path $msbRoot
+        $setup = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\setup.exe'
+        Write-Host ''
+        Write-Host 'Във Visual Studio липсват нужните компоненти:' -ForegroundColor Yellow
+        $missing | ForEach-Object { Write-Host "  - $_" -ForegroundColor Yellow }
+        Write-Host 'Visual Studio Installer -> Modify -> отметнете горните workloads -> Modify. Или от команден ред (като администратор):' -ForegroundColor Yellow
+        Write-Host "  `"$setup`" modify --installPath `"$vsPath`" --add Microsoft.VisualStudio.Workload.ManagedDesktopBuildTools --add Microsoft.VisualStudio.Workload.UniversalBuildTools --includeRecommended --passive --norestart" -ForegroundColor Cyan
+        throw 'Липсват компоненти на Visual Studio.'
+    }
     $msbLog = Join-Path $PSScriptRoot 'dist\msbuild.log'
     # ВАЖНО: PublishDir без краен "\" - иначе \" се чете като екранирана кавичка и счупва командата.
     $msbArgs = @(
@@ -57,7 +75,7 @@ try {
     )
     $prevEap = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
-    & $msbuild @msbArgs 2>&1 | Tee-Object -FilePath $msbLog | ForEach-Object { Write-Host $_ }
+    & $msbuild @msbArgs 2>&1 | ForEach-Object { Write-Host $_; $_ } | Out-File -FilePath $msbLog -Encoding utf8
     $msbCode = $LASTEXITCODE
     $ErrorActionPreference = $prevEap
     if ($msbCode -ne 0) {
