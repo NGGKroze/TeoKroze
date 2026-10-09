@@ -29,7 +29,7 @@ public sealed partial class MainWindow : Window
         var icon = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
         if (File.Exists(icon)) AppWindow.SetIcon(icon);
 
-        ((FrameworkElement)Content).Loaded += (_, _) => Motion.PressAll((DependencyObject)Content);
+        ((FrameworkElement)Content).Loaded += (_, _) => CrashLog.Safe("бутони (прозорец)", () => Motion.PressAll((DependencyObject)Content));
         Home.OpenRequested += (module, variant) => OpenModule(module, variant);
         Home.SetHandle(WinRT.Interop.WindowNative.GetWindowHandle(this));
         Closed += (_, _) =>

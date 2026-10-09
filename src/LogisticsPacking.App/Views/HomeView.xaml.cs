@@ -24,7 +24,7 @@ public sealed partial class HomeView : UserControl
     {
         InitializeComponent();
         Render(animate: true);
-        Loaded += (_, _) => Motion.PressAll(this);
+        Loaded += (_, _) => CrashLog.Safe("бутони (начален екран)", () => Motion.PressAll(this));
     }
 
     public void SetHandle(IntPtr hwnd) => _hwnd = hwnd;
@@ -64,8 +64,8 @@ public sealed partial class HomeView : UserControl
         {
             var tile = (FrameworkElement)MakeTile(t);
             TileGrid.Children.Add(tile);
-            Motion.Press(tile, pressed: 0.955f, hover: 1.015f);
-            if (animate) Motion.Reveal(tile, i++);
+            CrashLog.Safe("анимация на плочка", () => { Motion.Press(tile, pressed: 0.955f, hover: 1.015f); if (animate) Motion.Reveal(tile, i); });
+            i++;
         }
         EmptyText.Visibility = tiles.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }

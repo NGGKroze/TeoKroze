@@ -30,7 +30,7 @@ public sealed partial class ModuleView : UserControl, IDisposable
         NameText.Text = variant == null ? module.Manifest.Name : $"{module.Manifest.Name} – {variant.Name}";
         SummaryText.Text = variant?.Summary ?? module.Manifest.Summary;
         BuildInfoFlyout();
-        Loaded += (_, _) => Motion.PressAll(this);
+        Loaded += (_, _) => CrashLog.Safe("бутони (клиент)", () => Motion.PressAll(this));
     }
 
     private string HostName => _module.Id + ".lps.local";
