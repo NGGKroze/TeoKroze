@@ -7,6 +7,7 @@
   var pats = (DICT.patterns || []).map(function (p) { return [new RegExp(p[0], p[2] || ''), p[1]]; });
   var SKIP = (DICT.skip || []).join(',');
   var ATTRS = ['placeholder', 'title', 'aria-label', 'alt', 'data-tip', 'data-tooltip'];
+  var missing = new Set();
   var NOT = /^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA|PRE)$/;
 
   function tr(s) {
@@ -20,7 +21,12 @@
         if (pats[i][0].test(key)) { to = key.replace(pats[i][0], pats[i][1]); break; }
       }
     }
-    return to === undefined ? s : m[1] + to + m[3];
+    if (to === undefined) {
+      // за допълване на речника: непреведените английски низове (виж README: __lpsMissing())
+      if (!/[\u0400-\u04FF]/.test(key) && /[A-Za-z]{3,}/.test(key) && missing.size < 800) missing.add(key);
+      return s;
+    }
+    return m[1] + to + m[3];
   }
 
   function skipped(el) { return SKIP && el && el.closest && el.closest(SKIP); }
@@ -75,4 +81,5 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
   window.__lpsTr = tr;
+  window.__lpsMissing = function () { return Array.from(missing); };
 })();

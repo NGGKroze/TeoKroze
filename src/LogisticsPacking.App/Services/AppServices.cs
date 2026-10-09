@@ -8,6 +8,7 @@ internal static class AppServices
     public static AppPaths Paths { get; private set; } = null!;
     public static ModuleCatalog Catalog { get; private set; } = null!;
     public static SidecarManager Sidecars { get; private set; } = null!;
+    public static EngineService Engine { get; private set; } = null!;
     public static AppSettings Settings { get; set; } = new();
 
     public static void Init()
@@ -20,6 +21,7 @@ internal static class AppServices
         Settings = AppSettings.Load(Paths);
         Catalog = ModuleCatalog.Load(Paths);
         Sidecars = new SidecarManager(Paths);
+        Engine = new EngineService(Paths, Sidecars);
     }
 
     public static void ReloadCatalog() => Catalog = ModuleCatalog.Load(Paths);

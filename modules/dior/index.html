@@ -506,6 +506,11 @@
         const lines = groupTextItemsIntoLines(content.items || []);
         fullText += lines.join('\n') + '\n';
       }
+      // TEOKROZE: сканиран PDF без текстов слой -> общият OCR engine (само ако pdf.js не е намерил текст)
+      if (fullText.replace(/\s/g, '').length < 30 && window.LPS && LPS.engine && LPS.engine.available()) {
+        const r = await LPS.engine.pdfText(file, { ocr: 'force' });
+        fullText = r.pages.map(p => p.text).join('\n');
+      }
       return normalizeText(fullText);
     }
 

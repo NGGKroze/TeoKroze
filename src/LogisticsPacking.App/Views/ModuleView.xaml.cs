@@ -124,7 +124,34 @@ public sealed partial class ModuleView : UserControl, IDisposable
             var i18nScript = ThemeInjector.BuildI18nScript(AppServices.Paths, _module);
             if (i18nScript != null) _ = core.AddScriptToExecuteOnDocumentCreatedAsync(i18nScript);
         }
+        // Общ engine (OCR/PDF): страницата го иска през LPS.engine, обвивката го стартира и връща адреса.
+        var engineScript = ThemeInjector.BuildEngineScript(AppServices.Paths);
+        if (engineScript != null)
+        {
+            _ = core.AddScriptToExecuteOnDocumentCreatedAsync(engineScript);
+            core.WebMessageReceived += OnWebMessage;
+        }
         _coreReady = true;
+    }
+
+    private async void OnWebMessage(CoreWebView2 sender, CoreWebView2WebMessageReceivedEventArgs e)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(e.WebMessageAsJson);
+            if (!doc.RootElement.TryGetProperty("cmd", out var cmd) || cmd.GetString() != "engine.start") return;
+            try
+            {
+                var uri = await AppServices.Engine.EnsureStartedAsync();
+                sender.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(new { cmd = "engine.ready", url = uri.GetLeftPart(UriPartial.Authority) }));
+            }
+            catch (Exception ex)
+            {
+                AppServices.Log("Engine: " + ex.Message);
+                sender.PostWebMessageAsJson(System.Text.Json.JsonSerializer.Serialize(new { cmd = "engine.error", message = ex.Message }));
+            }
+        }
+        catch (Exception ex) { AppServices.Log("WebMessage: " + ex.Message); }
     }
 
     private void OnDownloadStarting(CoreWebView2 sender, CoreWebView2DownloadStartingEventArgs e)

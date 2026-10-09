@@ -28,6 +28,13 @@ public static class ThemeInjector
             .Replace("{{CSS}}", JsonSerializer.Serialize(css));
     }
 
+    /// <summary>Помощникът LPS.engine (runtime\lps-engine.js) - достъп до общия OCR/PDF engine от страниците.</summary>
+    public static string? BuildEngineScript(AppPaths paths)
+    {
+        var p = Path.Combine(paths.RuntimeDir, "lps-engine.js");
+        return File.Exists(p) ? File.ReadAllText(p) : null;
+    }
+
     /// <summary>Скрипт за превода на български (runtime\lps-i18n.js + общия и модулния речник). null = изключен или няма речник.</summary>
     public static string? BuildI18nScript(AppPaths paths, ModuleInfo module)
     {

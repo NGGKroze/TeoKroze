@@ -34,8 +34,9 @@ def setup(run_py: str) -> dict:
     # Никакви собствени прозорци/табове - показва се във вградения браузър на обвивката.
     webbrowser.open = webbrowser.open_new = webbrowser.open_new_tab = lambda *a, **k: False
 
-    sys.path.insert(0, str(backend))
-    os.chdir(backend)
+    if backend.exists():
+        sys.path.insert(0, str(backend))
+        os.chdir(backend)
     if os.environ.get("TEOKROZE_WATCH_STDIN", "1") == "1":
         threading.Thread(target=_watch_parent, daemon=True).start()
     return {"port": port, "data": data, "backend": backend}

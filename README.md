@@ -53,6 +53,20 @@ tests/                      xUnit тестове на ядрото
 `modules/<id>/lps.css` (селектор `html[data-lps="<id>"] …`). Темата се изключва глобално в Настройки или за един
 модул с `"theme": false` в `module.json`. Преглед: `node tools/theme_shots.mjs <папка>` + `python tools/contact_sheet.py`.
 
+### Български интерфейс
+`runtime/lps-i18n.js` превежда видимия текст (и подсказките, placeholder-ите, диалозите) по речник: общ
+`runtime/i18n/common.bg.json` + `modules/<id>/bg.json` (точни фрази + регулярни шаблони за динамични съобщения).
+Етикетите, печатът и данните НЕ се превеждат (`skip` селектори). Липсва превод? В страницата (F12 -> Console):
+`__lpsMissing()` връща непреведените английски низове; или `node tools/i18n_report.mjs <id>`.
+Изключва се в Настройки или с `"translate": false` в `module.json`.
+
+### Общ engine (OCR / PDF)
+`runtime/lps_engine/` е единен слой за PDF текст с координати (PyMuPDF) и OCR (Tesseract). Работи като един общ процес
+(`runtime/engine`, стартира се при първа нужда), а HTML модулите го ползват през `LPS.engine.pdfText(file)` /
+`LPS.engine.ocrImage(file)` (виж `runtime/lps-engine.js`). Пример: Dior пада на OCR, ако PDF-ът е сканиран.
+Python модулите (ACNE, ASPHALTE, COURREGES) ползват същия Tesseract (път през `TESSERACT_CMD`) и могат да `import lps_engine`.
+Тестове: `python -m unittest discover -s tests/engine`, `node tools/test_engine_bridge.mjs`.
+
 ### Поправка на един клиент без нов инсталатор
 Сложете обновената папка на модула в `%LOCALAPPDATA%\LogisticsPacking\modules\<id>\` (бутон в Настройки).
 Тя има предимство пред вградената със същото `id`. Изтриете ли я - връща се вграденият.
