@@ -1,0 +1,539 @@
+[
+  {
+    "id": "ember_imp",
+    "name": "Ember Imp",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "emberclaw",
+    "attribute": "flame",
+    "race": "beast",
+    "level": 1,
+    "atk": 500,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "If this card is discarded: Special Summon it.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "discarded",
+        "ops": [
+          {
+            "op": "special_summon",
+            "target": "self",
+            "from": "graveyard"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Tiny fire-lit imp juggling sparks, mischievous grin, cave background",
+    "status": "draft",
+    "def": 300
+  },
+  {
+    "id": "emberclaw_whelp",
+    "name": "Emberclaw Whelp",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "emberclaw",
+    "attribute": "flame",
+    "race": "beast",
+    "level": 2,
+    "atk": 600,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "If you control no units, you can Special Summon this card from your hand. Once per turn.",
+    "effects": [
+      {
+        "timing": "summon_rule",
+        "condition": "controller_has_no_units",
+        "from": "hand",
+        "limit": {
+          "scope": "card_name",
+          "per": "turn",
+          "count": 1
+        }
+      }
+    ],
+    "art_brief": "Fox-sized fire cub with ember-tipped claws, leaping from ash",
+    "status": "draft",
+    "def": 400
+  },
+  {
+    "id": "emberclaw_scout",
+    "name": "Emberclaw Scout",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "emberclaw",
+    "attribute": "flame",
+    "race": "beast",
+    "level": 3,
+    "atk": 1200,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "When Normal Summoned: add 1 Emberclaw Tactic or Snare from your deck to your hand. Once per turn.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "normal_summoned",
+        "limit": {
+          "scope": "card_name",
+          "per": "turn",
+          "count": 1
+        },
+        "ops": [
+          {
+            "op": "search",
+            "from": "deck",
+            "to": "hand",
+            "filter": {
+              "archetype": "emberclaw",
+              "type": [
+                "tactic",
+                "snare"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Lean wildcat scout on a ridge, scanning a burning plain",
+    "status": "draft",
+    "def": 800
+  },
+  {
+    "id": "cindertail_fox",
+    "name": "Cindertail Fox",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "emberclaw",
+    "attribute": "flame",
+    "race": "beast",
+    "level": 3,
+    "atk": 1000,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "If destroyed by battle: inflict 500 damage to your opponent.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "destroyed_by_battle",
+        "ops": [
+          {
+            "op": "damage",
+            "target": "opponent",
+            "amount": 500
+          }
+        ]
+      }
+    ],
+    "art_brief": "Fox whose tail trails glowing cinders as it dissolves into sparks",
+    "status": "draft",
+    "def": 1000
+  },
+  {
+    "id": "ashmane_lion",
+    "name": "Ashmane Lion",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "emberclaw",
+    "attribute": "flame",
+    "race": "beast",
+    "level": 4,
+    "atk": 1700,
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "Gains 300 ATK for each other Emberclaw unit you control.",
+    "effects": [
+      {
+        "timing": "continuous",
+        "ops": [
+          {
+            "op": "modify_stat",
+            "stat": "atk",
+            "per": {
+              "count": "other_units_you_control",
+              "filter": {
+                "archetype": "emberclaw"
+              }
+            },
+            "amount": 300
+          }
+        ]
+      }
+    ],
+    "art_brief": "Lion with a mane of drifting ash and glowing embers, roaring",
+    "status": "draft",
+    "def": 1200
+  },
+  {
+    "id": "flare_raider",
+    "name": "Flare Raider",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "emberclaw",
+    "attribute": "flame",
+    "race": "warrior",
+    "level": 4,
+    "atk": 1700,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Once per turn: discard 1 card; inflict 600 damage to your opponent.",
+    "effects": [
+      {
+        "timing": "ignition",
+        "limit": {
+          "scope": "card_name",
+          "per": "turn",
+          "count": 1
+        },
+        "cost": [
+          {
+            "discard": 1
+          }
+        ],
+        "ops": [
+          {
+            "op": "damage",
+            "target": "opponent",
+            "amount": 600
+          }
+        ]
+      }
+    ],
+    "art_brief": "Masked raider hurling a flaming chakram mid-sprint",
+    "status": "draft",
+    "def": 1000
+  },
+  {
+    "id": "scorchwing_hawk",
+    "name": "Scorchwing Hawk",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "emberclaw",
+    "attribute": "flame",
+    "race": "beast",
+    "level": 4,
+    "atk": 1600,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Piercing (inflicts the difference as damage when attacking a Defense unit).",
+    "effects": [
+      {
+        "timing": "continuous",
+        "keyword": "piercing"
+      }
+    ],
+    "art_brief": "Hawk diving, wings trailing orange fire streaks",
+    "status": "draft",
+    "def": 900
+  },
+  {
+    "id": "pyre_matriarch",
+    "name": "Pyre Matriarch",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "emberclaw",
+    "attribute": "flame",
+    "race": "warrior",
+    "level": 5,
+    "atk": 2200,
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "When Tribute Summoned: destroy 1 Tactic or Snare your opponent controls.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "tribute_summoned",
+        "target": {
+          "controller": "opponent",
+          "zone": "support",
+          "count": 1
+        },
+        "ops": [
+          {
+            "op": "destroy",
+            "target": "chosen"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Elder warrior-queen in charred armour, torch staff raised",
+    "status": "draft",
+    "def": 1600
+  },
+  {
+    "id": "magma_warden",
+    "name": "Magma Warden",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "emberclaw",
+    "attribute": "flame",
+    "race": "warrior",
+    "level": 6,
+    "atk": 2500,
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "When this card destroys a unit by battle: inflict 500 damage to your opponent.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "destroyed_unit_by_battle",
+        "ops": [
+          {
+            "op": "damage",
+            "target": "opponent",
+            "amount": 500
+          }
+        ]
+      }
+    ],
+    "art_brief": "Hulking guardian of molten rock striding through a lava river",
+    "status": "draft",
+    "def": 1800
+  },
+  {
+    "id": "volcarex",
+    "name": "Volcarex, the Ember Tyrant",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "emberclaw",
+    "attribute": "flame",
+    "race": "dragon",
+    "level": 8,
+    "atk": 3000,
+    "rarity": "mythic",
+    "deck": "main",
+    "tags": [
+      "boss"
+    ],
+    "text": "When this card destroys a unit by battle: inflict damage equal to half that unit's ATK.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "destroyed_unit_by_battle",
+        "ops": [
+          {
+            "op": "damage",
+            "target": "opponent",
+            "amount": {
+              "half_of": "destroyed_unit_atk"
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Colossal volcano-dragon erupting from a crater, wings of lava",
+    "status": "draft",
+    "def": 2200
+  },
+  {
+    "id": "pyrovex_infernal",
+    "name": "Pyrovex, Infernal Merged",
+    "type": "unit",
+    "subtype": "merge",
+    "archetype": "emberclaw",
+    "attribute": "flame",
+    "race": "dragon",
+    "level": 8,
+    "atk": 3200,
+    "rarity": "mythic",
+    "deck": "extra",
+    "tags": [
+      "boss"
+    ],
+    "text": "Merge: 1 Emberclaw Beast + 1 Emberclaw Warrior. When Merge Summoned: inflict 1000 damage to your opponent.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "merge_summoned",
+        "ops": [
+          {
+            "op": "damage",
+            "target": "opponent",
+            "amount": 1000
+          }
+        ]
+      }
+    ],
+    "art_brief": "Beast and warrior silhouettes fusing into a single blazing dragon",
+    "status": "draft",
+    "materials": [
+      {
+        "archetype": "emberclaw",
+        "race": "beast"
+      },
+      {
+        "archetype": "emberclaw",
+        "race": "warrior"
+      }
+    ],
+    "def": 2500
+  },
+  {
+    "id": "ember_spark",
+    "name": "Ember Spark",
+    "type": "tactic",
+    "subtype": "normal",
+    "archetype": "emberclaw",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Inflict 500 damage to your opponent. If you control an Emberclaw unit, inflict 1000 instead.",
+    "effects": [
+      {
+        "timing": "on_resolve",
+        "ops": [
+          {
+            "op": "damage",
+            "target": "opponent",
+            "amount": {
+              "if": {
+                "you_control": {
+                  "archetype": "emberclaw",
+                  "type": "unit"
+                }
+              },
+              "then": 1000,
+              "else": 500
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "A single spark leaping from a palm and igniting",
+    "status": "draft"
+  },
+  {
+    "id": "rekindle",
+    "name": "Rekindle",
+    "type": "tactic",
+    "subtype": "quick",
+    "archetype": "emberclaw",
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "Special Summon 1 Emberclaw unit from your graveyard. Its effects are negated until end of turn.",
+    "effects": [
+      {
+        "timing": "on_resolve",
+        "target": {
+          "zone": "graveyard",
+          "controller": "you",
+          "filter": {
+            "archetype": "emberclaw",
+            "type": "unit"
+          }
+        },
+        "ops": [
+          {
+            "op": "special_summon",
+            "target": "chosen",
+            "negate_effects": "end_of_turn"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Phoenix-like flame rising from a pile of ash",
+    "status": "draft"
+  },
+  {
+    "id": "caldera_of_claws",
+    "name": "Caldera of Claws",
+    "type": "tactic",
+    "subtype": "field",
+    "archetype": "emberclaw",
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "All Flame units gain 300 ATK and lose 200 DEF.",
+    "effects": [
+      {
+        "timing": "continuous",
+        "ops": [
+          {
+            "op": "modify_stat",
+            "stat": "atk",
+            "amount": 300,
+            "filter": {
+              "attribute": "flame"
+            }
+          },
+          {
+            "op": "modify_stat",
+            "stat": "def",
+            "amount": -200,
+            "filter": {
+              "attribute": "flame"
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Vast volcanic caldera arena at sunset, claw-shaped rock spires",
+    "status": "draft"
+  },
+  {
+    "id": "backdraft",
+    "name": "Backdraft",
+    "type": "snare",
+    "subtype": "normal",
+    "archetype": "emberclaw",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Activate when your opponent declares an attack: inflict 800 damage to your opponent.",
+    "effects": [
+      {
+        "timing": "quick",
+        "trigger": "opponent_attack_declared",
+        "ops": [
+          {
+            "op": "damage",
+            "target": "opponent",
+            "amount": 800
+          }
+        ]
+      }
+    ],
+    "art_brief": "Door blown open by a rush of flame",
+    "status": "draft"
+  },
+  {
+    "id": "ash_veil",
+    "name": "Ash Veil",
+    "type": "snare",
+    "subtype": "normal",
+    "archetype": "emberclaw",
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "Activate when your opponent declares an attack: negate the attack, then inflict 500 damage to your opponent.",
+    "effects": [
+      {
+        "timing": "quick",
+        "trigger": "opponent_attack_declared",
+        "ops": [
+          {
+            "op": "negate_attack"
+          },
+          {
+            "op": "damage",
+            "target": "opponent",
+            "amount": 500
+          }
+        ]
+      }
+    ],
+    "art_brief": "Curtain of drifting ash shielding a lone warrior",
+    "status": "draft"
+  }
+]

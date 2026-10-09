@@ -1,0 +1,590 @@
+[
+  {
+    "id": "thread_apprentice",
+    "name": "Thread Apprentice",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "astral_weavers",
+    "attribute": "radiance",
+    "race": "mage",
+    "level": 1,
+    "atk": 300,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "If this card is sent to the graveyard: add 1 Astral Weavers Tactic from your deck to your hand.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "sent_to_graveyard",
+        "ops": [
+          {
+            "op": "search",
+            "from": "deck",
+            "to": "hand",
+            "filter": {
+              "archetype": "astral_weavers",
+              "type": "tactic"
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Child mage holding a spool of glowing starlight thread",
+    "status": "draft",
+    "def": 300
+  },
+  {
+    "id": "loom_sprite",
+    "name": "Loom Sprite",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "astral_weavers",
+    "attribute": "radiance",
+    "race": "spirit",
+    "level": 2,
+    "atk": 500,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "If you control an Astral Weavers unit, you can Special Summon this card from your hand. Once per turn.",
+    "effects": [
+      {
+        "timing": "summon_rule",
+        "condition": "controller_controls",
+        "filter": {
+          "archetype": "astral_weavers",
+          "type": "unit"
+        },
+        "from": "hand",
+        "limit": {
+          "scope": "card_name",
+          "per": "turn",
+          "count": 1
+        }
+      }
+    ],
+    "art_brief": "Tiny sprite made of woven light riding a shuttle",
+    "status": "draft",
+    "def": 700
+  },
+  {
+    "id": "star_spinner_adept",
+    "name": "Star-Spinner Adept",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "astral_weavers",
+    "attribute": "radiance",
+    "race": "mage",
+    "level": 3,
+    "atk": 1000,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "When Normal Summoned: send 1 Astral Weavers unit from your deck to the graveyard. Once per turn.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "normal_summoned",
+        "limit": {
+          "scope": "card_name",
+          "per": "turn",
+          "count": 1
+        },
+        "ops": [
+          {
+            "op": "send",
+            "from": "deck",
+            "to": "graveyard",
+            "filter": {
+              "archetype": "astral_weavers",
+              "type": "unit"
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Adept spinning a thread of starlight between two fingers",
+    "status": "draft",
+    "def": 1000
+  },
+  {
+    "id": "constellation_seer",
+    "name": "Constellation Seer",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "astral_weavers",
+    "attribute": "radiance",
+    "race": "mage",
+    "level": 4,
+    "atk": 1600,
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "Once per turn: reveal the top card of your deck. If it is an Astral Weavers card, draw 1 card; otherwise shuffle it into the deck.",
+    "effects": [
+      {
+        "timing": "ignition",
+        "limit": {
+          "scope": "card_name",
+          "per": "turn",
+          "count": 1
+        },
+        "ops": [
+          {
+            "op": "reveal_top",
+            "count": 1,
+            "then": {
+              "if": {
+                "archetype": "astral_weavers"
+              },
+              "do": {
+                "op": "draw",
+                "count": 1
+              },
+              "else": {
+                "op": "shuffle_in"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Seer under a dome of stars tracing constellations in the air",
+    "status": "draft",
+    "def": 1200
+  },
+  {
+    "id": "celestial_seamstress",
+    "name": "Celestial Seamstress",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "astral_weavers",
+    "attribute": "radiance",
+    "race": "spirit",
+    "level": 4,
+    "atk": 1500,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Once per turn: Special Summon 1 Level 3 or lower Astral Weavers unit from your graveyard.",
+    "effects": [
+      {
+        "timing": "ignition",
+        "limit": {
+          "scope": "card_name",
+          "per": "turn",
+          "count": 1
+        },
+        "ops": [
+          {
+            "op": "special_summon",
+            "from": "graveyard",
+            "filter": {
+              "archetype": "astral_weavers",
+              "type": "unit",
+              "level_max": 3
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Spirit stitching glowing figures out of a sky of thread",
+    "status": "draft",
+    "def": 1500
+  },
+  {
+    "id": "star_cartographer",
+    "name": "Star Cartographer",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "astral_weavers",
+    "attribute": "radiance",
+    "race": "mage",
+    "level": 4,
+    "atk": 1300,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "When this card is used as Merge material: draw 1 card.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "used_as_merge_material",
+        "ops": [
+          {
+            "op": "draw",
+            "player": "you",
+            "count": 1
+          }
+        ]
+      }
+    ],
+    "art_brief": "Scholar unrolling a star map across a floating desk",
+    "status": "draft",
+    "def": 1600
+  },
+  {
+    "id": "moonthread_oracle",
+    "name": "Moonthread Oracle",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "astral_weavers",
+    "attribute": "radiance",
+    "race": "mage",
+    "level": 5,
+    "atk": 2000,
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "When Tribute Summoned: add 1 Astral Weavers Tactic from your deck or graveyard to your hand.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "tribute_summoned",
+        "ops": [
+          {
+            "op": "search",
+            "from": [
+              "deck",
+              "graveyard"
+            ],
+            "to": "hand",
+            "filter": {
+              "archetype": "astral_weavers",
+              "type": "tactic"
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Hooded oracle weaving a moonbeam into a rope",
+    "status": "draft",
+    "def": 1800
+  },
+  {
+    "id": "dawn_tailor",
+    "name": "Dawn Tailor",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "astral_weavers",
+    "attribute": "radiance",
+    "race": "spirit",
+    "level": 6,
+    "atk": 2400,
+    "rarity": "epic",
+    "deck": "main",
+    "tags": [],
+    "text": "While you control a Merge unit, this card gains 500 ATK.",
+    "effects": [
+      {
+        "timing": "continuous",
+        "condition": {
+          "you_control": {
+            "subtype": "merge"
+          }
+        },
+        "ops": [
+          {
+            "op": "modify_stat",
+            "stat": "atk",
+            "amount": 500
+          }
+        ]
+      }
+    ],
+    "art_brief": "Radiant spirit-tailor stitching a sunrise into the sky",
+    "status": "draft",
+    "def": 2000
+  },
+  {
+    "id": "nebula_warden",
+    "name": "Nebula Warden",
+    "type": "unit",
+    "subtype": "merge",
+    "archetype": "astral_weavers",
+    "attribute": "radiance",
+    "race": "spirit",
+    "level": 6,
+    "atk": 2300,
+    "rarity": "epic",
+    "deck": "extra",
+    "tags": [],
+    "text": "Merge: 2 Astral Weavers units. When Merge Summoned: draw 1 card.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "merge_summoned",
+        "ops": [
+          {
+            "op": "draw",
+            "player": "you",
+            "count": 1
+          }
+        ]
+      }
+    ],
+    "art_brief": "Guardian made of swirling nebula clouds and threads of light",
+    "status": "draft",
+    "materials": [
+      {
+        "archetype": "astral_weavers"
+      },
+      {
+        "archetype": "astral_weavers"
+      }
+    ],
+    "def": 1800
+  },
+  {
+    "id": "starloom_archon",
+    "name": "Starloom Archon",
+    "type": "unit",
+    "subtype": "merge",
+    "archetype": "astral_weavers",
+    "attribute": "radiance",
+    "race": "spirit",
+    "level": 8,
+    "atk": 3000,
+    "rarity": "mythic",
+    "deck": "extra",
+    "tags": [
+      "boss"
+    ],
+    "text": "Merge: 1 Astral Weavers Merge unit + 1 Level 4 or higher Astral Weavers unit. Once per turn: negate the activation of 1 Tactic your opponent activates.",
+    "effects": [
+      {
+        "timing": "quick",
+        "trigger": "opponent_activates_tactic",
+        "limit": {
+          "scope": "card_name",
+          "per": "turn",
+          "count": 1
+        },
+        "ops": [
+          {
+            "op": "negate_activation"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Colossal being of woven starlight, loom frame as halo",
+    "status": "draft",
+    "materials": [
+      {
+        "archetype": "astral_weavers",
+        "subtype": "merge"
+      },
+      {
+        "archetype": "astral_weavers",
+        "level_min": 4
+      }
+    ],
+    "def": 2500
+  },
+  {
+    "id": "weave_together",
+    "name": "Weave Together",
+    "type": "tactic",
+    "subtype": "normal",
+    "archetype": "astral_weavers",
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "Merge Summon 1 Astral Weavers Merge unit from your Extra Deck, using materials from your hand, field, or graveyard (banish graveyard materials).",
+    "effects": [
+      {
+        "timing": "on_resolve",
+        "ops": [
+          {
+            "op": "merge_summon",
+            "filter": {
+              "archetype": "astral_weavers"
+            },
+            "material_zones": [
+              "hand",
+              "field",
+              "graveyard"
+            ],
+            "graveyard_materials": "banish"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Hands pulling two glowing threads into a single bright knot",
+    "status": "draft"
+  },
+  {
+    "id": "loom_of_fate",
+    "name": "Loom of Fate",
+    "type": "tactic",
+    "subtype": "field",
+    "archetype": "astral_weavers",
+    "rarity": "epic",
+    "deck": "main",
+    "tags": [],
+    "text": "Merge units gain 500 ATK. Once per turn, when you Merge Summon: draw 1 card.",
+    "effects": [
+      {
+        "timing": "continuous",
+        "ops": [
+          {
+            "op": "modify_stat",
+            "stat": "atk",
+            "amount": 500,
+            "filter": {
+              "subtype": "merge"
+            }
+          }
+        ]
+      },
+      {
+        "timing": "trigger",
+        "trigger": "you_merge_summon",
+        "limit": {
+          "scope": "card_name",
+          "per": "turn",
+          "count": 1
+        },
+        "ops": [
+          {
+            "op": "draw",
+            "player": "you",
+            "count": 1
+          }
+        ]
+      }
+    ],
+    "art_brief": "Immense cosmic loom hanging in a starry void",
+    "status": "draft"
+  },
+  {
+    "id": "spool_return",
+    "name": "Spool Return",
+    "type": "tactic",
+    "subtype": "normal",
+    "archetype": "astral_weavers",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Add 2 Astral Weavers units from your graveyard to your hand, then discard 1 card.",
+    "effects": [
+      {
+        "timing": "on_resolve",
+        "target": {
+          "zone": "graveyard",
+          "count": 2,
+          "filter": {
+            "archetype": "astral_weavers",
+            "type": "unit"
+          }
+        },
+        "ops": [
+          {
+            "op": "add_to_hand",
+            "target": "chosen"
+          },
+          {
+            "op": "discard",
+            "player": "you",
+            "count": 1
+          }
+        ]
+      }
+    ],
+    "art_brief": "Thread spool rolling back across a table, pulling cards with it",
+    "status": "draft"
+  },
+  {
+    "id": "moonlit_study",
+    "name": "Moonlit Study",
+    "type": "tactic",
+    "subtype": "normal",
+    "archetype": "astral_weavers",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Add 1 \"Weave Together\" or \"Loom of Fate\" from your deck to your hand.",
+    "effects": [
+      {
+        "timing": "on_resolve",
+        "ops": [
+          {
+            "op": "search",
+            "from": "deck",
+            "to": "hand",
+            "filter": {
+              "id": [
+                "weave_together",
+                "loom_of_fate"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Open book glowing under a moonlit window",
+    "status": "draft"
+  },
+  {
+    "id": "frayed_reality",
+    "name": "Frayed Reality",
+    "type": "snare",
+    "subtype": "counter",
+    "archetype": "astral_weavers",
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "Activate when your opponent activates a Tactic: negate the activation and destroy it.",
+    "effects": [
+      {
+        "timing": "quick",
+        "trigger": "opponent_activates_tactic",
+        "ops": [
+          {
+            "op": "negate_activation"
+          },
+          {
+            "op": "destroy",
+            "target": "activated_card"
+          }
+        ]
+      }
+    ],
+    "art_brief": "A tapestry unravelling mid-air, thread by thread",
+    "status": "draft"
+  },
+  {
+    "id": "mirror_veil",
+    "name": "Mirror Veil",
+    "type": "snare",
+    "subtype": "normal",
+    "archetype": "astral_weavers",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Activate when your opponent declares an attack: negate the attack, then Special Summon 1 Level 4 or lower Astral Weavers unit from your hand.",
+    "effects": [
+      {
+        "timing": "quick",
+        "trigger": "opponent_attack_declared",
+        "ops": [
+          {
+            "op": "negate_attack"
+          },
+          {
+            "op": "special_summon",
+            "from": "hand",
+            "filter": {
+              "archetype": "astral_weavers",
+              "type": "unit",
+              "level_max": 4
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Shimmering mirror-curtain reflecting a sword strike",
+    "status": "draft"
+  }
+]

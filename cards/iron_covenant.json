@@ -1,0 +1,510 @@
+[
+  {
+    "id": "ironwatch_recruit",
+    "name": "Ironwatch Recruit",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "iron_covenant",
+    "attribute": "stone",
+    "race": "warrior",
+    "level": 2,
+    "atk": 500,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "When Normal Summoned: Special Summon 1 Level 3 or lower Iron Covenant unit from your hand in Defense Position.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "normal_summoned",
+        "ops": [
+          {
+            "op": "special_summon",
+            "from": "hand",
+            "position": "defense",
+            "filter": {
+              "archetype": "iron_covenant",
+              "level_max": 3
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Young soldier in oversized armour holding a tower shield",
+    "status": "draft",
+    "def": 1200
+  },
+  {
+    "id": "bulwark_sentry",
+    "name": "Bulwark Sentry",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "iron_covenant",
+    "attribute": "stone",
+    "race": "warrior",
+    "level": 3,
+    "atk": 800,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "While in Defense Position, your other Iron Covenant units cannot be targeted by your opponent's card effects.",
+    "effects": [
+      {
+        "timing": "continuous",
+        "condition": "self_in_defense",
+        "ops": [
+          {
+            "op": "grant",
+            "keyword": "untargetable",
+            "filter": {
+              "archetype": "iron_covenant",
+              "exclude_self": true
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Sentry crouched behind a wall of runed stone slabs",
+    "status": "draft",
+    "def": 1800
+  },
+  {
+    "id": "rune_smith",
+    "name": "Rune Smith",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "iron_covenant",
+    "attribute": "stone",
+    "race": "mage",
+    "level": 3,
+    "atk": 1000,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "When Normal Summoned: add 1 Equip Tactic from your deck to your hand. Once per turn.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "normal_summoned",
+        "limit": {
+          "scope": "card_name",
+          "per": "turn",
+          "count": 1
+        },
+        "ops": [
+          {
+            "op": "search",
+            "from": "deck",
+            "to": "hand",
+            "filter": {
+              "type": "tactic",
+              "subtype": "equip"
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Smith carving glowing runes into a steel plate",
+    "status": "draft",
+    "def": 1200
+  },
+  {
+    "id": "pikewall_soldier",
+    "name": "Pikewall Soldier",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "iron_covenant",
+    "attribute": "stone",
+    "race": "warrior",
+    "level": 3,
+    "atk": 1300,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Gains 500 DEF while in Defense Position.",
+    "effects": [
+      {
+        "timing": "continuous",
+        "condition": "self_in_defense",
+        "ops": [
+          {
+            "op": "modify_stat",
+            "stat": "def",
+            "amount": 500
+          }
+        ]
+      }
+    ],
+    "art_brief": "Rank of soldiers bracing long pikes in formation",
+    "status": "draft",
+    "def": 1100
+  },
+  {
+    "id": "shieldwall_captain",
+    "name": "Shieldwall Captain",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "iron_covenant",
+    "attribute": "stone",
+    "race": "warrior",
+    "level": 4,
+    "atk": 1500,
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "While in Defense Position, your opponent's units must attack this card if able.",
+    "effects": [
+      {
+        "timing": "continuous",
+        "condition": "self_in_defense",
+        "ops": [
+          {
+            "op": "force_attack_target",
+            "target": "self"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Veteran captain planting a banner-shield into the ground",
+    "status": "draft",
+    "def": 2000
+  },
+  {
+    "id": "gatekeeper_golem",
+    "name": "Gatekeeper Golem",
+    "type": "unit",
+    "subtype": "normal",
+    "archetype": "iron_covenant",
+    "attribute": "stone",
+    "race": "construct",
+    "level": 4,
+    "atk": 1400,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "",
+    "effects": [],
+    "art_brief": "Stone golem blocking a mountain gate, moss on its shoulders",
+    "status": "draft",
+    "def": 2200
+  },
+  {
+    "id": "covenant_oathkeeper",
+    "name": "Covenant Oathkeeper",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "iron_covenant",
+    "attribute": "stone",
+    "race": "warrior",
+    "level": 4,
+    "atk": 1800,
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "When an Equip Tactic is equipped to this card: draw 1 card.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "equipped",
+        "ops": [
+          {
+            "op": "draw",
+            "player": "you",
+            "count": 1
+          }
+        ]
+      }
+    ],
+    "art_brief": "Knight kneeling and swearing on a glowing sword",
+    "status": "draft",
+    "def": 1600
+  },
+  {
+    "id": "citadel_knight",
+    "name": "Citadel Knight",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "iron_covenant",
+    "attribute": "stone",
+    "race": "warrior",
+    "level": 5,
+    "atk": 2000,
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "When Tribute Summoned: equip 1 Equip Tactic from your deck to this card.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "tribute_summoned",
+        "ops": [
+          {
+            "op": "equip_from",
+            "from": "deck",
+            "filter": {
+              "type": "tactic",
+              "subtype": "equip"
+            },
+            "to": "self"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Heavily armoured knight before a vast fortress gate",
+    "status": "draft",
+    "def": 2400
+  },
+  {
+    "id": "warden_last_wall",
+    "name": "Warden of the Last Wall",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "iron_covenant",
+    "attribute": "stone",
+    "race": "warrior",
+    "level": 6,
+    "atk": 2200,
+    "rarity": "epic",
+    "deck": "main",
+    "tags": [],
+    "text": "Once per turn, when another Iron Covenant unit would be destroyed by battle or effect, you can destroy this card instead.",
+    "effects": [
+      {
+        "timing": "replacement",
+        "limit": {
+          "scope": "card_name",
+          "per": "turn",
+          "count": 1
+        },
+        "replaces": "destroy_other_ally",
+        "filter": {
+          "archetype": "iron_covenant"
+        },
+        "ops": [
+          {
+            "op": "destroy",
+            "target": "self"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Towering warden holding a crumbling wall together with its own body",
+    "status": "draft",
+    "def": 2800
+  },
+  {
+    "id": "ironclad_colossus",
+    "name": "Ironclad Colossus",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "iron_covenant",
+    "attribute": "stone",
+    "race": "construct",
+    "level": 7,
+    "atk": 2600,
+    "rarity": "epic",
+    "deck": "main",
+    "tags": [],
+    "text": "This card can attack while in Defense Position; use its DEF for damage calculation.",
+    "effects": [
+      {
+        "timing": "continuous",
+        "keyword": "defense_attacker"
+      }
+    ],
+    "art_brief": "Giant iron construct raising a fist the size of a house",
+    "status": "draft",
+    "def": 3000
+  },
+  {
+    "id": "aegis_paragon",
+    "name": "Aegis Paragon, Sovereign of the Seal",
+    "type": "unit",
+    "subtype": "merge",
+    "archetype": "iron_covenant",
+    "attribute": "stone",
+    "race": "warrior",
+    "level": 8,
+    "atk": 3000,
+    "rarity": "mythic",
+    "deck": "extra",
+    "tags": [
+      "boss"
+    ],
+    "text": "Merge: 2 Iron Covenant units. Once per turn, this card cannot be destroyed by card effects.",
+    "effects": [
+      {
+        "timing": "continuous",
+        "limit": {
+          "scope": "card_name",
+          "per": "turn",
+          "count": 1
+        },
+        "ops": [
+          {
+            "op": "grant",
+            "keyword": "indestructible_by_effect"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Radiant armoured sovereign merged from knight and golem, shield of light",
+    "status": "draft",
+    "materials": [
+      {
+        "archetype": "iron_covenant"
+      },
+      {
+        "archetype": "iron_covenant"
+      }
+    ],
+    "def": 3200
+  },
+  {
+    "id": "forged_oath",
+    "name": "Forged Oath",
+    "type": "tactic",
+    "subtype": "normal",
+    "archetype": "iron_covenant",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Draw 2 cards, then discard 1 card.",
+    "effects": [
+      {
+        "timing": "on_resolve",
+        "ops": [
+          {
+            "op": "draw",
+            "player": "you",
+            "count": 2
+          },
+          {
+            "op": "discard",
+            "player": "you",
+            "count": 1
+          }
+        ]
+      }
+    ],
+    "art_brief": "Two hands clasped over a glowing anvil",
+    "status": "draft"
+  },
+  {
+    "id": "rune_plate",
+    "name": "Rune-Etched Plate",
+    "type": "tactic",
+    "subtype": "equip",
+    "archetype": "iron_covenant",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Equip to an Iron Covenant unit. It gains 600 DEF.",
+    "effects": [
+      {
+        "timing": "continuous",
+        "equip_filter": {
+          "archetype": "iron_covenant",
+          "type": "unit"
+        },
+        "ops": [
+          {
+            "op": "modify_stat",
+            "stat": "def",
+            "amount": 600
+          }
+        ]
+      }
+    ],
+    "art_brief": "Steel breastplate covered in blue glowing runes",
+    "status": "draft"
+  },
+  {
+    "id": "bastion_field",
+    "name": "Bastion Field",
+    "type": "tactic",
+    "subtype": "field",
+    "archetype": "iron_covenant",
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "All Stone units gain 400 DEF.",
+    "effects": [
+      {
+        "timing": "continuous",
+        "ops": [
+          {
+            "op": "modify_stat",
+            "stat": "def",
+            "amount": 400,
+            "filter": {
+              "attribute": "stone"
+            }
+          }
+        ]
+      }
+    ],
+    "art_brief": "Wide mountain fortress courtyard under grey sky, banners snapping",
+    "status": "draft"
+  },
+  {
+    "id": "iron_reprisal",
+    "name": "Iron Reprisal",
+    "type": "snare",
+    "subtype": "normal",
+    "archetype": "iron_covenant",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Activate when your Iron Covenant unit is destroyed by battle: destroy the unit that destroyed it.",
+    "effects": [
+      {
+        "timing": "quick",
+        "trigger": "ally_destroyed_by_battle",
+        "filter": {
+          "archetype": "iron_covenant"
+        },
+        "ops": [
+          {
+            "op": "destroy",
+            "target": "battle_opponent"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Fallen shield with a vengeful sword plunged beside it",
+    "status": "draft"
+  },
+  {
+    "id": "bulwark_call",
+    "name": "Bulwark Call",
+    "type": "snare",
+    "subtype": "normal",
+    "archetype": "iron_covenant",
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "Activate when your opponent declares an attack on your Iron Covenant unit: negate the attack, then change that unit to Defense Position.",
+    "effects": [
+      {
+        "timing": "quick",
+        "trigger": "opponent_attack_declared_on_ally",
+        "filter": {
+          "archetype": "iron_covenant"
+        },
+        "ops": [
+          {
+            "op": "negate_attack"
+          },
+          {
+            "op": "set_position",
+            "target": "attacked_unit",
+            "position": "defense"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Horn blown from a tower, soldiers locking shields in response",
+    "status": "draft"
+  }
+]

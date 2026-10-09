@@ -1,0 +1,328 @@
+[
+  {
+    "id": "wandering_mercenary",
+    "name": "Wandering Mercenary",
+    "type": "unit",
+    "subtype": "normal",
+    "archetype": "neutral",
+    "attribute": "stone",
+    "race": "warrior",
+    "level": 4,
+    "atk": 1700,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "",
+    "effects": [],
+    "art_brief": "Travel-worn sellsword on a dusty road",
+    "status": "draft",
+    "def": 1000
+  },
+  {
+    "id": "guild_courier",
+    "name": "Guild Courier",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "neutral",
+    "attribute": "gale",
+    "race": "warrior",
+    "level": 2,
+    "atk": 700,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "If this card is sent to the graveyard: draw 1 card.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "sent_to_graveyard",
+        "ops": [
+          {
+            "op": "draw",
+            "player": "you",
+            "count": 1
+          }
+        ]
+      }
+    ],
+    "art_brief": "Courier mid-sprint clutching a sealed letter",
+    "status": "draft",
+    "def": 500
+  },
+  {
+    "id": "bell_toller_monk",
+    "name": "Bell-Toller Monk",
+    "type": "unit",
+    "subtype": "effect",
+    "archetype": "neutral",
+    "attribute": "radiance",
+    "race": "spirit",
+    "level": 3,
+    "atk": 800,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "When Normal Summoned: gain 800 LP.",
+    "effects": [
+      {
+        "timing": "trigger",
+        "trigger": "normal_summoned",
+        "ops": [
+          {
+            "op": "gain_lp",
+            "player": "you",
+            "amount": 800
+          }
+        ]
+      }
+    ],
+    "art_brief": "Monk ringing a huge bronze bell, light rippling out",
+    "status": "draft",
+    "def": 1500
+  },
+  {
+    "id": "hollow_sentinel",
+    "name": "Hollow Sentinel",
+    "type": "unit",
+    "subtype": "normal",
+    "archetype": "neutral",
+    "attribute": "umbra",
+    "race": "construct",
+    "level": 5,
+    "atk": 2100,
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "",
+    "effects": [],
+    "art_brief": "Empty suit of armour standing guard in a dark hall",
+    "status": "draft",
+    "def": 1700
+  },
+  {
+    "id": "forge_of_unity",
+    "name": "Forge of Unity",
+    "type": "tactic",
+    "subtype": "normal",
+    "archetype": "neutral",
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "Merge Summon 1 Merge unit from your Extra Deck, using materials listed on it from your hand or field.",
+    "effects": [
+      {
+        "timing": "on_resolve",
+        "ops": [
+          {
+            "op": "merge_summon",
+            "material_zones": [
+              "hand",
+              "field"
+            ]
+          }
+        ]
+      }
+    ],
+    "art_brief": "Two silhouettes dissolving into a single bright figure over a forge",
+    "status": "draft"
+  },
+  {
+    "id": "scholars_gambit",
+    "name": "Scholar's Gambit",
+    "type": "tactic",
+    "subtype": "normal",
+    "archetype": "neutral",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Draw 2 cards, then discard 1 card.",
+    "effects": [
+      {
+        "timing": "on_resolve",
+        "ops": [
+          {
+            "op": "draw",
+            "player": "you",
+            "count": 2
+          },
+          {
+            "op": "discard",
+            "player": "you",
+            "count": 1
+          }
+        ]
+      }
+    ],
+    "art_brief": "Scholar sliding a stack of cards across a table",
+    "status": "draft"
+  },
+  {
+    "id": "shatter_strike",
+    "name": "Shatter Strike",
+    "type": "tactic",
+    "subtype": "normal",
+    "archetype": "neutral",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Destroy 1 unit your opponent controls.",
+    "effects": [
+      {
+        "timing": "on_resolve",
+        "target": {
+          "controller": "opponent",
+          "zone": "units",
+          "count": 1
+        },
+        "ops": [
+          {
+            "op": "destroy",
+            "target": "chosen"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Lightning bolt cracking a stone statue",
+    "status": "draft"
+  },
+  {
+    "id": "cleansing_gale",
+    "name": "Cleansing Gale",
+    "type": "tactic",
+    "subtype": "quick",
+    "archetype": "neutral",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Destroy 1 Tactic or Snare on the field.",
+    "effects": [
+      {
+        "timing": "on_resolve",
+        "target": {
+          "zone": "support",
+          "count": 1
+        },
+        "ops": [
+          {
+            "op": "destroy",
+            "target": "chosen"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Gust of wind scattering banners and charms",
+    "status": "draft"
+  },
+  {
+    "id": "grave_call",
+    "name": "Grave Call",
+    "type": "tactic",
+    "subtype": "normal",
+    "archetype": "neutral",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Special Summon 1 Level 4 or lower unit from your graveyard.",
+    "effects": [
+      {
+        "timing": "on_resolve",
+        "target": {
+          "zone": "graveyard",
+          "controller": "you",
+          "filter": {
+            "type": "unit",
+            "level_max": 4
+          }
+        },
+        "ops": [
+          {
+            "op": "special_summon",
+            "target": "chosen"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Hand reaching out of a grave holding a lantern",
+    "status": "draft"
+  },
+  {
+    "id": "hollow_ward",
+    "name": "Hollow Ward",
+    "type": "snare",
+    "subtype": "normal",
+    "archetype": "neutral",
+    "rarity": "common",
+    "deck": "main",
+    "tags": [],
+    "text": "Activate when your opponent declares an attack: negate the attack.",
+    "effects": [
+      {
+        "timing": "quick",
+        "trigger": "opponent_attack_declared",
+        "ops": [
+          {
+            "op": "negate_attack"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Glowing ward-circle hastily drawn in dust",
+    "status": "draft"
+  },
+  {
+    "id": "counterweight",
+    "name": "Counterweight",
+    "type": "snare",
+    "subtype": "counter",
+    "archetype": "neutral",
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "Activate when your opponent Summons a unit: negate the Summon and destroy it.",
+    "effects": [
+      {
+        "timing": "quick",
+        "trigger": "opponent_summons",
+        "ops": [
+          {
+            "op": "negate_summon"
+          },
+          {
+            "op": "destroy",
+            "target": "summoned_unit"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Heavy iron weight dropping onto a portal",
+    "status": "draft"
+  },
+  {
+    "id": "giants_fall",
+    "name": "Giant's Fall",
+    "type": "snare",
+    "subtype": "normal",
+    "archetype": "neutral",
+    "rarity": "rare",
+    "deck": "main",
+    "tags": [],
+    "text": "Activate when your opponent declares an attack with a unit with 2000 or more ATK: destroy that unit.",
+    "effects": [
+      {
+        "timing": "quick",
+        "trigger": "opponent_attack_declared",
+        "condition": {
+          "attacker_atk_min": 2000
+        },
+        "ops": [
+          {
+            "op": "destroy",
+            "target": "attacker"
+          }
+        ]
+      }
+    ],
+    "art_brief": "Collapsing rope trap bringing down a huge shadow",
+    "status": "draft"
+  }
+]
