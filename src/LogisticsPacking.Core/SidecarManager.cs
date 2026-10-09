@@ -61,6 +61,9 @@ public sealed class SidecarManager : IDisposable
                 RedirectStandardInput = true,   // държим го отворен: EOF = обвивката е умряла
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                // Python пише UTF-8 (PYTHONUTF8=1); без това .NET чете изхода в OEM кодировка на Windows.
+                StandardOutputEncoding = System.Text.Encoding.UTF8,
+                StandardErrorEncoding = System.Text.Encoding.UTF8,
             };
             psi.ArgumentList.Add("-u");
             psi.ArgumentList.Add(script);
@@ -77,7 +80,7 @@ public sealed class SidecarManager : IDisposable
                 psi.Environment["PATH"] = tess + Path.PathSeparator + (Environment.GetEnvironmentVariable("PATH") ?? "");
             }
 
-            var log = new StreamWriter(new FileStream(logPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite)) { AutoFlush = true };
+            var log = new StreamWriter(new FileStream(logPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite), new System.Text.UTF8Encoding(false)) { AutoFlush = true };
             var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
             void Write(string text) { lock (log) { try { log.WriteLine(text); } catch (ObjectDisposedException) { } } }
             process.OutputDataReceived += (_, e) => { if (e.Data != null) Write(e.Data); };
@@ -170,7 +173,7 @@ public sealed class SidecarManager : IDisposable
         try
         {
             using var fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var sr = new StreamReader(fs);
+            using var sr = new StreamReader(fs, System.Text.Encoding.UTF8);
             return string.Join('\n', sr.ReadToEnd().Split('\n').TakeLast(lines)).Trim();
         }
         catch (Exception) { return ""; }
