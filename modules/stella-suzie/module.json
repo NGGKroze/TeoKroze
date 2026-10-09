@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "stella-suzie",
+  "name": "Stella and Suzie",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 160,
+  "summary": "A4 portrait duplex carton labels",
+  "requires": [
+    "Carton packing list workbook или CSV"
+  ],
+  "note": "Създава A4 portrait duplex carton labels.",
+  "formats": [
+    "XLSX",
+    "XLS",
+    "CSV"
+  ]
+}

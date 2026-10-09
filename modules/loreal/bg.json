@@ -1,0 +1,13 @@
+{
+  "exact": {
+    "V13 offline": "V13 офлайн",
+    "English": "Английски",
+    "5. Biotherm": "5. Biotherm",
+    "2. Packing Information (PRADA or BIOTHERM)": "2. Информация за опаковането (PRADA или BIOTHERM)",
+    "ASIA / FCA": "ASIA / FCA",
+    "INTER / DDP": "INTER / DDP"
+  },
+  "skip": [
+    "#previewTableWrap"
+  ]
+}

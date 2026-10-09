@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "chanel",
+  "name": "Chanel Uniforms",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 40,
+  "summary": "Uniforms packing list към етикети",
+  "requires": [
+    "Chanel Uniforms packing list в Excel или CSV"
+  ],
+  "note": "Качете файла вътре в генератора и използвайте неговите бутони за преглед и сваляне.",
+  "formats": [
+    "XLSX",
+    "XLS",
+    "CSV"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "title": "Stella & Suzie – етикети за кашони",
+  "subtitle": "Опаковъчен лист (XLSX/CSV) → дуплекс етикети 10×15 см на A4 (портрет)",
+  "hide": [
+    "body > header",
+    "body > footer"
+  ],
+  "side": [
+    {
+      "card": false,
+      "move": [
+        "main > aside > section"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "sel": "#downloadPdfBtn",
+      "kind": "primary",
+      "side": "right"
+    }
+  ]
+}

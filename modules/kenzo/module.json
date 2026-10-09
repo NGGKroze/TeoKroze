@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "id": "kenzo",
+  "name": "Kenzo",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 110,
+  "summary": "PDF към PL и print labels по reference",
+  "requires": [
+    "Kenzo source PDF"
+  ],
+  "note": "Използва PDF източника, за да изгради packing lists и labels по reference.",
+  "formats": [
+    "PDF"
+  ]
+}

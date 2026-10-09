@@ -1,0 +1,10 @@
+/* STELLA & SUZIE - единна тема */
+@media screen {
+  html[data-lps="stella-suzie"] header.bg-brand-900 {
+    background: rgba(255,255,255,.86) !important; color:#26272b !important; border-bottom:2px solid var(--lps-brass) !important; box-shadow:0 6px 20px rgba(31,32,35,.07) !important;
+  }
+  html[data-lps="stella-suzie"] header.bg-brand-900 h1, html[data-lps="stella-suzie"] header.bg-brand-900 p, html[data-lps="stella-suzie"] header.bg-brand-900 i { color:#26272b !important; }
+}
+@media screen {
+  html[data-lps="stella-suzie"] main { max-width: none !important; padding: 0 !important; } html[data-lps="stella-suzie"] main > section { width: 100% !important; }
+}

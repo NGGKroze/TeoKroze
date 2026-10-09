@@ -1,0 +1,30 @@
+{
+  "title": "ASPHALTE – опаковъчен лист и етикети",
+  "subtitle": "PDF поръчка + EAN → PKL (Excel), етикети за кашони и палети",
+  "hide": [
+    "body > header"
+  ],
+  "side": [
+    {
+      "title": "Режим",
+      "move": [
+        "main > aside > .tabs"
+      ]
+    },
+    {
+      "card": false,
+      "move": [
+        "#panelOrder",
+        "#panelPL",
+        "#panelAudit"
+      ]
+    }
+  ],
+  "style": [
+    {
+      "sel": ".primary-action",
+      "kind": "primary"
+    }
+  ],
+  "actions": []
+}

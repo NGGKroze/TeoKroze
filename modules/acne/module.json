@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "id": "acne",
+  "name": "ACNE Studios",
+  "version": "1.0.0",
+  "type": "python",
+  "entry": "run.py",
+  "order": 10,
+  "summary": "PO PDF или готов Packing List → PL и етикети",
+  "requires": [
+    "ACNE Purchase Order PDF (един или няколко)",
+    "или готов ACNE Packing List (.xlsx / .xlsm)"
+  ],
+  "note": "Единичен SKU = A4 портрет; смесен кашон = A4 пейзаж (до 4 етикета). Дестинацията (SE / US / KR / JP / CN) се разпознава автоматично от PO.",
+  "formats": [
+    "PDF",
+    "XLSX",
+    "XLSM"
+  ],
+  "python": {
+    "script": "run.py",
+    "health": "/",
+    "startupTimeoutSec": 90,
+    "port": 5057
+  }
+}

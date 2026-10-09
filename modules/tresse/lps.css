@@ -1,0 +1,6 @@
+/* TRESSE - единна тема */
+@media screen {
+  html[data-lps="tresse"] { --accent:var(--lps-accent); }
+  html[data-lps="tresse"] .btn { background:var(--lps-accent); }
+  html[data-lps="tresse"] .btn.secondary { background:#fff; color:var(--lps-accent); }
+}

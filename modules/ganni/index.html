@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GANNI - Label Generator</title>
+    <script src="vendor/cdn.tailwindcss.com/tailwindcss.js"></script>
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Include html2pdf for direct PDF downloading -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        /* Apply Helvetica Font globally - NO italics */
+        body, .label-card, .address-label-card {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+            font-style: normal !important;
+        }
+
+        /* Strict Print Layout: A4 Landscape */
+        @media print {
+            @page { margin: 0; size: A4 landscape; }
+            body { background: white !important; margin: 0 !important; padding: 0 !important; }
+            #ui-panel { display: none !important; }
+            
+            #print-container {
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            /* Wrapper for Box Labels (2 per page) */
+            .label-page-wrapper {
+                width: 297mm;
+                height: 209mm; /* 1mm shy of A4 height to prevent blank overflow pages */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10mm;
+                page-break-after: always;
+                page-break-inside: avoid;
+                overflow: hidden;
+            }
+            .label-page-wrapper:last-child {
+                page-break-after: auto;
+            }
+
+            /* Wrapper for Address Labels (1 full page) */
+            .label-page-wrapper-single {
+                width: 297mm;
+                height: 209mm;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                page-break-after: always;
+                page-break-inside: avoid;
+                overflow: hidden;
+            }
+            .label-page-wrapper-single:last-child {
+                page-break-after: auto;
+            }
+
+            .label-card {
+                width: 135mm !important;
+                height: 135mm !important;
+                border: 2px solid black !important;
+                box-sizing: border-box !important;
+                box-shadow: none !important;
+                page-break-inside: avoid !important;
+            }
+
+            .address-label-card {
+                width: 280mm !important;
+                height: 190mm !important;
+                border: 2px solid black !important;
+                box-sizing: border-box !important;
+                box-shadow: none !important;
+                page-break-inside: avoid !important;
+                aspect-ratio: auto !important;
+            }
+            
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+
+        /* UI Preview Box Label Size */
+        .label-card {
+            width: 13.5cm;
+            height: 13.5cm;
+            border: 2px solid black;
+            box-sizing: border-box;
+        }
+
+        /* UI Preview Address Label Size */
+        .address-label-card {
+            width: 280mm;
+            aspect-ratio: 280 / 190;
+            border: 2px solid black;
+            box-sizing: border-box;
+            max-width: 100%;
+        }
+
+        /* Helpers for PDF Export */
+        .pdf-export-wrapper {
+            width: 297mm;
+            height: 210mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10mm;
+            background-color: white;
+            box-sizing: border-box;
+        }
+
+        .pdf-export-wrapper-single {
+            width: 297mm;
+            height: 210mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-900 min-h-screen overflow-x-hidden">
+
+    <!-- UI Panel (Hidden during print/export) -->
+    <div id="ui-panel" class="max-w-5xl mx-auto p-8">
+        <div class="bg-white rounded-[2rem] shadow-xl p-10 border border-slate-200">
+            <div class="flex items-center justify-between mb-8 pb-6 border-b border-slate-100 flex-wrap gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold uppercase tracking-tighter flex items-center gap-3">
+                        <span class="bg-black text-white px-3 py-1 rounded-xl">GANNI</span> 
+                        Label Generator
+                    </h1>
+                    <p class="text-slate-500 font-bold text-sm mt-2 uppercase tracking-widest">Client-Specific Standalone Tool</p>
+                </div>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <button id="reset-btn" class="hidden bg-slate-100 text-slate-600 border-2 border-slate-200 px-5 py-3 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center gap-2">
+                        Reset Data
+                    </button>
+                    <!-- Download PDF Button -->
+                    <button id="export-pdf-btn" class="hidden bg-blue-600 text-white px-5 py-3 rounded-2xl font-bold hover:bg-blue-700 hover:scale-105 transition-all shadow-lg shadow-blue-200 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Download PDF
+                    </button>
+                    <!-- Physical Print Button -->
+                    <button id="print-btn" class="hidden bg-slate-800 text-white px-5 py-3 rounded-2xl font-bold hover:bg-slate-900 hover:scale-105 transition-all shadow-lg flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                        Print
+                    </button>
+                </div>
+            </div>
+
+            <!-- Global Settings Override -->
+            <div class="grid grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block tracking-widest">Location Code (Fallback)</label>
+                    <input type="text" id="loc-code" value="EU_WLS" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 font-bold uppercase outline-none focus:border-black">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block tracking-widest">Ship-To (Auto-Extracted)</label>
+                    <textarea id="ship-to" rows="2" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-2 font-bold text-xs uppercase outline-none focus:border-black resize-none" placeholder="Will auto-fill from Excel..."></textarea>
+                </div>
+                <div class="col-span-2 flex items-center gap-3">
+                    <input type="checkbox" id="include-address-labels" class="w-6 h-6 accent-black cursor-pointer" checked>
+                    <label for="include-address-labels" class="font-bold text-sm uppercase tracking-widest text-slate-700 cursor-pointer">Generate 1:1 Matching Address Labels (Full A4)</label>
+                </div>
+            </div>
+
+            <!-- Drag and Drop Zone -->
+            <div id="drop-zone" class="w-full h-[250px] border-4 border-dashed border-slate-300 bg-slate-50 hover:bg-blue-50 hover:border-blue-400 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden">
+                <input type="file" id="file-input" class="hidden" accept=".xlsx, .xls, .csv">
+                
+                <svg id="drop-icon" xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 mb-4 transition-all"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                
+                <svg id="drop-success-icon" xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 mb-4 hidden transition-all"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                
+                <p id="drop-text" class="font-bold text-xl text-slate-600 z-10 text-center px-4">Drag & Drop Packing List</p>
+                <p id="drop-subtext" class="font-bold text-[11px] text-slate-400 uppercase tracking-widest mt-2 z-10 text-center">Supports .XLSX and .CSV</p>
+            </div>
+            
+            <p id="error-msg" class="text-red-500 font-bold text-center mt-4 hidden"></p>
+        </div>
+
+        <!-- Preview Grid for UI -->
+        <div id="preview-grid" class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-10 place-items-center"></div>
+    </div>
+
+    <!-- Print Container (Only visible during printing) -->
+    <div id="print-container" class="hidden"></div>
+    
+    <!-- Hidden Container purely for precise PDF export -->
+    <div id="hidden-pdf-container" class="hidden"></div>
+
+    <script>
+        // --- DOM Elements ---
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const printBtn = document.getElementById('print-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const exportPdfBtn = document.getElementById('export-pdf-btn');
+        const previewGrid = document.getElementById('preview-grid');
+        const printContainer = document.getElementById('print-container');
+        const hiddenPdfContainer = document.getElementById('hidden-pdf-container');
+        const errorMsg = document.getElementById('error-msg');
+        
+        const dropIcon = document.getElementById('drop-icon');
+        const dropSuccessIcon = document.getElementById('drop-success-icon');
+        const dropText = document.getElementById('drop-text');
+        const dropSubtext = document.getElementById('drop-subtext');
+
+        // Global state for Excel Export
+        let currentLabelsData = [];
+
+        // --- Drag & Drop Listeners ---
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-blue-500', 'bg-blue-50'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-blue-500', 'bg-blue-50'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) processFile(e.target.files[0]);
+        });
+        
+        printBtn.addEventListener('click', () => window.print());
+        resetBtn.addEventListener('click', resetApp);
+        exportPdfBtn.addEventListener('click', exportToPDF);
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.remove('hidden');
+            setTimeout(() => errorMsg.classList.add('hidden'), 5000);
+        }
+
+        function resetApp() {
+            previewGrid.innerHTML = '';
+            printContainer.innerHTML = '';
+            hiddenPdfContainer.innerHTML = '';
+            printBtn.classList.add('hidden');
+            resetBtn.classList.add('hidden');
+            exportPdfBtn.classList.add('hidden');
+            fileInput.value = '';
+            currentLabelsData = [];
+            
+            // Clear override fields
+            document.getElementById('loc-code').value = '';
+            document.getElementById('ship-to').value = '';
+            
+            dropIcon.classList.remove('hidden');
+            dropSuccessIcon.classList.add('hidden');
+            dropText.textContent = 'Drag & Drop Packing List';
+            dropSubtext.textContent = 'Supports .XLSX and .CSV';
+        }
+
+        // --- EXPORT TO PDF USING HTML2PDF ---
+        function exportToPDF() {
+            if (currentLabelsData.length === 0) return;
+            
+            const element = document.getElementById('hidden-pdf-container');
+            element.classList.remove('hidden');
+            element.style.display = 'block';
+
+            const opt = {
+                margin:       0,
+                filename:     `Ganni_Labels_Export.pdf`,
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+
+            const originalText = exportPdfBtn.innerHTML;
+            exportPdfBtn.innerHTML = 'Generating...';
+            exportPdfBtn.disabled = true;
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.classList.add('hidden');
+                element.style.display = '';
+                exportPdfBtn.innerHTML = originalText;
+                exportPdfBtn.disabled = false;
+            });
+        }
+
+        // --- LOCATION CODE AUTO-DETECTION ---
+        function detectLocationCode(address) {
+            if (!address) return "EU_WLS"; // Default fallback
+            const addrUpper = address.toUpperCase();
+            
+            // US keywords
+            if (addrUpper.match(/\b(US|USA|UNITED STATES|AMERICA|NEW YORK|CALIFORNIA|TEXAS|NEW JERSEY|FLORIDA|WASHINGTON|NJ)\b/)) {
+                return "US_NJ_NB";
+            }
+            // China keywords
+            if (addrUpper.match(/\b(CHINA|CN|SHANGHAI|SHENZHEN|GUANGZHOU|BEIJING|HONG KONG|DONGGUAN)\b/)) {
+                return "CN_SHA";
+            }
+            // EU keywords (Ganni hubs)
+            if (addrUpper.match(/\b(NETHERLANDS|VENLO|DENMARK|COPENHAGEN|UK|UNITED KINGDOM|ENGLAND|GERMANY|FRANCE|ITALY|SPAIN|EUROPE|BELGIUM|SWEDEN|NORWAY|POLAND|PORTUGAL)\b/)) {
+                return "EU_WLS";
+            }
+            
+            return "EU_WLS"; // Default fallback
+        }
+
+        function getFixedAddressText(locCode) {
+            if (locCode === "US_NJ_NB") {
+                return "US GANNI Inc.\nc/o Bergen Logistics\n5903 West Side Avenue\nNorth Bergen\nNJ 07047, USA";
+            } else if (locCode === "CN_SHA") {
+                return "TOLEAD FASHION LOGISTICS (SHANGHAI) CO., LTD.\n5th Floor,No.1 Office building,A3 Reservoir Area,330 Zhengding Road\nChina(Shanghai) Pilot Free Trade Zone, SHANGHAI, CN ZIP 201202";
+            } else {
+                return "Bleckmann Solutions BV - Ganni\nPiri Reisweg 15-17\n5928LB Venlo\nNetherlands";
+            }
+        }
+
+        // --- FILE PROCESSING & CLIENT DATA MAPPING ---
+        function processFile(file) {
+            dropIcon.classList.add('hidden');
+            dropSuccessIcon.classList.remove('hidden');
+            dropText.textContent = file.name;
+            dropSubtext.textContent = 'Processing Data...';
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const json = XLSX.utils.sheet_to_json(sheet, {header: 1, defval: ""});
+                    
+                    extractGanniData(json);
+                    
+                    dropSubtext.textContent = 'Data Extracted Successfully';
+                    printBtn.classList.remove('hidden');
+                    resetBtn.classList.remove('hidden');
+                    exportPdfBtn.classList.remove('hidden');
+                } catch (err) {
+                    showError("Failed to parse Excel file.");
+                    resetApp();
+                    console.error(err);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function extractGanniData(rows) {
+            let poNo = "";
+            let extractedShipTo = "";
+            let labelsData = [];
+            let sizeHeaders = {}; 
+            
+            let colMap = {
+                style: 2,
+                colorCode: 3,
+                colorDesc: 4,
+                totalPieces: -1,
+                grossWeight: -1
+            };
+            let headerFound = false;
+
+            for (let r = 0; r < rows.length; r++) {
+                const row = rows[r];
+                const rowString = row.join(" ").toUpperCase();
+
+                // 1. Find Ship To Address automatically
+                if (!extractedShipTo) {
+                    for (let c = 0; c < row.length; c++) {
+                        const cellStr = row[c] ? row[c].toString().trim().toUpperCase() : "";
+                        // Added SHIPPING MARK to the scan list
+                        if (cellStr.match(/(SHIP\s*TO|DELIVERY|CONSIGNEE|ADDRESS|DESTINATION|SHIPPING\s*MARK)/i)) {
+                            let addressLines = [];
+                            
+                            // Check same cell split by newlines
+                            if (row[c].toString().includes('\n')) {
+                                addressLines = row[c].toString().split('\n')
+                                    .map(l => l.trim())
+                                    .filter(l => l !== "" && !l.toUpperCase().match(/(SHIP\s*TO|DELIVERY|CONSIGNEE|ADDRESS|DESTINATION|SHIPPING\s*MARK)/i));
+                            }
+                            
+                            // Check next cells to the right (Side-by-side format)
+                            if (addressLines.length === 0) {
+                                for (let nc = c + 1; nc <= c + 3 && nc < row.length; nc++) {
+                                    if (row[nc] && row[nc].toString().trim() !== "") {
+                                        addressLines.push(row[nc].toString().trim());
+                                        // Grab subsequent lines underneath
+                                        for (let nr = r + 1; nr < r + 8 && nr < rows.length; nr++) {
+                                            if (rows[nr][nc] && rows[nr][nc].toString().trim() !== "") {
+                                                addressLines.push(rows[nr][nc].toString().trim());
+                                            } else if (addressLines.length > 0) break;
+                                        }
+                                        break; // Found address block, break col loop
+                                    }
+                                }
+                            } 
+                            // Check underneath header cell (Top-down format - grabs 4-5 cells below)
+                            if (addressLines.length === 0) {
+                                for (let nr = r + 1; nr < r + 8 && nr < rows.length; nr++) {
+                                    // Look directly under, or one cell to the right (due to merged cells)
+                                    let val = rows[nr][c] ? rows[nr][c].toString().trim() : "";
+                                    if (!val && c+1 < rows[nr].length) val = rows[nr][c+1] ? rows[nr][c+1].toString().trim() : "";
+                                    
+                                    if (val !== "") {
+                                        addressLines.push(val);
+                                    } else if (addressLines.length > 0) {
+                                        break; // Stop collecting if we hit an empty row
+                                    }
+                                }
+                            }
+                            
+                            if (addressLines.length > 0) {
+                                extractedShipTo = addressLines.join('\n');
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // 2. Find PO Number
+                if (!poNo && (rowString.includes("PO NO") || rowString.includes("PURCHASE ORDER"))) {
+                    for (let c = 0; c < row.length; c++) {
+                        const cellStr = row[c] ? row[c].toString().trim().toUpperCase() : "";
+                        if (cellStr.match(/^(PO NO\.?|PURCHASE ORDER( NO\.?)?)[\s:]*$/)) {
+                            for (let n = c + 1; n < row.length; n++) {
+                                if (row[n] && row[n].toString().trim() !== "") {
+                                    poNo = row[n].toString().trim();
+                                    break;
+                                }
+                            }
+                            if (poNo) break;
+                        } 
+                        else if (cellStr.includes("PO NO:") || cellStr.includes("PURCHASE ORDER:")) {
+                            poNo = row[c].toString().split(':')[1]?.trim();
+                            if (poNo) break;
+                        }
+                    }
+                    if (poNo) {
+                        poNo = poNo.replace(/^(PO\s*NO\.?|PO|PURCHASE\s*ORDER)[\s:]*/i, '').trim();
+                    }
+                }
+
+                // 3. Map Size and Data Columns
+                if (!headerFound && (rowString.includes("CARTON NO") || rowString.includes("CARTON"))) {
+                    headerFound = true;
+                    for (let c = 0; c < row.length; c++) {
+                        const cellVal = row[c] ? row[c].toString().toUpperCase().trim() : "";
+                        if (!cellVal) continue;
+                        
+                        if (cellVal.includes("STYLE")) colMap.style = c;
+                        else if (cellVal.includes("COLOR CODE")) colMap.colorCode = c;
+                        else if (cellVal.includes("COLOR DESC")) colMap.colorDesc = c;
+                        else if (cellVal.includes("TOTAL PIECE") || cellVal.includes("TOTAL QTY")) colMap.totalPieces = c;
+                        else if (cellVal.includes("G.W") || cellVal.includes("GROSS WEIGHT")) colMap.grossWeight = c;
+                        else {
+                            const numVal = parseInt(cellVal);
+                            if (!isNaN(numVal) && numVal > 20 && numVal < 60 && !cellVal.includes("CARTON")) {
+                                sizeHeaders[c] = cellVal;
+                            }
+                        }
+                    }
+                    continue; 
+                }
+
+                // 4. Extract Carton Rows
+                const cartonRaw = row[0] ? row[0].toString().trim() : "";
+                if (headerFound && !isNaN(parseInt(cartonRaw)) && cartonRaw !== "") {
+                    const styleNo = (row[colMap.style] || "").toString().trim();
+                    const colorCode = (row[colMap.colorCode] || "").toString().trim();
+                    const colorDesc = (row[colMap.colorDesc] || "").toString().trim();
+                    
+                    let totalPieces = "0";
+                    if (colMap.totalPieces !== -1) {
+                        totalPieces = (row[colMap.totalPieces] || "").toString().trim();
+                    } else {
+                        totalPieces = (row[row.length - 4] || row[row.length - 2] || "0").toString().trim(); 
+                    }
+
+                    let grossWeight = "0";
+                    if (colMap.grossWeight !== -1) {
+                        grossWeight = (row[colMap.grossWeight] || "").toString().trim();
+                    } else {
+                        grossWeight = (row[row.length - 3] || row[row.length - 1] || "0").toString().trim();
+                    }
+
+                    // Format Gross Weight to max 3 decimal places
+                    const parsedGw = parseFloat(grossWeight);
+                    if (!isNaN(parsedGw)) {
+                        grossWeight = Number(parsedGw.toFixed(3)).toString();
+                    }
+
+                    let breakdown = [];
+                    for (let c in sizeHeaders) {
+                        const qty = row[c]?.toString().trim();
+                        if (qty && parseInt(qty) > 0) {
+                            breakdown.push(`${sizeHeaders[c]}=${qty}`);
+                        }
+                    }
+
+                    if (breakdown.length > 0) {
+                        labelsData.push({
+                            cartonNo: cartonRaw,
+                            styleNo: styleNo,
+                            colorName: `${styleNo}${colorCode} ${colorDesc}`.trim(),
+                            sizeBreakdown: breakdown.join(" "),
+                            totalPieces: totalPieces,
+                            grossWeight: grossWeight,
+                            poNo: poNo
+                        });
+                    }
+                }
+            }
+
+            if (labelsData.length === 0) {
+                showError("Could not find valid carton data matching the Ganni format.");
+                resetApp();
+                return;
+            }
+
+            // Fill UI override box if address extracted
+            if (extractedShipTo) {
+                document.getElementById('ship-to').value = extractedShipTo;
+                document.getElementById('loc-code').value = detectLocationCode(extractedShipTo);
+            } else {
+                // If no address extracted from Excel, try detecting from what's already in the manual override box
+                document.getElementById('loc-code').value = detectLocationCode(document.getElementById('ship-to').value);
+            }
+
+            const totalCartons = labelsData.length;
+            const shipTo = document.getElementById('ship-to').value;
+            const locCode = document.getElementById('loc-code').value.toUpperCase();
+            const includeAddressLabels = document.getElementById('include-address-labels').checked;
+            const fixedAddressText = getFixedAddressText(locCode);
+            
+            // Format Display No (1 box label, 1 address label per carton)
+            let boxLabels = [];
+            let addressLabels = [];
+            
+            labelsData.forEach(l => {
+                // Box Label
+                const formattedBoxLabel = { ...l, displayNo: `${l.cartonNo}/${totalCartons}`, shipTo: shipTo, type: 'box' };
+                boxLabels.push(formattedBoxLabel);
+
+                // Address Label
+                if (includeAddressLabels) {
+                    const addressLabel = { type: 'address', text: fixedAddressText };
+                    addressLabels.push(addressLabel);
+                }
+            });
+
+            // Group all box labels together to print 2 per page, followed by address labels
+            let finalLabels = [...boxLabels, ...addressLabels];
+
+            currentLabelsData = finalLabels;
+            renderLabels(finalLabels);
+        }
+
+        // --- RENDER & HTML TEMPLATE SECTION ---
+        function renderLabels(labels) {
+            const locCode = document.getElementById('loc-code').value.toUpperCase();
+            const shipTo = document.getElementById('ship-to').value.toUpperCase().replace(/\n/g, '<br/>');
+
+            let uiHtml = '';
+            let printHtml = '';
+            let pdfExportHtml = '';
+
+            let i = 0;
+            while (i < labels.length) {
+                if (labels[i].type === 'address') {
+                    // Output ONE full page address label
+                    const labelHtml = generateAddressLabelHtml(labels[i].text);
+                    const pageContent = `
+                        <div class="label-page-wrapper-single pdf-export-wrapper-single">
+                            ${labelHtml}
+                        </div>`;
+                    printHtml += pageContent;
+                    pdfExportHtml += pageContent;
+                    
+                    // Add to UI (taking full width of the grid)
+                    uiHtml += `<div class="col-span-1 md:col-span-2 flex justify-center w-full">${labelHtml}</div>`;
+                    i += 1;
+                } else {
+                    // Output TWO box labels per page
+                    const label1Html = generateLabelHtml(labels[i], locCode, shipTo);
+                    let label2Html = '';
+                    let labelsConsumed = 1;
+                    
+                    if (i + 1 < labels.length && labels[i+1].type === 'box') {
+                        label2Html = generateLabelHtml(labels[i+1], locCode, shipTo);
+                        labelsConsumed = 2;
+                    }
+
+                    const pageContent = `
+                        <div class="label-page-wrapper pdf-export-wrapper">
+                            ${label1Html}
+                            ${label2Html}
+                        </div>`;
+                    printHtml += pageContent;
+                    pdfExportHtml += pageContent;
+                    
+                    uiHtml += label1Html;
+                    if (label2Html) uiHtml += label2Html;
+                    
+                    i += labelsConsumed;
+                }
+            }
+
+            previewGrid.innerHTML = uiHtml;
+            printContainer.innerHTML = printHtml;
+            hiddenPdfContainer.innerHTML = pdfExportHtml;
+
+            printContainer.classList.remove('hidden');
+        }
+
+        // Address Only Label Template (Full page / 280x190mm)
+        function generateAddressLabelHtml(text) {
+            const safeText = text.toUpperCase().replace(/\n/g, '<br/>');
+            return `
+            <div class="address-label-card bg-white flex flex-col uppercase overflow-hidden relative shadow-2xl print:shadow-none border-[2px] border-black p-12 justify-center items-center text-center">
+                <div class="font-bold text-7xl mb-8 tracking-tight">GANNI</div>
+                <div class="font-bold text-3xl leading-[1.6] w-full max-w-[80%] mx-auto">${safeText}</div>
+            </div>`;
+        }
+
+        // Box Label Template
+        function generateLabelHtml(data, locCode, shipTo) {
+            const safe = (val) => (val || '').toString().toUpperCase();
+            
+            return `
+            <div class="label-card bg-white flex flex-col uppercase overflow-hidden relative shadow-2xl print:shadow-none border-[2px] border-black">
+                <!-- Row 1 -->
+                <div class="flex h-[15%] border-b-[2px] border-black shrink-0">
+                    <div class="w-[55%] flex items-center justify-center border-r-[2px] border-black font-bold text-5xl leading-none">
+                        GANNI
+                    </div>
+                    <div class="w-[45%] flex flex-col">
+                        <div class="h-1/3 text-[0.6rem] text-center pt-1 font-bold tracking-widest border-b border-black/10">LOCATION CODE</div>
+                        <div class="h-2/3 flex items-center justify-center font-bold text-4xl leading-none">${safe(locCode)}</div>
+                    </div>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="flex h-[15%] border-b-[2px] border-black shrink-0">
+                    <div class="w-[55%] px-3 py-2 text-[0.75rem] leading-tight font-normal border-r-[2px] border-black overflow-hidden bg-slate-50/30 normal-case flex flex-col justify-center">
+                        ${safe(shipTo)}
+                    </div>
+                    <div class="w-[45%] flex uppercase">
+                        <div class="w-1/3 flex items-center justify-center text-[0.6rem] font-bold px-1 text-center leading-tight border-r-2 border-black">CARTON NO</div>
+                        <div class="w-2/3 flex items-center justify-center font-bold text-4xl leading-none">${safe(data.displayNo)}</div>
+                    </div>
+                </div>
+
+                <!-- Rows 3-8 Detail Data -->
+                ${createRow("PURCHASE ORDER NO", safe(data.poNo), "text-2xl", true)}
+                ${createRow("STYLE NO", safe(data.styleNo), "text-3xl", true)}
+                ${createRow("COLOR CODE + NAME", safe(data.colorName), "text-sm leading-[1.1]", true)}
+                ${createRow("SIZE", safe(data.sizeBreakdown), "text-xl normal-case", true)}
+                ${createRow("TOTAL PIECES", safe(data.totalPieces), "text-4xl", true)}
+                ${createRow("GROSS WEIGHT", safe(data.grossWeight), "text-4xl", false)}
+            </div>`;
+        }
+
+        function createRow(label, value, valueClasses, hasBorder) {
+            return `
+            <div class="flex h-[11.6%] ${hasBorder ? 'border-b-[2px] border-black' : ''}">
+                <div class="w-[55%] flex items-center justify-center font-bold text-[0.75rem] border-r-[2px] border-black px-4 text-center leading-tight bg-slate-50/10">
+                    ${label}
+                </div>
+                <div class="w-[45%] flex items-center justify-center font-normal ${valueClasses} px-4 text-center leading-tight">
+                    ${value}
+                </div>
+            </div>`;
+        }
+    </script>
+</body>
+</html>

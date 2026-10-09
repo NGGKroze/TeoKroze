@@ -1,0 +1,38 @@
+{
+  "exact": {
+    "PELINTEX Pallet Labels v7 Manual TEC-IT GS1-128": "PELINTEX – етикети за палети v7 (GS1-128)",
+    "PELINTEX Pallet Label Generator": "PELINTEX – генератор на етикети за палети",
+    "v7 Manual TEC-IT": "v7 (офлайн)",
+    "Drop the Excel export. The program groups rows by pallet and creates 100 × 150 mm labels, 2 labels per A4 landscape page. Barcodes can be created automatically with TEC-IT GS1-128 or pasted manually from the TEC-IT site.": "Пуснете Excel експорта. Програмата групира редовете по палет и създава етикети 100 × 150 мм, по 2 на страница A4 (пейзаж). Баркодовете GS1-128 се рисуват локално, без интернет.",
+    "Clear": "Изчисти",
+    "Print / Save PDF": "Печат / Запази PDF",
+    "Company / title": "Фирма / заглавие",
+    "PL date": "Дата на PL",
+    "PL code preview": "Преглед на кода на PL",
+    "Maximum units in a box": "Макс. бройки в кашон",
+    "Regenerate": "Генерирай наново",
+    "1. Excel file": "1. Excel файл",
+    "2. Manual TEC-IT codes": "2. Ръчни баркод кодове",
+    "Drop XLSX file here": "Пуснете XLSX файл тук",
+    "or click to select file": "или кликнете за избор на файл",
+    "Apply pasted codes": "Приложи поставените кодове",
+    "Clear manual codes": "Изчисти ръчните кодове",
+    "Load Excel to see the label list.": "Заредете Excel, за да видите списъка с етикети.",
+    "Waiting for Excel file.": "Очаква се Excel файл.",
+    "Barcode source:": "Източник на баркодовете:",
+    "Open calendar": "Отвори календара",
+    "Input method": "Начин на въвеждане",
+    "Manual TEC-IT image/code": "Ръчен баркод",
+    "Load the Excel file first, then paste TEC-IT codes in tab 2.": "Първо заредете Excel файла, после поставете кодовете в раздел 2.",
+    "Manual barcode codes cleared. Labels now use automatic TEC-IT GS1-128 generation.": "Ръчните кодове са изчистени. Етикетите ползват автоматичния GS1-128 баркод.",
+    "Could not detect the required columns. Needed: Article, Quantité, Num manuel de pal, Numéro SSCC.": "Не са открити нужните колони: Article, Quantité, Num manuel de pal, Numéro SSCC.",
+    "Not detected": "Не е открито",
+    "SSCC: missing": "SSCC: липсва",
+    "No sheets found in the file.": "Във файла няма листове.",
+    "Load the Excel first, then paste the barcode codes copied from TEC-IT. Accepted formats: full TEC-IT image URL, full HTML <img> code, one code per line, or just SSCC / (00)SSCC digits. If no pallet/SSCC is detected, lines are applied in label order.": "Първо заредете Excel, после поставете баркод кодовете. Приемат се: пълен адрес на изображение, HTML <img> код, по един код на ред или само SSCC / (00)SSCC цифри. Ако не е открит палет/SSCC, редовете се прилагат по реда на етикетите.",
+    "TEC-IT GS1-128 Barcode Generator": "GS1-128 баркод (локален)"
+  },
+  "skip": [
+    "#printArea"
+  ]
+}

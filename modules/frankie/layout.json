@@ -1,0 +1,49 @@
+{
+  "title": "The Frankie Shop – етикети за кашони",
+  "subtitle": "Опаковъчен лист (XLS/XLSX) → етикети за кашони (2 копия на A4)",
+  "hide": [
+    ".hero"
+  ],
+  "side": [
+    {
+      "title": "1. Файлове",
+      "move": [
+        "#dropzone",
+        "#message"
+      ]
+    },
+    {
+      "title": "2. Настройки",
+      "move": [
+        ".controls"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "sel": "#clearBtn",
+      "kind": "danger",
+      "side": "left"
+    },
+    {
+      "sel": "#addBtn",
+      "kind": "secondary",
+      "side": "left"
+    },
+    {
+      "sel": "#applyBtn",
+      "kind": "secondary",
+      "side": "right"
+    },
+    {
+      "sel": "#pdfBtn",
+      "kind": "primary",
+      "side": "right"
+    },
+    {
+      "sel": "#printBtn",
+      "kind": "primary",
+      "side": "right"
+    }
+  ]
+}

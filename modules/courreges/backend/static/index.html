@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>COURRÈGES Packing Generator V34</title>
+<style>
+:root{
+  --bg:#f6f2ec; --card:#fffdf9; --ink:#1e1b17; --muted:#756d63; --line:#ded6cb;
+  --accent:#111; --soft:#eee7dc; --good:#0f7b4b; --warn:#b56500; --bad:#9c3100;
+  --shadow:0 14px 35px rgba(37,28,18,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:#111;color:white;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;gap:18px;position:sticky;top:0;z-index:5;box-shadow:0 4px 16px rgba(0,0,0,.16)}
+.logo{font-weight:800;letter-spacing:.02em;font-size:20px}.tag{font-size:12px;color:#ddd;margin-top:4px}.status{font-size:12px;color:#ddd;text-align:right}
+main{padding:24px;max-width:1540px;margin:0 auto}.grid{display:grid;grid-template-columns:390px 1fr;gap:22px;align-items:start}.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}.panel h2{margin:0;padding:16px 18px;border-bottom:1px solid var(--line);font-size:18px;background:#fff}.panel .body{padding:18px}.step{display:flex;gap:12px;margin-bottom:16px}.num{width:28px;height:28px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:0 0 28px}.step-title{font-weight:800}.hint{color:var(--muted);font-size:13px;line-height:1.35;margin-top:4px}
+.drop{border:2px dashed #bfb5a8;border-radius:16px;background:#faf7f1;padding:22px;text-align:center;cursor:pointer;transition:.15s}.drop:hover,.drop.dragover{border-color:#111;background:#fff;transform:translateY(-1px)}.drop strong{display:block;margin-bottom:6px}.drop input{display:none}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}.row6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:12px}label{display:block;font-size:12px;font-weight:700;color:#4e463d;margin-bottom:5px}input,select,textarea{width:100%;border:1px solid #cec4b7;border-radius:10px;background:#fff;padding:10px 11px;font-family:Calibri,Arial,sans-serif;font-size:14px}textarea{min-height:86px;resize:vertical}.check{display:flex;gap:10px;align-items:center;margin:10px 0}.check input{width:auto}.btn{border:0;border-radius:12px;background:#111;color:#fff;padding:11px 15px;font-weight:800;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,.12)}.btn.secondary{background:#fff;color:#111;border:1px solid #111;box-shadow:none}.btn.good{background:var(--good)}.btn.warn{background:var(--bad)}.btn.small{padding:7px 10px;border-radius:9px;font-size:12px}.btn.icon{padding:4px 8px;border-radius:8px;font-size:12px;box-shadow:none;vertical-align:middle;margin-right:6px}.btn.icon.light{background:#fff;color:#111;border:1px solid #cfc6bc}.btn:disabled{opacity:.5;cursor:not-allowed}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}.metric{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.metric b{font-size:22px;display:block}.metric span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.orderCards{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;margin-bottom:14px}.orderCard{min-width:185px;border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px;cursor:pointer}.orderCard:hover{border-color:#111}.orderCard.active{background:#111;color:#fff;border-color:#111}.orderCard.downloaded{border-color:var(--good);box-shadow:inset 0 0 0 2px rgba(15,123,75,.18);background:#effaf4}.orderCard.active.downloaded{background:#102017;color:#fff;border-color:#28a863}.downloadedRow td{background:#effaf4}.downloadedText{color:var(--good)!important;text-decoration-color:var(--good)!important}.dlActions{display:flex;gap:5px;flex-wrap:wrap;align-items:center}.downloadedMark{display:inline-block;color:var(--good);font-weight:900;margin-left:4px}.orderCard b{display:block;font-size:18px}.orderCard .cardTop{display:flex;align-items:center;justify-content:space-between;gap:8px}.orderCard .cardActions{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}.orderCard span{font-size:12px;color:inherit;opacity:.78}.tableWrap{border:1px solid var(--line);border-radius:14px;overflow:auto;background:#fff;max-height:520px}table{border-collapse:collapse;width:max-content;min-width:100%;font-size:13px}th{position:sticky;top:0;background:#eee7dc;z-index:1;border-bottom:1px solid #cfc6bc;padding:8px;white-space:nowrap}td{border-bottom:1px solid #eee6dc;border-right:1px solid #eee6dc;padding:7px;vertical-align:middle}.w-style{min-width:170px}.w-desc{min-width:220px}.w-color{min-width:230px}.clickCell{cursor:pointer;color:#111;font-weight:800;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}.clickCell:hover{background:#fff7dc}.overrideBadge{display:inline-block;background:#0f7b4b;color:#fff;border-radius:999px;padding:2px 7px;font-size:11px;font-weight:800;margin-left:5px}.logs{background:#171717;color:#ddd;border-radius:14px;padding:12px;font-family:Consolas,monospace;font-size:12px;max-height:220px;overflow:auto;white-space:pre-wrap}.sectionTitle{font-weight:900;margin:18px 0 10px}.sep{height:1px;background:var(--line);margin:18px 0}.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 9px;background:#eee7dc;font-size:12px;color:#51483f}.dangerText{color:#9c3100;font-weight:700}.previewBox{border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px;margin-bottom:14px}.previewBox h3{margin:0 0 10px}.miniTable{width:100%;min-width:0}.miniTable td,.miniTable th{padding:6px;text-align:center}.miniTable .left{text-align:left}.footerNote{font-size:12px;color:var(--muted);margin-top:8px}
+.modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.48);display:none;align-items:center;justify-content:center;z-index:20;padding:24px}.modalBackdrop.show{display:flex}.modal{width:min(980px,96vw);max-height:92vh;overflow:auto;background:var(--card);border-radius:22px;box-shadow:0 30px 70px rgba(0,0,0,.35);border:1px solid var(--line)}.modalHead{position:sticky;top:0;background:#111;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;gap:12px;align-items:center;z-index:2}.modalHead h2{margin:0;font-size:18px}.modalBody{padding:18px 20px}.modalSummary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0 16px}.modalMetric{border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px}.modalMetric b{font-size:20px;display:block}.modalMetric span{font-size:11px;text-transform:uppercase;color:var(--muted)}.blockTitle{font-weight:900;margin:16px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--line)}.modalFoot{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;position:sticky;bottom:0;background:var(--card)}
+@media(max-width:1000px){.grid{grid-template-columns:1fr}.metrics,.modalSummary{grid-template-columns:repeat(2,1fr)}header{position:static}.row3,.row6{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="logo">COURRÈGES Packing Generator</div><div class="tag">V35 · clean label borders · 2 labels per print sheet</div></div>
+  <div class="status" id="status">Loading status…</div>
+</header>
+<main>
+  <div class="grid">
+    <aside class="panel">
+      <h2>Workflow</h2>
+      <div class="body">
+        <div class="step"><div class="num">1</div><div><div class="step-title">Import order PDFs</div><div class="hint">Text-layer PDFs parse by coordinates. Image-only PDFs use local Tesseract OCR.</div></div></div>
+        <label class="drop" id="pdfDrop"><input id="pdfFiles" type="file" multiple accept=".pdf"/><strong>Drop PDFs here or click to select</strong><span id="pdfNames" class="hint">No PDF selected</span></label>
+        <label class="check"><input type="checkbox" id="forceOcr"/> Force OCR for all pages</label>
+        <div class="actions"><button class="btn" id="parseBtn">Parse PDF orders</button><button class="btn secondary" id="clearBtn">Clear rows</button></div>
+        <div class="sep"></div>
+        <div class="step"><div class="num">2</div><div><div class="step-title">Review + edit order/style</div><div class="hint">Click an order number or style in the table to open a popup for quantities, weight and carton overrides. Blank override fields use the defaults below.</div></div></div>
+        <div class="row"><div><label>Preview order</label><select id="orderSelect"><option value="ALL">All parsed orders</option></select></div><div><label>Document type</label><select id="docType"><option>COLLECTION</option><option>PRE PROD SAMPLE</option><option>PRE SHIP SAMPLE</option><option selected>PRODUCTION</option></select></div></div>
+        <div class="sep"></div>
+        <div class="step"><div class="num">3</div><div><div class="step-title">Default packing settings</div><div class="hint">These are used unless a style/color row has its own popup override.</div></div></div>
+        <div class="row"><div><label>Shipment date</label><input id="shipmentDate" type="date"/></div><div><label>Packing list number</label><input id="plNumber" placeholder="Auto: PL-YYYYMMDD"/></div></div>
+        <div class="row"><div><label>Invoice number</label><input id="invoiceNumber"/></div><div><label>Grouping</label><select id="groupMode"><option value="order" selected>One packing list per order number</option><option value="styleColor">One packing list per style/color</option></select></div></div>
+        <div class="row"><div><label>Default pieces per carton</label><input id="capacity" type="number" value="25"/></div><div><label>Default net kg / piece</label><input id="netPerPiece" type="number" step="0.01" value="0.35"/></div></div>
+        <div class="row"><div><label>Default carton tare kg</label><input id="tare" type="number" step="0.01" value="1.20"/></div><div><label>Default box size</label><input id="boxSize" value="60/40/40"/></div></div>
+        <label>Warehouse address</label><textarea id="warehouse">C-LOG LONGUEIL SAINTE MARIE
+Par Logistique Paris Oise
+Bâtiment C - Cellule n°1, 2 et 3
+60126 LONGUEIL SAINTE MARIE
+FRANCE</textarea>
+        <label>Expediteur address</label><textarea id="expediteur">PELINTEX
+5 Hristo Botev blvd.
+7000 RUSE
+BULGARIA</textarea>
+        <div class="actions"><button class="btn good" id="exportBtn">Download all PL + Labels</button><button class="btn secondary" id="exportActiveBtn">Download selected PL + Labels</button></div>
+        <div class="sep"></div>
+        <div class="step"><div class="num">L</div><div><div class="step-title">Labels only from finished packing lists</div><div class="hint">Upload approved Packing_List.xlsx files. Summary tables are ignored; only carton detail sections become labels.</div></div></div>
+        <label class="drop" id="plDrop"><input id="plFiles" type="file" multiple accept=".xlsx"/><strong>Drop Packing_List.xlsx here or click to select</strong><span id="plNames" class="hint">No Excel packing list selected</span></label>
+        <div class="actions"><button class="btn" id="labelsOnlyBtn">Generate labels from packing lists</button></div>
+      </div>
+    </aside>
+
+    <section class="panel">
+      <h2>Review parsed orders</h2>
+      <div class="body">
+        <div class="metrics">
+          <div class="metric"><b id="mOrders">0</b><span>Orders</span></div>
+          <div class="metric"><b id="mRows">0</b><span>Style/color rows</span></div>
+          <div class="metric"><b id="mPieces">0</b><span>Total pieces</span></div>
+          <div class="metric"><b id="mCartons">0</b><span>Estimated cartons</span></div>
+        </div>
+        <div id="orderCards" class="orderCards"></div>
+        <div id="orderPreview" class="previewBox" style="display:none"></div>
+        <div class="tableWrap"><table id="rowsTable"></table></div>
+        <div class="footerNote">Click the underlined order/style cells to edit a row. Empty size cells are treated as 0. Row overrides are saved with export.</div>
+        <div class="sectionTitle">Log</div>
+        <div id="log" class="logs">Ready.</div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="modalBackdrop" id="editModal">
+  <div class="modal">
+    <div class="modalHead">
+      <h2 id="modalTitle">Edit row</h2>
+      <button class="btn secondary small" id="modalCloseTop">Close</button>
+    </div>
+    <div class="modalBody">
+      <div class="modalSummary">
+        <div class="modalMetric"><b id="modalPieces">0</b><span>Total pieces</span></div>
+        <div class="modalMetric"><b id="modalCartons">0</b><span>Estimated cartons</span></div>
+        <div class="modalMetric"><b id="modalNet">0</b><span>Net kg / carton setting</span></div>
+        <div class="modalMetric"><b id="modalGross">0</b><span>Gross kg first carton</span></div>
+      </div>
+      <div class="blockTitle">Order / style information</div>
+      <div class="row3">
+        <div><label>Order number</label><input id="ed_orderNumber"></div>
+        <div><label>Season</label><input id="ed_season"></div>
+        <div><label>Ex-mill date</label><input id="ed_exMillDate"></div>
+      </div>
+      <div class="row">
+        <div><label>Style</label><input id="ed_style"></div>
+        <div><label>EAN</label><input id="ed_ean"></div>
+      </div>
+      <div class="row">
+        <div><label>Designation</label><input id="ed_designation"></div>
+        <div><label>Color</label><div class="row" style="margin:0"><input id="ed_colorCode" placeholder="Code"><input id="ed_colorName" placeholder="Name"></div></div>
+      </div>
+      <div class="blockTitle">Quantities by size</div>
+      <div class="row6" id="modalSizeGrid"></div>
+      <div class="blockTitle">Packing overrides for this style/color</div>
+      <div class="hint">Leave blank to use the default settings from the left panel. Fill only the field you want to override.</div>
+      <div class="row">
+        <div><label>Pieces per carton override</label><input id="ed_overrideCapacity" type="number" placeholder="Use default"></div>
+        <div><label>Net kg / piece override</label><input id="ed_overrideNetPerPiece" type="number" step="0.01" placeholder="Use default"></div>
+      </div>
+      <div class="row">
+        <div><label>Carton tare kg override</label><input id="ed_overrideTare" type="number" step="0.01" placeholder="Use default"></div>
+        <div><label>Box size override</label><input id="ed_overrideBoxSize" placeholder="Use default"></div>
+      </div>
+    </div>
+    <div class="modalFoot">
+      <div class="actions" style="margin:0"><button class="btn secondary" id="clearOverridesBtn">Clear overrides</button><button class="btn warn" id="deleteRowBtn">Delete row</button></div>
+      <button class="btn" id="modalClose">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SIZES = ['XS','S','M','L','XL','XXL'];
+let rows = [];
+const downloaded = new Set();
+let activeOrder = 'ALL';
+let editingIdx = null;
+const $ = id => document.getElementById(id);
+
+function log(msg){ const el=$('log'); el.textContent += '\n' + msg; el.scrollTop=el.scrollHeight; }
+function setLog(lines){ $('log').textContent = lines && lines.length ? lines.join('\n') : 'Ready.'; }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+$('shipmentDate').value = todayISO();
+function autoPL(){ const d=$('shipmentDate').value; if(!$('plNumber').value && d){ $('plNumber').placeholder='PL-' + d.replaceAll('-',''); } }
+$('shipmentDate').addEventListener('change', autoPL); autoPL();
+
+fetch('/api/status').then(r=>r.json()).then(s=>{$('status').innerHTML = `${s.version}<br>Tesseract: ${s.tesseract}`}).catch(()=>{$('status').textContent='Local backend not reachable'});
+
+function filesLabel(input){ return [...input.files].map(f=>f.name).join(', ') || 'No file selected'; }
+function installDropZone(dropId, inputId, namesId, allowedExts){
+  const drop=$(dropId), input=$(inputId), names=$(namesId);
+  const refresh=()=>{ names.textContent=filesLabel(input); };
+  const setDroppedFiles=(fileList)=>{
+    const dt=new DataTransfer();
+    [...fileList].forEach(f=>{
+      const ok=!allowedExts || allowedExts.some(ext=>f.name.toLowerCase().endsWith(ext));
+      if(ok) dt.items.add(f);
+    });
+    input.files=dt.files;
+    refresh();
+  };
+  drop.addEventListener('click', (e)=>{ if(e.target!==input) input.click(); });
+  input.addEventListener('change', refresh);
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); drop.classList.add('dragover'); }));
+  ['dragleave','dragend'].forEach(ev=>drop.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); drop.classList.remove('dragover'); }));
+  drop.addEventListener('drop', e=>{ e.preventDefault(); e.stopPropagation(); drop.classList.remove('dragover'); setDroppedFiles(e.dataTransfer.files); });
+}
+window.addEventListener('dragover', e=>e.preventDefault());
+window.addEventListener('drop', e=>e.preventDefault());
+installDropZone('pdfDrop','pdfFiles','pdfNames',['.pdf']);
+installDropZone('plDrop','plFiles','plNames',['.xlsx']);
+
+function settings(){
+  const date=$('shipmentDate').value; const pl=$('plNumber').value || (date ? 'PL-'+date.replaceAll('-','') : '');
+  return {docType:$('docType').value, shipmentDate: date ? date.split('-').reverse().join('/').slice(0,8) : '', packingListNumber:pl,
+    invoiceNumber:$('invoiceNumber').value, groupMode:$('groupMode').value, capacity:+$('capacity').value||25,
+    netPerPiece:+$('netPerPiece').value||0.35, tare:+$('tare').value||1.2, boxSize:$('boxSize').value||'60/40/40',
+    warehouse:$('warehouse').value, expediteur:$('expediteur').value, origin:'BULGARIA'};
+}
+function visibleRows(){ return activeOrder==='ALL' ? rows : rows.filter(r=>String(r.orderNumber)===String(activeOrder)); }
+function totalPieces(list){ return list.reduce((a,r)=>a+SIZES.reduce((s,z)=>s+(+r[z]||0),0),0); }
+function effectivePack(r){ const st=settings(); return {capacity:+r.overrideCapacity||st.capacity, netPerPiece:+r.overrideNetPerPiece||st.netPerPiece, tare:+r.overrideTare||st.tare, boxSize:r.overrideBoxSize||st.boxSize}; }
+function rowCartons(r){ const p=effectivePack(r); const pcs=SIZES.reduce((a,s)=>a+(+r[s]||0),0); return Math.ceil(pcs/(p.capacity||25)); }
+function estCartons(list){ return list.reduce((a,r)=>a+rowCartons(r),0); }
+function hasOverrides(r){ return !!(r.overrideCapacity || r.overrideNetPerPiece || r.overrideTare || r.overrideBoxSize); }
+function ordersMap(){ const m={}; rows.forEach(r=>{ const k=r.orderNumber||'UNKNOWN'; (m[k]??=[]).push(r); }); return m; }
+function sanitizeName(s){ return String(s||'FILE').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,120) || 'FILE'; }
+function cleanExportRows(list){ return list.map(r=>{ const o={...r}; SIZES.forEach(s=>o[s]=+o[s]||0); o.total=SIZES.reduce((a,s)=>a+o[s],0); return o; }).filter(r=>r.total>0); }
+function exportFilename(label, kind){
+  const base=sanitizeName(label);
+  if(kind==='packing') return base+'_Packing_List.xlsx';
+  if(kind==='labels') return base+'_Carton_Labels.xlsx';
+  return base+'_Export.xlsx';
+}
+async function exportRowsSubset(list, label, forcedGroupMode, kind='packing', markKey=null){
+  const cleanRows=cleanExportRows(list);
+  if(!cleanRows.length){ alert('Nothing to export for this selection.'); return false; }
+  const st={...settings()};
+  if(forcedGroupMode) st.groupMode=forcedGroupMode;
+  const res=await fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows:cleanRows,settings:st,kind})});
+  if(!res.ok){ alert(await res.text()); return false; }
+  const blob=await res.blob();
+  downloadBlob(blob, exportFilename(label, kind));
+  if(markKey){ downloaded.add(markKey+':'+kind); }
+  return true;
+}
+function groupedSelections(list, forcedGroupMode){
+  const mode = forcedGroupMode || settings().groupMode || 'order';
+  const groups = new Map();
+  cleanExportRows(list).forEach(r=>{
+    const key = mode==='styleColor'
+      ? `${r.orderNumber||'ORDER'}|${r.style||'STYLE'}|${r.colorCode||'COLOR'}`
+      : `${r.orderNumber||'ORDER'}`;
+    if(!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  });
+  return [...groups.entries()].map(([key, rs])=>{
+    const r=rs[0]||{};
+    const label = mode==='styleColor'
+      ? `${r.orderNumber||'ORDER'}_${r.style||'STYLE'}_${r.colorCode||'COLOR'}`
+      : `ORDER_${r.orderNumber||key}`;
+    return {key,label,rows:rs,mode};
+  });
+}
+async function exportRowsPair(list, label, forcedGroupMode, markKey=null){
+  const groups = groupedSelections(list, forcedGroupMode);
+  if(!groups.length){ alert('Nothing to export for this selection.'); return; }
+  let okCount = 0;
+  for(const g of groups){
+    const plOk = await exportRowsSubset(g.rows, groups.length===1 ? label : g.label, g.mode, 'packing', null);
+    if(!plOk) continue;
+    // Small pause helps Chrome/Edge register two separate downloads reliably.
+    await new Promise(resolve=>setTimeout(resolve, 180));
+    const labOk = await exportRowsSubset(g.rows, groups.length===1 ? label : g.label, g.mode, 'labels', null);
+    if(labOk) okCount++;
+    await new Promise(resolve=>setTimeout(resolve, 180));
+  }
+  if(markKey && okCount){ downloaded.add(markKey+':packing'); downloaded.add(markKey+':labels'); downloaded.add(markKey+':any'); renderAll(); }
+}
+function isDownloaded(prefix){ return downloaded.has(prefix+':any') || downloaded.has(prefix+':packing') || downloaded.has(prefix+':labels'); }
+function exportOrderBoth(orderNo, ev){
+  if(ev){ev.preventDefault(); ev.stopPropagation();}
+  exportRowsPair(rows.filter(r=>String(r.orderNumber)===String(orderNo)), 'ORDER_'+orderNo, 'order', 'order:'+orderNo);
+}
+function exportRowBoth(idx, ev){
+  if(ev){ev.preventDefault(); ev.stopPropagation();}
+  const r=rows[idx]; if(!r) return;
+  exportRowsPair([r], `${r.orderNumber||'ORDER'}_${r.style||'STYLE'}_${r.colorCode||'COLOR'}`, 'styleColor', 'row:'+idx);
+}
+function exportButtons(kindPrefix, orderNo, idx=null){
+  if(kindPrefix==='all'){
+    return `<span class="dlActions">
+      <button class="btn icon light" title="Download packing list and labels as separate Excel files" onclick="exportRowsPair(rows,'ALL_PARSED_ORDERS',settings().groupMode,'all');event.stopPropagation();">Both</button>
+      ${isDownloaded('all')?'<span class="downloadedMark">✓</span>':''}
+    </span>`;
+  }
+  const key = idx===null ? `order:${orderNo}` : `row:${idx}`;
+  const action = idx===null ? `exportOrderBoth('${orderNo}',event)` : `exportRowBoth(${idx},event)`;
+  return `<span class="dlActions">
+    <button class="btn icon light" title="Download packing list + labels as two Excel files" onclick="${action}">Both</button>
+    ${isDownloaded(key)?'<span class="downloadedMark">✓</span>':''}
+  </span>`;
+}
+function exportActiveOrder(){
+  const list=visibleRows();
+  const label=activeOrder==='ALL'?'ALL_PARSED_ORDERS':'ORDER_'+activeOrder;
+  exportRowsPair(list, label, activeOrder==='ALL'?settings().groupMode:'order', activeOrder==='ALL'?'all':('order:'+activeOrder));
+}
+
+function renderAll(){ renderOrderControls(); renderMetrics(); renderPreview(); renderTable(); }
+function renderOrderControls(){
+  const map=ordersMap(); const orders=Object.keys(map).sort();
+  if(activeOrder!=='ALL' && !map[activeOrder]) activeOrder='ALL';
+  $('orderSelect').innerHTML = `<option value="ALL">All parsed orders — ${rows.length} row(s), ${totalPieces(rows)} pcs</option>` + orders.map(o=>`<option value="${o}" ${activeOrder===o?'selected':''}>Order ${o} — ${map[o].length} row(s), ${totalPieces(map[o])} pcs</option>`).join('');
+  const cards = [`<div class="orderCard ${activeOrder==='ALL'?'active':''} ${isDownloaded('all')?'downloaded':''}" data-order="ALL"><div class="cardTop"><b>All orders</b>${exportButtons('all','ALL')}</div><span>${rows.length} rows · ${totalPieces(rows)} pcs · ${estCartons(rows)} cartons</span></div>`]
+    .concat(orders.map(o=>`<div class="orderCard ${activeOrder===o?'active':''} ${isDownloaded('order:'+o)?'downloaded':''}" data-order="${o}"><div class="cardTop"><b>${o}</b>${exportButtons('order',o)}</div><span>${map[o].length} rows · ${totalPieces(map[o])} pcs · ${estCartons(map[o])} cartons</span></div>`));
+  $('orderCards').innerHTML = cards.join('');
+  document.querySelectorAll('.orderCard').forEach(c=>c.onclick=()=>{activeOrder=c.dataset.order; renderAll();});
+}
+$('orderSelect').onchange=e=>{activeOrder=e.target.value; renderAll();};
+['capacity','netPerPiece','tare','boxSize'].forEach(id=>$(id).addEventListener('input', ()=>{renderAll(); if(editingIdx!==null) updateModalSummary();}));
+function renderMetrics(){ const list=visibleRows(); $('mOrders').textContent=Object.keys(ordersMap()).length; $('mRows').textContent=list.length; $('mPieces').textContent=totalPieces(list); $('mCartons').textContent=estCartons(list); }
+function renderPreview(){
+  const list=visibleRows(); const box=$('orderPreview');
+  if(!list.length){ box.style.display='none'; return; }
+  box.style.display='block';
+  const byOrder={}; list.forEach(r=>{(byOrder[r.orderNumber]??=[]).push(r)});
+  let html='';
+  for(const [order,rs] of Object.entries(byOrder)){
+    html += `<h3>Order ${order} · ${totalPieces(rs)} pcs · ${estCartons(rs)} estimated carton(s) · ${rs.length} style/color row(s) ${exportButtons('order',order)}</h3>`;
+    html += `<table class="miniTable"><tr><th class="left">Style</th><th class="left">Color</th>${SIZES.map(s=>`<th>${s}</th>`).join('')}<th>Total</th><th>Cartons</th></tr>`;
+    rs.forEach(r=>{ const idx=rows.indexOf(r); const dl=isDownloaded('row:'+idx)||isDownloaded('order:'+r.orderNumber); html += `<tr class="${dl?'downloadedRow':''}"><td class="left clickCell ${dl?'downloadedText':''}" onclick="openModal(${idx})">${exportButtons('row',r.orderNumber,idx)}${r.style}${hasOverrides(r)?'<span class="overrideBadge">override</span>':''}<br><span class="hint">${r.designation||''}</span></td><td class="left">${r.colorCode} - ${r.colorName}</td>${SIZES.map(s=>`<td>${+r[s]||0}</td>`).join('')}<td><b>${SIZES.reduce((a,s)=>a+(+r[s]||0),0)}</b></td><td>${rowCartons(r)}</td></tr>`; });
+    html += `</table>`;
+  }
+  box.innerHTML=html;
+}
+function renderTable(){
+  const list=visibleRows();
+  const headers=['Edit','Order','Season','Style','Designation','Color','Ex-mill','EAN',...SIZES,'Total','Cartons'];
+  let html='<thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
+  list.forEach((r)=>{
+    const realIdx=rows.indexOf(r); const total=SIZES.reduce((a,s)=>a+(+r[s]||0),0); const dl=isDownloaded('row:'+realIdx)||isDownloaded('order:'+r.orderNumber);
+    html += `<tr data-i="${realIdx}" class="${dl?'downloadedRow':''}">
+      <td><button class="btn small secondary" onclick="openModal(${realIdx})">Edit</button></td>
+      <td class="clickCell ${isDownloaded('order:'+r.orderNumber)?'downloadedText':''}" onclick="openModal(${realIdx})">${exportButtons('order',r.orderNumber)}${r.orderNumber||''}</td>
+      <td>${r.season||''}</td>
+      <td class="clickCell w-style ${dl?'downloadedText':''}" onclick="openModal(${realIdx})">${exportButtons('row',r.orderNumber,realIdx)}${r.style||''}${hasOverrides(r)?'<span class="overrideBadge">override</span>':''}</td>
+      <td class="w-desc">${r.designation||''}</td>
+      <td class="w-color">${(r.colorCode||'')+' - '+(r.colorName||'')}</td>
+      <td>${r.exMillDate||''}</td>
+      <td>${r.ean||''}</td>
+      ${SIZES.map(s=>`<td>${+r[s]||0}</td>`).join('')}
+      <td><b>${total}</b></td><td>${rowCartons(r)}</td>
+    </tr>`;
+  });
+  html+='</tbody>';
+  $('rowsTable').innerHTML=html;
+}
+
+function populateModalSizeGrid(){
+  $('modalSizeGrid').innerHTML = SIZES.map(s=>`<div><label>${s}</label><input id="ed_${s}" type="number" min="0"></div>`).join('');
+}
+populateModalSizeGrid();
+const editFields=['orderNumber','season','style','designation','colorCode','colorName','exMillDate','ean','overrideCapacity','overrideNetPerPiece','overrideTare','overrideBoxSize'];
+function openModal(idx){
+  editingIdx = idx;
+  const r=rows[idx]; if(!r) return;
+  $('modalTitle').textContent = `Edit ${r.orderNumber||''} · ${r.style||''} · ${r.colorCode||''}`;
+  editFields.forEach(k=>{ const el=$('ed_'+k); if(el) el.value = r[k] ?? ''; });
+  SIZES.forEach(s=>{$('ed_'+s).value=+r[s]||0;});
+  const p=effectivePack(r);
+  $('ed_overrideCapacity').placeholder = `Use default: ${settings().capacity}`;
+  $('ed_overrideNetPerPiece').placeholder = `Use default: ${settings().netPerPiece}`;
+  $('ed_overrideTare').placeholder = `Use default: ${settings().tare}`;
+  $('ed_overrideBoxSize').placeholder = `Use default: ${settings().boxSize}`;
+  updateModalSummary();
+  $('editModal').classList.add('show');
+}
+function saveModalField(k, value){
+  if(editingIdx===null || !rows[editingIdx]) return;
+  rows[editingIdx][k]=SIZES.includes(k)?(+value||0):value;
+  updateModalSummary(); renderMetrics(); renderPreview(); renderOrderControls(); renderTable();
+}
+function updateModalSummary(){
+  if(editingIdx===null || !rows[editingIdx]) return;
+  const r=rows[editingIdx];
+  const pcs=SIZES.reduce((a,s)=>a+(+r[s]||0),0); const p=effectivePack(r); const cartons=Math.ceil(pcs/(p.capacity||25));
+  const firstQty=Math.min(pcs, p.capacity||25); const net=(firstQty*(p.netPerPiece||0)).toFixed(2); const gross=(+net+(p.tare||0)).toFixed(2);
+  $('modalPieces').textContent=pcs; $('modalCartons').textContent=cartons; $('modalNet').textContent=`${p.netPerPiece} kg / pc`; $('modalGross').textContent=`${gross} kg`;
+}
+editFields.forEach(k=>{ const el=$('ed_'+k); if(el) el.addEventListener('input',e=>saveModalField(k,e.target.value)); });
+SIZES.forEach(s=>{$('ed_'+s).addEventListener('input',e=>saveModalField(s,e.target.value));});
+function closeModal(){ $('editModal').classList.remove('show'); editingIdx=null; renderAll(); }
+$('modalClose').onclick=closeModal; $('modalCloseTop').onclick=closeModal;
+$('editModal').addEventListener('click',e=>{ if(e.target.id==='editModal') closeModal(); });
+$('clearOverridesBtn').onclick=()=>{ if(editingIdx===null) return; ['overrideCapacity','overrideNetPerPiece','overrideTare','overrideBoxSize'].forEach(k=>{rows[editingIdx][k]=''; $('ed_'+k).value='';}); updateModalSummary(); renderAll(); };
+$('deleteRowBtn').onclick=()=>{ if(editingIdx===null) return; if(confirm('Delete this style/color row?')){ rows.splice(editingIdx,1); closeModal(); } };
+
+$('parseBtn').onclick=async()=>{
+  const files=$('pdfFiles').files; if(!files.length){ alert('Select at least one PDF.'); return; }
+  $('parseBtn').disabled=true; setLog(['Starting parse...']);
+  const fd=new FormData(); [...files].forEach(f=>fd.append('files',f)); fd.append('forceOcr',$('forceOcr').checked?'true':'false');
+  try{ const res=await fetch('/api/parse-pdfs',{method:'POST',body:fd}); const data=await res.json(); rows=(data.rows||[]).map(r=>({...r, overrideCapacity:'', overrideNetPerPiece:'', overrideTare:'', overrideBoxSize:''})); activeOrder='ALL'; setLog(data.logs||[]); renderAll(); }
+  catch(e){ log('ERROR: '+e); }
+  $('parseBtn').disabled=false;
+};
+$('clearBtn').onclick=()=>{ rows=[]; activeOrder='ALL'; renderAll(); setLog(['Cleared.']); };
+$('exportBtn').onclick=async()=>{
+  if(!rows.length){ alert('No parsed rows to export.'); return; }
+  await exportRowsPair(rows, 'COURREGES_all_exports', settings().groupMode, 'all');
+};
+$('exportActiveBtn').onclick=()=>{
+  if(!rows.length){ alert('No parsed rows to export.'); return; }
+  exportActiveOrder();
+};
+$('labelsOnlyBtn').onclick=async()=>{
+  const files=$('plFiles').files; if(!files.length){ alert('Select at least one Packing_List.xlsx file.'); return; }
+  const fd=new FormData(); [...files].forEach(f=>fd.append('files',f)); fd.append('settings',JSON.stringify(settings()));
+  const res=await fetch('/api/labels-from-packing',{method:'POST',body:fd});
+  if(!res.ok){ alert(await res.text()); return; }
+  const blob=await res.blob(); downloadBlob(blob,'COURREGES_labels_from_packing.zip');
+};
+function downloadBlob(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000); }
+renderAll();
+</script>
+</body>
+</html>

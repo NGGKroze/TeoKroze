@@ -1,0 +1,24 @@
+/* L'OREAL - единна тема (компилиран Tailwind: преоцветяваме готовите класове) */
+@media screen {
+  html[data-lps="loreal"] .bg-blue-700, html[data-lps="loreal"] .bg-blue-800, html[data-lps="loreal"] .hover\:bg-blue-800:hover,
+  html[data-lps="loreal"] .bg-violet-700, html[data-lps="loreal"] .bg-violet-600, html[data-lps="loreal"] .bg-cyan-700,
+  html[data-lps="loreal"] .bg-fuchsia-700, html[data-lps="loreal"] .bg-fuchsia-600, html[data-lps="loreal"] .bg-indigo-600, html[data-lps="loreal"] .bg-indigo-500,
+  html[data-lps="loreal"] .hover\:bg-violet-800:hover, html[data-lps="loreal"] .hover\:bg-cyan-800:hover, html[data-lps="loreal"] .hover\:bg-fuchsia-800:hover {
+    background-color:var(--lps-accent) !important;
+  }
+  html[data-lps="loreal"] .bg-blue-700.py-8 { background: rgba(255,255,255,.86) !important; border-bottom:2px solid var(--lps-brass); }
+  html[data-lps="loreal"] .bg-blue-700.py-8 * { color:#26272b !important; }
+  html[data-lps="loreal"] .bg-violet-50, html[data-lps="loreal"] .bg-cyan-50, html[data-lps="loreal"] .bg-sky-50, html[data-lps="loreal"] .bg-fuchsia-50 { background-color:#f6f3ec !important; }
+  html[data-lps="loreal"] .border-violet-400, html[data-lps="loreal"] .border-cyan-400, html[data-lps="loreal"] .border-fuchsia-500, html[data-lps="loreal"] .border-violet-200,
+  html[data-lps="loreal"] .border-cyan-200, html[data-lps="loreal"] .border-fuchsia-200, html[data-lps="loreal"] .border-sky-200, html[data-lps="loreal"] .border-sky-100,
+  html[data-lps="loreal"] .border-blue-300, html[data-lps="loreal"] .border-blue-500 { border-color:#cfc6b4 !important; }
+  html[data-lps="loreal"] .text-violet-700, html[data-lps="loreal"] .text-violet-800, html[data-lps="loreal"] .text-violet-950, html[data-lps="loreal"] .text-cyan-800, html[data-lps="loreal"] .text-cyan-950, html[data-lps="loreal"] .text-fuchsia-950 { color:var(--lps-accent) !important; }
+  html[data-lps="loreal"] .accent-sky-700 { accent-color:var(--lps-accent); }
+}
+@media screen {
+  html[data-lps="loreal"] main.max-w-6xl { max-width: none !important; padding: 0 !important; } html[data-lps="loreal"] section.bg-white.shadow-xl { box-shadow: none !important; background: transparent !important; } html[data-lps="loreal"] .p-8.space-y-8 { padding: 0 !important; }
+}
+@media screen {
+  html[data-lps="loreal"] #lps-side section.grid, html[data-lps="loreal"] #lps-side .grid { grid-template-columns: 1fr !important; }
+  html[data-lps="loreal"] #lps-side .space-y-8 > * + * { margin-top: 14px !important; }
+}

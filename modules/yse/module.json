@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "yse",
+  "name": "YSE",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 180,
+  "summary": "Direct PDF label export",
+  "requires": [
+    "Packing list workbook или CSV"
+  ],
+  "note": "YSE генераторът прави директен PDF export от качения PL файл.",
+  "formats": [
+    "XLSX",
+    "XLS",
+    "CSV"
+  ]
+}

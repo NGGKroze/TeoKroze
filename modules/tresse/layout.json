@@ -1,0 +1,34 @@
+{
+  "title": "TRESSE – етикети за кашони",
+  "subtitle": "Опаковъчен лист (XLSX) → етикети за кашони",
+  "hide": [
+    "#app-ui > .header",
+    "#app-ui > .toolbar"
+  ],
+  "side": [
+    {
+      "title": "1. Файл",
+      "move": [
+        "#drop-zone"
+      ]
+    },
+    {
+      "card": false,
+      "move": [
+        "#color-panel"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "sel": "#btn-reset",
+      "kind": "danger",
+      "side": "left"
+    },
+    {
+      "sel": "#btn-print",
+      "kind": "primary",
+      "side": "right"
+    }
+  ]
+}

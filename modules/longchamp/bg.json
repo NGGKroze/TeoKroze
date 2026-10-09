@@ -1,0 +1,32 @@
+{
+  "exact": {
+    "Excel Label Generator v2": "Longchamp – генератор на етикети (Excel) v2",
+    "Packing List Excel Label Generator v3 - Template Match": "Longchamp – Excel етикети от опаковъчен лист v3 (по шаблон)",
+    "Drop your Excel Packing List (.xlsx) to automatically generate styled Excel labels matching the uploaded Longchamp template. Version v2: 4 labels per worksheet.": "Пуснете Excel опаковъчния лист (.xlsx) и етикетите се генерират автоматично във формата на шаблона на Longchamp. 4 етикета на лист.",
+    "Click or drag & drop Packing List (.xlsx)": "Кликнете или плъзнете опаковъчен лист (.xlsx)",
+    "Label Configuration": "Настройки на етикета",
+    "PO / Order No.": "PO / № на поръчка",
+    "Parcel For (Receiver)": "Получател (Parcel For)",
+    "Supplier Name": "Доставчик (Supplier)",
+    "Download Excel Labels v3": "Изтегли Excel етикети v3",
+    "Parsed Labels Preview": "Преглед на прочетените етикети",
+    "Carton": "Кашон",
+    "Code / Color": "Код / цвят",
+    "Sizes (Qty)": "Размери (бр.)",
+    "Total Qty": "Общо бр.",
+    "Drop an Excel file to see the parsed data here.": "Пуснете Excel файл, за да видите прочетените данни тук.",
+    "Auto-filled from file": "Попълва се автоматично от файла",
+    "Error reading Excel file. Please ensure it is a valid format.": "Грешка при четене на Excel. Проверете дали форматът е валиден.",
+    "Could not find 'CTN NO.' header in the file. Please check the format.": "В файла не е намерено заглавие „CTN NO.“. Проверете формата.",
+    "Error generating Excel labels. Check the console for details.": "Грешка при генериране на Excel етикетите. Подробности има в конзолата."
+  },
+  "patterns": [
+    [
+      "^(\\d+) Labels loaded$",
+      "$1 заредени етикета"
+    ]
+  ],
+  "skip": [
+    "#previewBody"
+  ]
+}

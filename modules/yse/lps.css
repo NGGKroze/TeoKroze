@@ -1,0 +1,5 @@
+@media screen {
+  html[data-lps="yse"] main.grid { display: block !important; padding: 0 !important; max-width: none !important; }
+  html[data-lps="yse"] #exportPanel { border: 0 !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; }
+  html[data-lps="yse"] #exportPanel h2 { display: none !important; }
+}

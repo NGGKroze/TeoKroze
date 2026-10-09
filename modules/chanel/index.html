@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHANEL UNIFORMS LABEL GENERATOR</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="vendor/cdn.tailwindcss.com/tailwindcss.js"></script>
+    <!-- SheetJS for Excel Parsing -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF for PDF Generation -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+    <div class="min-h-screen p-4 md:p-8">
+        <div class="max-w-6xl mx-auto space-y-6">
+            
+            <!-- Header section -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col md:flex-row items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">CHANEL UNIFORMS LABEL GENERATOR</h1>
+                    <p class="text-gray-500 text-sm mt-1">Upload your packing list Excel file to generate A4 print-ready PDFs.</p>
+                </div>
+                <button id="downloadBtn" class="hidden mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-colors flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span id="downloadBtnText">Download Labels (PDF)</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left Column: Settings -->
+                <div class="lg:col-span-4 space-y-6">
+                    
+                    <!-- File Dropzone -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                        <h2 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">1. Data Source</h2>
+                        <div id="dropzone" class="border-2 border-dashed border-gray-300 hover:border-gray-400 bg-gray-50 rounded-xl p-6 text-center transition-colors cursor-pointer" onclick="document.getElementById('fileUpload').click()">
+                            <input type="file" id="fileUpload" class="hidden" accept=".xlsx, .xls, .csv" />
+                            
+                            <div id="dropzone-idle" class="flex flex-col items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 mb-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                <p class="text-gray-700 font-medium text-sm">Drag & drop Packing List</p>
+                            </div>
+
+                            <div id="dropzone-success" class="hidden flex-col items-center">
+                                <div class="bg-green-100 p-2 rounded-full mb-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                </div>
+                                <p id="fileNameDisplay" class="text-green-800 font-medium text-sm break-all"></p>
+                                <p id="fileCountDisplay" class="text-green-600 text-xs mt-1"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Edit Form -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xs font-bold text-gray-700 uppercase tracking-wider">2. Manual Edit</h2>
+                            <span id="form-label-indicator" class="text-xs font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded">Label 1</span>
+                        </div>
+                        
+                        <div class="space-y-3" id="manualEditForm" style="opacity: 0.5; pointer-events: none;">
+                            <div>
+                                <label class="block text-[11px] font-medium text-gray-500 mb-1">Order / Packing List / Date</label>
+                                <input type="text" id="edit_headerText" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 mb-1">Code Article</label>
+                                    <input type="text" id="edit_code" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 mb-1">Color Code</label>
+                                    <input type="text" id="edit_color" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 mb-1">Ctn Number</label>
+                                    <input type="text" id="edit_ctnNumber" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 mb-1">Total Ctns</label>
+                                    <input type="text" id="edit_maxCtn" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 mb-1">Total Pieces</label>
+                                    <input type="text" id="edit_totalPieces" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 mb-1">Net Wt (KG)</label>
+                                    <input type="text" id="edit_netWt" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-medium text-gray-500 mb-1">Gross Wt (KG)</label>
+                                    <input type="text" id="edit_grWt" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                                </div>
+                            </div>
+
+                            <div class="pt-2">
+                                <label class="block text-[11px] font-medium text-gray-500 mb-1">Address Lines (Customer)</label>
+                                <input type="text" id="edit_addressLine1" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs mb-1.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                <input type="text" id="edit_addressLine2" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs mb-1.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                <input type="text" id="edit_addressLine3" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs mb-1.5 focus:ring-2 focus:ring-blue-500 outline-none" />
+                                <input type="text" id="edit_addressLine4" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-medium text-gray-500 mb-1">Destination</label>
+                                <input type="text" id="edit_destination" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-medium text-gray-500 mb-1">Bottom Note</label>
+                                <input type="text" id="edit_madeIn" class="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Column: Live Preview -->
+                <div class="lg:col-span-8">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-full flex flex-col">
+                        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Live Preview</h2>
+                        
+                        <div id="preview-idle" class="flex-grow flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg bg-gray-50 text-gray-400 min-h-[500px]">
+                            Upload an Excel file to see the preview.
+                        </div>
+
+                        <div id="preview-loading" class="hidden flex-grow flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg bg-gray-50 text-gray-500 font-medium min-h-[500px]">
+                            <span class="animate-pulse">Parsing file...</span>
+                        </div>
+
+                        <!-- Scrollable Preview Container -->
+                        <div id="preview-container" class="hidden relative w-full h-[700px] bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
+                            <!-- Floating Badge -->
+                            <div id="preview-badge" class="absolute top-4 right-6 bg-gray-900/80 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-md z-10 backdrop-blur-sm transition-opacity">
+                                <span id="preview-badge-text">1 / 1</span>
+                            </div>
+                            
+                            <!-- Scrollable Content -->
+                            <div id="preview-content" class="w-full h-full overflow-y-auto p-6 flex flex-col items-center gap-8" onscroll="handleScroll(this)">
+                                <!-- Injected dynamically by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State variables
+        let appState = {
+            labels: [],
+            fileName: "",
+            currentIndex: 0,
+            isSyncing: false,
+            globalTemplate: {
+                headerText: "ORDER [NUM] PACKING LIST [DATE]",
+                addressLine1: "GEODIS",
+                addressLine2: "5550 VOIE DES HERONS",
+                addressLine3: "PARC DU HODE",
+                addressLine4: "GEODIS Uniformes",
+                destination: "",
+                madeIn: "MADE IN BULGARIA"
+            }
+        };
+
+        const formFields = [
+            'headerText', 'addressLine1', 'addressLine2', 'addressLine3', 'addressLine4', 
+            'destination', 'code', 'color', 'ctnNumber', 'maxCtn', 'totalPieces', 'netWt', 'grWt', 'madeIn'
+        ];
+
+        // Initialize inputs
+        const initInputs = () => {
+            formFields.forEach(key => {
+                const el = document.getElementById(`edit_${key}`);
+                if (el) {
+                    el.addEventListener('input', (e) => {
+                        if (appState.isSyncing || appState.labels.length === 0) return;
+                        // Update specific label data
+                        appState.labels[appState.currentIndex][key] = e.target.value;
+                        renderPreview(true); // true = preserve scroll position
+                    });
+                }
+            });
+        };
+
+        const syncFormToCurrentLabel = () => {
+            if (appState.labels.length === 0) return;
+            appState.isSyncing = true;
+            
+            const currentLabel = appState.labels[appState.currentIndex];
+            document.getElementById('form-label-indicator').innerText = `Label ${appState.currentIndex + 1}`;
+            
+            formFields.forEach(key => {
+                const el = document.getElementById(`edit_${key}`);
+                if (el) el.value = currentLabel[key] || "";
+            });
+            
+            appState.isSyncing = false;
+        };
+
+        // Scroll Badge & Form Sync Updater
+        const handleScroll = (el) => {
+            const total = appState.labels.length;
+            if (total <= 1) return;
+            
+            // Calculate current page based on scroll
+            const itemHeight = el.scrollHeight / total;
+            let current = Math.round(el.scrollTop / itemHeight);
+            
+            if (current < 0) current = 0;
+            if (current >= total) current = total - 1;
+            
+            if (current !== appState.currentIndex) {
+                appState.currentIndex = current;
+                document.getElementById('preview-badge-text').innerText = `${current + 1} / ${total}`;
+                syncFormToCurrentLabel();
+            }
+        };
+
+        // UI toggles
+        const updateUI = (status) => {
+            document.getElementById('dropzone-idle').classList.toggle('hidden', status === 'success');
+            document.getElementById('dropzone-success').classList.toggle('hidden', status !== 'success');
+            
+            const formEl = document.getElementById('manualEditForm');
+            
+            if (status === 'success') {
+                document.getElementById('dropzone').classList.add('border-green-400', 'bg-green-50');
+                document.getElementById('dropzone').classList.remove('border-gray-300', 'bg-gray-50');
+                document.getElementById('fileNameDisplay').textContent = appState.fileName;
+                document.getElementById('fileCountDisplay').textContent = `${appState.labels.length} labels loaded`;
+                
+                document.getElementById('downloadBtn').classList.remove('hidden');
+                document.getElementById('downloadBtnText').textContent = `Download ${appState.labels.length} Labels (PDF)`;
+                
+                formEl.style.opacity = '1';
+                formEl.style.pointerEvents = 'auto';
+            } else {
+                formEl.style.opacity = '0.5';
+                formEl.style.pointerEvents = 'none';
+            }
+
+            document.getElementById('preview-idle').classList.toggle('hidden', status !== 'idle');
+            document.getElementById('preview-loading').classList.toggle('hidden', status !== 'loading');
+            document.getElementById('preview-container').classList.toggle('hidden', status !== 'success');
+        };
+
+        // Drag & Drop Handling
+        const dropzone = document.getElementById('dropzone');
+        const fileUpload = document.getElementById('fileUpload');
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('border-blue-500', 'bg-blue-50');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('border-blue-500', 'bg-blue-50');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-blue-500', 'bg-blue-50');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                processFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileUpload.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                processFile(e.target.files[0]);
+            }
+        });
+
+        const processFile = (file) => {
+            appState.fileName = file.name;
+            updateUI('loading');
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    parseExcelData(rows);
+                } catch (err) {
+                    console.error("Error parsing file:", err);
+                    alert("Error parsing file. Ensure it is a valid Excel document.");
+                    updateUI('idle');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        const parseExcelData = (rows) => {
+            let headerRowIndex = -1;
+            
+            for (let i = 0; i < rows.length; i++) {
+                if (!Array.isArray(rows[i])) continue;
+                const rowStr = rows[i].map(String).join("").toUpperCase();
+                if (rowStr.includes('CTN NO') || rowStr.includes('CODE')) {
+                    headerRowIndex = i;
+                    break;
+                }
+            }
+
+            if (headerRowIndex === -1) {
+                alert("Could not find header row containing 'CTN NO.' or 'CODE'. Please check file format.");
+                updateUI('idle');
+                return;
+            }
+
+            let extractedPL = "";
+            let extractedOrder = "";
+            let dynamicDest = "";
+
+            for(let i=0; i<headerRowIndex; i++) {
+                if (!Array.isArray(rows[i])) continue;
+                let rowStrUpper = rows[i].join(" ").toUpperCase();
+                
+                if (rowStrUpper.includes("PACKING LIST")) {
+                    let plCell = rows[i].find(c => typeof c === 'string' && c.toUpperCase().includes('PACKING LIST'));
+                    if (plCell) extractedPL = plCell.trim();
+                }
+
+                if (rowStrUpper.includes("ORDER NO") || rowStrUpper.includes("ORDER N")) {
+                    let idx = rows[i].findIndex(c => typeof c === 'string' && (c.toUpperCase().includes('ORDER NO') || c.toUpperCase().includes('ORDER N')));
+                    if (idx !== -1) {
+                        let val = rows[i].slice(idx+1).find(c => c && String(c).trim() !== '');
+                        if (val) extractedOrder = String(val).trim();
+                    }
+                }
+                
+                if (rowStrUpper.includes("DESTINATION")) {
+                    let idx = rows[i].findIndex(c => typeof c === 'string' && c.toUpperCase().includes('DESTINATION'));
+                    if (idx !== -1) {
+                        let val = rows[i].slice(idx+1).find(c => c && String(c).trim() !== '');
+                        if (val) dynamicDest = String(val).trim();
+                    }
+                }
+            }
+
+            const headerRow = rows[headerRowIndex].map(h => String(h || "").toUpperCase().trim());
+            
+            // Dynamically find the starting Carton column instead of assuming it's the very first column (0)
+            let colCtnStart = headerRow.findIndex(c => typeof c === 'string' && (c.includes('CTN NO') || c.includes('CARTON')));
+            if (colCtnStart === -1) colCtnStart = 0; // Fallback
+            
+            const colCode = headerRow.findIndex(c => typeof c === 'string' && c.includes('CODE'));
+            const colColor = headerRow.findIndex(c => typeof c === 'string' && (c.includes('COLOUR') || c.includes('COLOR')));
+            const colOrder = headerRow.findIndex(c => typeof c === 'string' && c.includes('ORDER'));
+            const colQtyCtn = headerRow.findIndex(c => typeof c === 'string' && c.includes('QTY') && c.includes('CTN'));
+            const colNetWt = headerRow.findIndex(c => typeof c === 'string' && c.includes('NET') && c.includes('WT'));
+            const colGrWt = headerRow.findIndex(c => typeof c === 'string' && c.includes('GR') && c.includes('WT'));
+
+            let sizeStartCol = colOrder !== -1 ? colOrder + 1 : colColor + 1;
+            let sizeEndCol = colQtyCtn !== -1 ? colQtyCtn - 1 : headerRow.length - 1;
+
+            let generatedLabels = [];
+            let currentCode = "";
+            let currentColor = "";
+            let currentOrder = "";
+            
+            // Track the max carton number individually per color/code group
+            let maxCtnPerGroup = {}; 
+
+            for (let i = headerRowIndex + 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || !Array.isArray(row) || row.length === 0) continue;
+
+                let startCtn = parseInt(row[colCtnStart]);
+                if (isNaN(startCtn)) continue;
+
+                let endCtn = startCtn;
+                // Shift the 'to' check dynamically relative to the starting carton column
+                if (String(row[colCtnStart + 1]).trim().toLowerCase() === 'to') {
+                    endCtn = parseInt(row[colCtnStart + 2]) || startCtn;
+                }
+
+                if (colCode !== -1 && row[colCode]) currentCode = String(row[colCode]).trim();
+                if (colColor !== -1 && row[colColor]) currentColor = String(row[colColor]).trim();
+                if (colOrder !== -1 && row[colOrder]) currentOrder = String(row[colOrder]).trim();
+
+                // Build a unique key for the current item group
+                let groupKey = `${currentCode}|${currentColor}|${currentOrder}`;
+                if (!maxCtnPerGroup[groupKey] || endCtn > maxCtnPerGroup[groupKey]) {
+                    maxCtnPerGroup[groupKey] = endCtn;
+                }
+
+                let sizes = [];
+                let calculatedQty = 0;
+                for (let s = sizeStartCol; s <= sizeEndCol; s++) {
+                    let qty = parseInt(row[s]);
+                    if (qty && !isNaN(qty)) {
+                        sizes.push({ size: headerRow[s], qty: qty });
+                        calculatedQty += qty;
+                    }
+                }
+
+                // FIX: Prevent Ghost Labels (e.g. Total rows tricking the parser into generating empty boxes)
+                if (sizes.length === 0) continue;
+
+                let totalPieces = (colQtyCtn !== -1 && row[colQtyCtn]) ? row[colQtyCtn] : calculatedQty;
+                let netWt = colNetWt !== -1 ? row[colNetWt] : "";
+                let grWt = colGrWt !== -1 ? row[colGrWt] : "";
+
+                for (let ctn = startCtn; ctn <= endCtn; ctn++) {
+                    
+                    let finalOrder = extractedOrder || currentOrder || "[NUM]";
+                    let hd = extractedPL ? `ORDER ${finalOrder} ${extractedPL}` : appState.globalTemplate.headerText;
+                    if (hd.includes("[NUM]") && finalOrder !== "[NUM]") {
+                        hd = hd.replace("[NUM]", finalOrder);
+                    }
+                    
+                    // Pre-populate each label with global template data so it can be edited individually
+                    generatedLabels.push({
+                        groupKey: groupKey, // Temp variable to assign maxCtn after the loop
+                        headerText: hd,
+                        addressLine1: appState.globalTemplate.addressLine1,
+                        addressLine2: appState.globalTemplate.addressLine2,
+                        addressLine3: appState.globalTemplate.addressLine3,
+                        addressLine4: appState.globalTemplate.addressLine4,
+                        destination: dynamicDest || appState.globalTemplate.destination,
+                        madeIn: appState.globalTemplate.madeIn,
+                        code: currentCode,
+                        color: currentColor,
+                        ctnNumber: ctn,
+                        totalPieces: totalPieces,
+                        netWt: netWt ? Number(netWt).toFixed(1) : "",
+                        grWt: grWt ? Number(grWt).toFixed(1) : "",
+                        sizes: sizes
+                    });
+                }
+            }
+
+            // Sync all labels to their specific group's maximum carton number
+            generatedLabels.forEach(lbl => {
+                lbl.maxCtn = maxCtnPerGroup[lbl.groupKey];
+                delete lbl.groupKey; // Clean up temporary key
+            });
+
+            appState.labels = generatedLabels;
+            appState.currentIndex = 0;
+
+            syncFormToCurrentLabel();
+            document.getElementById('preview-badge-text').innerText = `1 / ${appState.labels.length}`;
+            renderPreview(false);
+            updateUI('success');
+        };
+
+        const renderPreview = (preserveScroll = false) => {
+            const container = document.getElementById('preview-content');
+            const scrollTop = container.scrollTop;
+            
+            if(appState.labels.length === 0) return;
+
+            const labelsHTML = appState.labels.map((label, idx) => {
+                // Add border-t to subsequent rows and fix the height to ensure uniform stacking
+                let sizeHtml = label.sizes.map((s, i) => `<div class="w-full h-6 sm:h-7 flex items-center justify-center ${i > 0 ? 'border-t border-black' : ''} ${i === label.sizes.length - 1 ? 'border-b border-black' : ''}">${s.size}</div>`).join("");
+                let qtyHtml = label.sizes.map((s, i) => `<div class="w-full h-6 sm:h-7 flex items-center justify-center ${i > 0 ? 'border-t border-black' : ''} ${i === label.sizes.length - 1 ? 'border-b border-black' : ''}">${s.qty}</div>`).join("");
+
+                let addressHtml = [label.addressLine1, label.addressLine2, label.addressLine3, label.addressLine4]
+                    .filter(Boolean).map(l => `<div>${l}</div>`).join("");
+
+                // Format Header Text to split on PACKING LIST to create 3 rows perfectly
+                let headerFormattedHtml = (label.headerText || "").replace(/\s*(PACKING LIST)\s*/i, '\n$1\n').trim();
+
+                return `
+                    <div id="label-card-${idx}" class="bg-white border-2 border-black w-full max-w-[600px] aspect-[1.4] flex flex-col shadow-md relative shrink-0">
+                         
+                         <!-- Row 1: Parcel+Address (Left) / Order (Right) -->
+                         <div class="flex border-b border-black h-[28%]">
+                           <div style="width: 52.6%" class="border-r border-black p-2 flex flex-col justify-start text-left">
+                             <div class="font-bold text-xs sm:text-sm mb-1">PARCEL FOR:</div>
+                             <div class="text-[10px] sm:text-[11px] leading-tight text-gray-800 space-y-0.5">
+                                ${addressHtml}
+                             </div>
+                           </div>
+                           <!-- Order splits into 3 rows automatically, scaling font down on smaller screens to fit -->
+                           <div style="width: 47.4%" class="flex items-center justify-center text-center font-bold text-base sm:text-lg md:text-xl lg:text-[22px] whitespace-pre-wrap px-2 py-1 leading-tight tracking-wide overflow-hidden">
+                             ${headerFormattedHtml}
+                           </div>
+                         </div>
+                         
+                         <!-- Row 2: Destination -->
+                         <div class="flex items-center px-3 border-b border-black h-[8%]">
+                             <div class="font-bold text-xs sm:text-[13px] text-left">
+                                ${label.destination}
+                             </div>
+                         </div>
+
+                         <!-- Table Header -->
+                         <div class="flex border-b border-black font-bold text-[10px] sm:text-xs text-center h-[8%]">
+                            <div style="width: 52.6%" class="flex">
+                               <div class="w-1/2 border-r border-black flex items-center justify-center">CODE ARTICLE</div>
+                               <div class="w-1/2 border-r border-black flex items-center justify-center">COLOR CODE</div>
+                            </div>
+                            <div style="width: 47.4%" class="flex">
+                               <div style="width: 20%" class="border-r border-black flex items-center justify-center">SIZE</div>
+                               <div style="width: 80%" class="flex items-center justify-center">QTY</div>
+                            </div>
+                         </div>
+
+                         <!-- Table Body -->
+                         <div class="flex flex-grow text-[10px] sm:text-xs text-center">
+                            <div style="width: 52.6%" class="flex">
+                               <div class="w-1/2 border-r border-black flex items-start justify-center pt-[6px] sm:pt-[8px] font-extrabold text-[11px] sm:text-[13px]">${label.code}</div>
+                               <div class="w-1/2 border-r border-black flex items-start justify-center pt-[6px] sm:pt-[8px]">${label.color}</div>
+                            </div>
+                            <div style="width: 47.4%" class="flex">
+                               <div style="width: 20%" class="border-r border-black flex flex-col">
+                                  ${sizeHtml}
+                               </div>
+                               <div style="width: 80%" class="flex flex-col">
+                                  ${qtyHtml}
+                               </div>
+                            </div>
+                         </div>
+
+                         <!-- Totals Section -->
+                         <div class="border-t border-black text-[10px] sm:text-[11px] mt-auto">
+                            
+                            <!-- TOTAL PIECES (NO inner borders on this row) -->
+                            <div class="flex h-6 sm:h-8 items-center text-center">
+                               <div style="width: 52.6%" class="font-bold h-full flex items-center justify-center">
+                                  TOTAL PIECES
+                               </div>
+                               <div style="width: 47.4%" class="flex h-full">
+                                  <div style="width: 20%" class="h-full"></div>
+                                  <div style="width: 80%" class="h-full flex items-center justify-start text-left px-2 font-bold">
+                                    ${label.totalPieces}
+                                  </div>
+                               </div>
+                            </div>
+                            
+                            <!-- CARTON NUMBER (80% / 20% width split applied) -->
+                            <div class="flex border-t border-b border-black h-6 sm:h-8 items-center text-center">
+                               <div style="width: 52.6%" class="flex h-full border-r border-black">
+                                  <div style="width: 80%" class="border-r border-black font-bold h-full flex items-center justify-center">CARTON NUMBER</div>
+                                  <div style="width: 20%" class="font-extrabold h-full flex items-center justify-center text-sm">${label.ctnNumber}</div>
+                               </div>
+                               <div style="width: 47.4%" class="flex h-full">
+                                  <div style="width: 20%" class="border-r border-black font-bold h-full flex items-center justify-center">OF</div>
+                                  <div style="width: 80%" class="font-extrabold h-full flex items-center justify-center text-sm">${label.maxCtn}</div>
+                               </div>
+                            </div>
+                            
+                            <!-- WEIGHTS -->
+                            <div class="flex border-b border-black h-6 sm:h-8 items-center text-center">
+                               <!-- Nett Weight: 80/20 proportions but absolutely NO vertical border inside -->
+                               <div style="width: 52.6%" class="flex h-full border-r border-black">
+                                  <div style="width: 80%" class="font-bold h-full flex items-center justify-center">NETT WEIGHT KG</div>
+                                  <div style="width: 20%" class="h-full flex items-center justify-center">${label.netWt}</div>
+                               </div>
+                               <!-- Gross Weight: Left text, Center-right number perfectly spaced -->
+                               <div style="width: 47.4%" class="flex h-full items-center justify-between pl-2 pr-6">
+                                  <span class="font-bold leading-none">GROSS WEIGHT KG</span>
+                                  <span>${label.grWt}</span>
+                               </div>
+                            </div>
+
+                            <!-- BOTTOM FOOTER (Taller cells, bigger text & logo) -->
+                            <div class="flex items-center text-base sm:text-xl h-12 sm:h-14">
+                               <div style="width: 52.6%" class="border-r border-black h-full flex items-center justify-center font-bold tracking-wider">
+                                 ${label.madeIn}
+                               </div>
+                               <div style="width: 47.4%" class="h-full flex items-center justify-center font-bold">
+                                 <div class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full border-[3px] border-black text-xl sm:text-2xl pr-px pb-px">B</div>
+                               </div>
+                            </div>
+                         </div>
+                      </div>
+                `;
+            }).join("");
+
+            container.innerHTML = labelsHTML;
+            if (preserveScroll) {
+                container.scrollTop = scrollTop;
+            } else {
+                container.scrollTop = 0;
+            }
+        };
+
+        // Generate PDF
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+            appState.labels.forEach((label, index) => {
+                if (index > 0 && index % 2 === 0) {
+                    doc.addPage();
+                }
+
+                const isTop = index % 2 === 0;
+                const startY = isTop ? 10 : 150;
+                const startX = 10;
+                const width = 190;
+                const height = 135;
+
+                // CORE ALIGNMENT COORDINATES
+                // Width split: 52.6% (100mm) / 47.4% (90mm)
+                const x0 = startX;
+                const x1 = startX + 50;  // Code Article (Half of 100mm)
+                const x_80_20 = startX + 80; // 80% split for Net/Carton bounds
+                const x2 = startX + 100; // Major separation
+                const x3 = startX + 118; // Size column is 20% of 90mm = 18mm
+                const x4 = startX + width; // Right edge
+
+                // Centers for text alignment
+                const col1Center = (x0 + x1) / 2;
+                const col2Center = (x1 + x2) / 2;
+                const col3Center = (x2 + x3) / 2;
+                const col4Center = (x3 + x4) / 2;
+
+                // Vertical coordinates
+                const y0 = startY;
+                const y1 = startY + 28;  // Bottom of Row 1
+                const y2 = startY + 36;  // Bottom of Row 2
+                const y3 = startY + 44;  // Table headers bottom
+                const y4 = startY + 95;  // Table body bottom
+                const y5 = startY + 103; // Total Pieces bottom
+                const y6 = startY + 111; // Carton Number bottom
+                const y7 = startY + 119; // Weights bottom
+                const y8 = startY + height;
+
+                // 1. Draw Outer Border
+                doc.setLineWidth(0.5);
+                doc.rect(x0, y0, width, height);
+
+                // 2. Row 1: Header + Static Address (Left) / Order (Right)
+                doc.setLineWidth(0.2);
+                doc.line(x0, y1, x4, y1); 
+                doc.line(x2, y0, x2, y1); // Vertical split
+
+                // Left Cell: Parcel + Static Address
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.text("PARCEL FOR:", x0 + 5, y0 + 6);
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                const addressLines = [
+                    label.addressLine1,
+                    label.addressLine2,
+                    label.addressLine3,
+                    label.addressLine4
+                ].filter(Boolean);
+
+                addressLines.forEach((line, i) => {
+                    doc.text(line, x0 + 5, y0 + 11.5 + (i * 4.5));
+                });
+                
+                // Right Cell: Order Info (Split cleanly to 3 lines, dynamically scale font to fit cell)
+                doc.setFont("helvetica", "bold");
+                let headerFontSize = 18;
+                doc.setFontSize(headerFontSize);
+                let headerFormattedArr = (label.headerText || "").replace(/\s*(PACKING LIST)\s*/i, '\n$1\n').trim().split('\n');
+
+                // Calculate max width of the text lines
+                let maxLineWidth = 0;
+                headerFormattedArr.forEach(line => {
+                    let w = doc.getTextWidth(line);
+                    if (w > maxLineWidth) maxLineWidth = w;
+                });
+
+                // Scale down font if width exceeds 86mm (Cell is 90mm wide)
+                if (maxLineWidth > 86) {
+                    headerFontSize = (headerFontSize * 86) / maxLineWidth;
+                }
+
+                // Calculate exactly even spacing based on the number of lines
+                const cellHeight = y1 - y0; // 28mm
+                const stepY = cellHeight / (headerFormattedArr.length + 1);
+                
+                // Scale down font if its height exceeds the available spacing to prevent bleeding
+                let estLineHeight = headerFontSize * 0.352778;
+                if (estLineHeight > stepY * 0.9) {
+                    headerFontSize = (stepY * 0.9) / 0.352778;
+                }
+
+                doc.setFontSize(headerFontSize);
+
+                // Evenly distribute lines vertically in the cell
+                headerFormattedArr.forEach((line, idx) => {
+                    let lineY = y0 + (stepY * (idx + 1));
+                    doc.text(line, (x2 + x4) / 2, lineY, { align: 'center', baseline: 'middle' });
+                });
+
+                // 3. Row 2: Destination Section
+                doc.line(x0, y2, x4, y2);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.text(label.destination || "", x0 + 5, y1 + 5.5);
+
+                // 4. Table Header
+                doc.line(x0, y3, x4, y3); 
+                
+                doc.line(x1, y2, x1, y4); // Code | Color
+                doc.line(x2, y2, x2, y4); // Color | Size (Major Anchor)
+                doc.line(x3, y2, x3, y4); // Size | QTY
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(10);
+                doc.text("CODE ARTICLE", col1Center, y2 + 5.5, { align: 'center' });
+                doc.text("COLOR CODE", col2Center, y2 + 5.5, { align: 'center' });
+                doc.text("SIZE", col3Center, y2 + 5.5, { align: 'center' });
+                doc.text("QTY", col4Center, y2 + 5.5, { align: 'center' });
+
+                // 5. Table Rows (Sizes & Quantities with internal borders)
+                doc.setFont("helvetica", "normal");
+                const rowHeight = 7; // Fixed height per size row
+                
+                label.sizes.forEach((sizeObj, i) => {
+                    let currentY = y3 + (i * rowHeight);
+
+                    // Draw horizontal border for SIZE and QTY columns only (from Major Anchor x2 to Right edge x4)
+                    if (i > 0) {
+                        doc.setLineWidth(0.2);
+                        doc.line(x2, currentY, x4, currentY); 
+                    }
+
+                    doc.text(String(sizeObj.size), col3Center, currentY + 5, { align: 'center' });
+                    doc.text(String(sizeObj.qty), col4Center, currentY + 5, { align: 'center' });
+                    
+                    // Draw bottom border for the last size and qty element
+                    if (i === label.sizes.length - 1) {
+                        doc.setLineWidth(0.2);
+                        doc.line(x2, currentY + rowHeight, x4, currentY + rowHeight);
+                    }
+                });
+
+                // Print Code and Color statically at the top of their respective columns
+                doc.setFont("helvetica", "bold");
+                doc.text(String(label.code || ""), col1Center, y3 + 5, { align: 'center' });
+                doc.setFont("helvetica", "normal");
+                doc.text(String(label.color || ""), col2Center, y3 + 5, { align: 'center' });
+
+                // 6. Footer section
+                doc.line(x0, y4, x4, y4); // Top of Total Pieces
+                doc.line(x0, y5, x4, y5); // Top of Carton Number
+                doc.line(x0, y6, x4, y6); // Top of Weights
+                doc.line(x0, y7, x4, y7); // Top of Bottom Footer
+
+                // Vertical Lines inside rows 6 and 7
+                
+                // Row 5 (y4 to y5): Total Pieces 
+                // NO VERTICAL BORDERS IN THIS ROW
+                
+                // Row 6 (y5 to y6): Carton Number (80/20 proportions inside left side)
+                doc.line(x_80_20, y5, x_80_20, y6); // 80/20 inner left separation
+                doc.line(x2, y5, x2, y6);           // Major separation
+                doc.line(x3, y5, x3, y6);           // OF / number separation
+                
+                // Row 7 (y6 to y7): Weights 
+                doc.line(x2, y6, x2, y7); // Only major center separation, no 80/20 border for Nett
+
+                // --- Row 5 Data (Total Pieces) - Blank horizontal, no grid lines --
+                doc.setFont("helvetica", "bold");
+                doc.text("TOTAL PIECES", (x0 + x2) / 2, y4 + 5.5, { align: 'center' });
+                // Left aligned under QTY boundary (x3)
+                doc.text(String(label.totalPieces || ""), x3 + 2, y4 + 5.5, { align: 'left' });
+
+                // --- Row 6 Data (Carton) ---
+                doc.setFont("helvetica", "bold");
+                doc.text("CARTON NUMBER", (x0 + x_80_20) / 2, y5 + 5.5, { align: 'center' });
+                // Bold carton value explicitly
+                doc.setFontSize(12);
+                doc.text(String(label.ctnNumber), (x_80_20 + x2) / 2, y5 + 5.5, { align: 'center' });
+                
+                doc.setFontSize(10);
+                doc.text("OF", col3Center, y5 + 5.5, { align: 'center' });
+                // Bold carton max value explicitly
+                doc.setFontSize(12);
+                doc.text(String(label.maxCtn), col4Center, y5 + 5.5, { align: 'center' });
+
+                // --- Row 7 Data (Weights) ---
+                doc.setFontSize(10);
+                
+                // Nett Weight (Left 80% Text, Right 20% Value, NO drawn border)
+                doc.text("NETT WEIGHT KG", (x0 + x_80_20) / 2, y6 + 5.5, { align: 'center' });
+                doc.setFont("helvetica", "normal");
+                doc.text(String(label.netWt || ""), (x_80_20 + x2) / 2, y6 + 5.5, { align: 'center' });
+                
+                // Gross Weight (Text left-aligned, Value Center-Right aligned (x4 - 15) to separate from border)
+                doc.setFont("helvetica", "bold");
+                doc.text("GROSS WEIGHT KG", x2 + 2, y6 + 5.5, { align: 'left' });
+                doc.setFont("helvetica", "normal");
+                doc.text(String(label.grWt || ""), x4 - 15, y6 + 5.5, { align: 'center' });
+
+                // 7. Bottom Row
+                doc.line(x2, y7, x2, y8); 
+                
+                doc.setFontSize(17);
+                doc.setFont("helvetica", "bold");
+                doc.text(label.madeIn || "", (x0 + x2) / 2, y7 + 10.5, { align: 'center' });
+                
+                doc.setFontSize(22);
+                const circleCenterY = y7 + 8;
+                const bCenterX = (x2 + x4) / 2;
+                doc.setLineWidth(0.8); // Make the B circle bolder
+                doc.circle(bCenterX, circleCenterY, 6.5);
+                doc.text("B", bCenterX, circleCenterY + 2.5, { align: 'center' });
+            });
+
+            doc.save(`Box_Labels_${appState.fileName.split('.')[0] || 'Export'}.pdf`);
+        });
+
+        // Initialize Form
+        initInputs();
+    </script>
+</body>
+</html>
