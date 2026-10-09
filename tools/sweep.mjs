@@ -34,6 +34,7 @@ for (const c of spec) {
   } catch (e) { errs.push('STEP ' + String(e).slice(0, 140)); }
   await pg.waitForTimeout(c.settle ?? 2500);
   const sel = c.preview || PREVIEW[c.module] || 'body';
+  await pg.evaluate(() => document.querySelectorAll('input:not([type=file]):not([type=checkbox]),textarea,select').forEach(i => { const v = i.tagName === 'SELECT' ? (i.selectedOptions[0] || {}).text : i.value; const s = document.createElement('span'); s.textContent = v || ' '; i.replaceWith(s); })); // значенията на полетата да се виждат в текста
   const info = await pg.evaluate(s => { const t = [...document.querySelectorAll(s)].map(e => e.innerText).join('\n'); const st = document.querySelector('#status, #statusBox, .status, #message, #log, #logMessages'); return { text: t.replace(/\n{2,}/g, '\n').slice(0, 1500), status: st ? st.innerText.slice(0, 300) : '', len: t.length }; }, sel);
   const f = `${OUT}/${c.module}_${++n}.txt`; fs.writeFileSync(f, await pg.evaluate(s => [...document.querySelectorAll(s)].map(e => e.innerText).join('\n'), sel));
   console.log(`\n##### [${c.module}] ${c.label || ''}  files=${(c.files || []).map(x => path.basename(x)).join(' + ')}\nerrors: ${errs.length ? '\n  ' + [...new Set(errs)].join('\n  ') : 'none'}${dl.length ? '\ndownloads: ' + dl.join(', ') : ''}\nstatus: ${info.status.replace(/\s+/g, ' ').slice(0, 220)}\npreview chars: ${info.len}  -> ${f}\n${c.show === false ? '' : info.text.split('\n').slice(0, c.lines ?? 8).join('\n')}`);

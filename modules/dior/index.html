@@ -635,7 +635,8 @@
         .replace(/TOTAL\s*:.*/i, '')
         .trim()
         .split(/\s+/)
-        .filter(isSizeToken);
+        .filter(isSizeToken)
+        .map(s => s.replace(/^(\d+)R$/i, '$1'));
       const qtys = (qtyLine.split(/Quantit[eé]\s*:/i)[1] || '')
         .replace(/\bUN\b.*/i, '')
         .trim()
@@ -679,7 +680,7 @@
       }
 
       const items = [];
-      const sizePattern = '(?:XXXL|XXL|XL|XS|S|M|L|\d{1,3})';
+      const sizePattern = '(?:XXXL|XXL|XL|XS|S|M|L|\\d{1,3}R?)'; // R = regular дължина (44R -> 44)
       for (const style of styles) {
         const re = new RegExp('^' + escapeRegExp(style) + '\\s+(.+?)\\s+(' + sizePattern + ')\\s+(.+?)\\s+([0-9]+(?:[,.][0-9]+)?)\\s+UN\\b', 'i');
         for (const line of lines) {
@@ -687,7 +688,7 @@
           const m = line.match(re);
           if (!m) continue;
           const color = m[1].trim();
-          const size = m[2].trim();
+          const size = m[2].trim().replace(/^(\d+)R$/i, '$1');
           const ref = m[3].trim();
           const qty = parseEuroNumber(m[4]);
           if (!isSizeToken(size) || !Number.isFinite(qty) || qty <= 0) continue;
@@ -1038,6 +1039,11 @@
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       const parsed = parsePackingListRows(rawRows);
+      if (!parsed.labelsData.length) {
+        const why = 'Във файла няма редове с кашони (заглавие „CTN NO.“ и номера на кашони). Вероятно е формат без разпределение по кашони (напр. поръчка на закачалки) - за него packing списъкът се прави от OA/COMMESSA PDF.';
+        if (window.LPS && LPS.diag) LPS.diag.report('Dior: няма кашони във файла', [why, ''].concat(LPS.diag.analyze(rawRows, { ctn: { label: 'CTN NO.', header: [/^CTN\s*NO/i] }, ref: { label: 'REF NO.', header: [/^REF\s*NO/i] }, qty: { label: 'QTY CTN', header: [/QTY\s*CTN/i] } }).lines));
+        throw new Error(why);
+      }
       activeLabelsData = parsed.labelsData;
       activeSizeColumns = parsed.sizeColumns;
       activeLabelMeta = {
@@ -1064,11 +1070,14 @@
         if (/department\s+PAP-F/i.test(rowStr)) pap = 'PAP F';
         if (/Order\s+No/i.test(rowStr)) {
           const joined = row.join(' ');
-          const m = joined.match(/(\d+)\s*\/\s*Commessa\s*(\d+)/i);
+          const m = joined.match(/(\d+)\s*\/\s*COMM?ESSA\s*(\d+)/i); // във файловете се среща и "COMESSA" с едно M
           if (m) { po = m[1]; commessa = m[2]; }
         }
         if (/Destination/i.test(rowStr)) {
-          destination = row.filter(Boolean).slice(1).join(' ').replace(/^Destination:\s*/i, '').trim();
+          const cells = row.filter(Boolean).slice(1);
+          const stop = cells.findIndex(c => /:\s*$|total\s+packages|weight/i.test(c)); // само адресът, без съседните клетки (Total Packages ...)
+          destination = (stop >= 0 ? cells.slice(0, stop) : cells).join(' ').replace(/^Destination:\s*/i, '').trim();
+          if (/\bGXO\b/i.test(destination) && /Blois/i.test(destination)) destination = FRANCE_GXO_ADDRESS;
         }
         if (/Total\s+Packages/i.test(rowStr)) {
           for (const cell of row) {
@@ -1840,7 +1849,7 @@
     }
 
     function isSizeToken(s) {
-      return /^(?:XXXL|XXL|XL|XS|S|M|L|\d{1,3})$/i.test(String(s || '').trim());
+      return /^(?:XXXL|XXL|XL|XS|S|M|L|\d{1,3}R?)$/i.test(String(s || '').trim());
     }
 
     function compareSizesKeepingCommonOrder(a, b) {
