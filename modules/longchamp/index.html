@@ -194,6 +194,20 @@ BULGARIA</textarea>
             }
 
             if (headerRowIdx === -1) {
+                if (window.LPS && LPS.diag) {
+                    const r = LPS.diag.analyze(rows, {
+                        ctn: { label: 'CTN NO.', header: [/^ctn\s*no\.?$/i] },
+                        ref: { label: 'REF NO.', header: [/^ref\s*no/i] },
+                        color: { label: 'COLOR / COLORIS', header: [/^colou?r(is)?$/i] },
+                        qty: { label: 'QTY CTN', header: [/qty\s*ctn/i] }
+                    });
+                    const hasTotalsOnly = rows.some(rw => (rw || []).some(c => /^qte\s*ttle$/i.test(String(c || '').trim())));
+                    LPS.diag.report('Longchamp: няма таблица с кашони', [
+                        'Не е намерено заглавие „CTN NO.“.',
+                        hasTotalsOnly ? 'Файлът прилича на обобщен PL (общи бройки по размер, без разпределение по кашони) - разпределението по кашони трябва да се направи първо.' : 'Проверете дали това е packing list с кашони (а не size indication / pallet label / labels файл).',
+                        ''
+                    ].concat(r.lines));
+                }
                 alert("Could not find 'CTN NO.' header in the file. Please check the format.");
                 return;
             }
