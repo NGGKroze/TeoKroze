@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "id": "reformation",
+  "name": "Reformation",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 150,
+  "summary": "PO paste към PL или legacy PL към labels",
+  "requires": [
+    "Purchase order copy-paste данни или готов packing list workbook",
+    "При legacy режим: Excel/CSV PL файл"
+  ],
+  "note": "Има два режима: създаване на packing list от PO текст и legacy генериране на labels от Excel PL.",
+  "formats": [
+    "XLSX",
+    "XLS",
+    "CSV",
+    "Paste"
+  ]
+}

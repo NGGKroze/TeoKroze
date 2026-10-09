@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JACQUEMUS LABEL GENERATOR</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="vendor/cdn.tailwindcss.com/tailwindcss.js"></script>
+    <!-- SheetJS for reading Excel (.xlsx, .xls) and CSVs -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- JsBarcode for generating vector barcodes -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+    <!-- pdfMake for pure vector PDF generation -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="vendor/unpkg.com/lucide@latest.js"></script>
+    
+    <style>
+        /* Print-specific styles to guarantee perfect multi-page PDF vectors */
+        @media print {
+            #app-ui { display: none !important; }
+            body, html { background-color: white !important; margin: 0 !important; padding: 0 !important; }
+            #print-area { background-color: transparent !important; padding: 0 !important; margin: 0 !important; display: block !important; }
+            
+            .label-page {
+                page-break-inside: avoid;
+                break-inside: avoid;
+                margin: 0 0 20px 0 !important;
+                padding: 10px !important;
+                border: none !important;
+                box-shadow: none !important;
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+            .label-page:last-child { border: none !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            table, th, td { border-color: black !important; }
+        }
+
+        .drop-zone { transition: all 0.2s ease; }
+        .drop-zone.dragover { background-color: #f0fdf4; border-color: #22c55e; }
+        
+        /* Enforce absolute left column width in UI to mirror PDF exactly */
+        .left-col { width: 130px; min-width: 130px; max-width: 130px; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+    <!-- App UI (Hidden during print) -->
+    <div class="max-w-6xl mx-auto p-6" id="app-ui">
+        <header class="mb-8 text-center relative">
+            <h1 class="text-3xl font-bold flex justify-center items-center gap-3 text-slate-800">
+                <i data-lucide="package"></i> JACQUEMUS LABEL GENERATOR
+            </h1>
+            <p class="text-slate-500 mt-2">Upload Packing List and Barcode files to generate vector PDF labels.</p>
+        </header>
+
+        <!-- New Batch Button (Shows after Generation) -->
+        <div id="new-batch-container" class="hidden justify-center mb-6">
+            <button id="btn-reset" class="bg-red-50 text-red-600 border border-red-200 px-6 py-2 rounded-lg font-semibold hover:bg-red-100 transition flex items-center gap-2 shadow-sm text-sm">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i> Start New Batch
+            </button>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6 mb-8" id="dropzones-container">
+            <!-- Packing List Dropzone -->
+            <div id="drop-packing" class="drop-zone border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer bg-white hover:bg-gray-50">
+                <i data-lucide="file-spreadsheet" class="mx-auto h-12 w-12 text-blue-500 mb-4"></i>
+                <h3 class="font-semibold text-lg">1. Packing List (Excel)</h3>
+                <p class="text-sm text-gray-500 mb-4">Drag & drop or click to upload</p>
+                <input type="file" id="file-packing" class="hidden" accept=".csv, .xlsx, .xls" />
+                <div id="status-packing" class="text-sm font-medium text-blue-600 hidden">File selected</div>
+            </div>
+
+            <!-- Barcode File Dropzone -->
+            <div id="drop-barcode" class="drop-zone border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer bg-white hover:bg-gray-50">
+                <i data-lucide="barcode" class="mx-auto h-12 w-12 text-purple-500 mb-4"></i>
+                <h3 class="font-semibold text-lg">2. Barcode File (Excel)</h3>
+                <p class="text-sm text-gray-500 mb-4">Drag & drop or click to upload</p>
+                <input type="file" id="file-barcode" class="hidden" accept=".csv, .xlsx, .xls" />
+                <div id="status-barcode" class="text-sm font-medium text-purple-600 hidden">File selected</div>
+            </div>
+        </div>
+
+        <div class="flex justify-center gap-4 mb-8">
+            <button id="btn-generate" class="bg-slate-800 text-white px-8 py-3 rounded-lg font-semibold shadow-md hover:bg-slate-700 transition flex items-center gap-2">
+                <i data-lucide="settings"></i> Generate Labels
+            </button>
+            <button id="btn-print" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold shadow-md hover:bg-blue-700 transition flex items-center gap-2 hidden">
+                <i data-lucide="printer"></i> Export as Vector PDF
+            </button>
+        </div>
+
+        <!-- Color & Pattern Sync Toggle -->
+        <div id="toggle-container" class="hidden flex justify-center items-center gap-3 mb-8">
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="sync-colors-toggle" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <span class="ml-3 text-sm font-medium text-gray-700">Sync all colors & patterns to Label 1</span>
+            </label>
+            <span class="text-xs text-gray-500">(Change the 1st label to auto-update the rest)</span>
+        </div>
+
+        <div id="error-message" class="hidden max-w-2xl mx-auto bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-8 text-center">
+            <!-- Error messages injected here -->
+        </div>
+
+    </div>
+
+    <!-- Print Area for Generated Labels -->
+    <div id="print-area" class="w-full bg-gray-100 py-8">
+        <div id="labels-container" class="w-full">
+            <!-- Labels will be injected here -->
+            <div class="text-center text-gray-400 py-12 italic" id="placeholder-text">
+                Live preview of labels will appear here.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // State
+        let rawPackingData = null;
+        let barcodeLookup = [];
+        let currentGeneratedBoxes = [];
+        let currentOrderNo = "";
+        let currentTotalBoxes = 0;
+        let currentExpDate = "";
+        
+        // Sizes are detected dynamically from the Packing List header row.
+        // The program keeps the exact left-to-right order found between COLOR and QTY CTN.
+        function normalizeSizeLabel(value) {
+            if (value === undefined || value === null) return "";
+            let str = value.toString().trim().replace(/\.0$/, '');
+            if (/^[A-Za-z\s]+$/.test(str)) {
+                str = str.replace(/\s+/g, '').toUpperCase(); // Handles headers like "X S" -> "XS"
+            } else {
+                str = str.replace(/\s+/g, ' ');
+            }
+            return str;
+        }
+
+        function isValidSizeHeader(value) {
+            const str = normalizeSizeLabel(value);
+            if (!str) return false;
+            const upper = str.toUpperCase();
+            const blocked = ['QTY', 'TTL', 'TOTAL', 'CTN', 'NET', 'GR', 'GROSS', 'WEIGHT', 'COLOR', 'COLOUR', 'STYLE', 'REF'];
+            if (blocked.some(token => upper.includes(token))) return false;
+            return /^(\d{1,3}|[A-Z]{1,6}|[A-Z0-9\/\-]{1,12})$/.test(upper);
+        }
+
+        function getBoxSizeOrder(box) {
+            return (box.sizeOrder && box.sizeOrder.length) ? box.sizeOrder : Object.keys(box.sizes || {});
+        }
+
+        function makeBarcodeDomId(boxNum, size) {
+            return `barcode-${boxNum}-${normalizeSizeLabel(size).replace(/[^a-zA-Z0-9]/g,'')}`;
+        }
+
+        function pdfDummies(count) {
+            return Array.from({ length: Math.max(0, count) }, () => ({}));
+        }
+        
+        // DOM Elements
+        const dropPacking = document.getElementById('drop-packing');
+        const filePacking = document.getElementById('file-packing');
+        const statusPacking = document.getElementById('status-packing');
+        
+        const dropBarcode = document.getElementById('drop-barcode');
+        const fileBarcode = document.getElementById('file-barcode');
+        const statusBarcode = document.getElementById('status-barcode');
+        
+        const btnGenerate = document.getElementById('btn-generate');
+        const btnPrint = document.getElementById('btn-print');
+        const btnReset = document.getElementById('btn-reset');
+        const toggleContainer = document.getElementById('toggle-container');
+        const newBatchContainer = document.getElementById('new-batch-container');
+        const dropzonesContainer = document.getElementById('dropzones-container');
+        const labelsContainer = document.getElementById('labels-container');
+        const placeholderText = document.getElementById('placeholder-text');
+        const errorMsg = document.getElementById('error-message');
+
+        // Helper CSS & SVG Generators for 20 Excel-Like Patterns
+        function getPatternBackground(pattern, color) {
+            let css = '';
+            if (pattern === 'solid') {
+                css += `background-color: ${color};`;
+            } else if (pattern === 'dots-1') {
+                css += `background-image: radial-gradient(${color} 20%, transparent 20%); background-size: 8px 8px; background-color: #ffffff; background-position: 0 0, 4px 4px;`;
+            } else if (pattern === 'dots-2') {
+                css += `background-image: radial-gradient(${color} 30%, transparent 30%); background-size: 6px 6px; background-color: #ffffff; background-position: 0 0, 3px 3px;`;
+            } else if (pattern === 'dots-3') {
+                css += `background-image: radial-gradient(${color} 40%, transparent 40%); background-size: 6px 6px; background-color: #ffffff; background-position: 0 0, 3px 3px;`;
+            } else if (pattern === 'dots-4') {
+                css += `background-image: radial-gradient(${color} 50%, transparent 50%); background-size: 4px 4px; background-color: #ffffff; background-position: 0 0, 2px 2px;`;
+            } else if (pattern === 'dots-5') {
+                css += `background-image: radial-gradient(${color} 65%, transparent 65%); background-size: 4px 4px; background-color: #ffffff; background-position: 0 0, 2px 2px;`;
+            } else if (pattern === 'stripes-horizontal') {
+                css += `background: repeating-linear-gradient(0deg, ${color}, ${color} 2px, #ffffff 2px, #ffffff 6px);`;
+            } else if (pattern === 'stripes-vertical') {
+                css += `background: repeating-linear-gradient(90deg, ${color}, ${color} 2px, #ffffff 2px, #ffffff 6px);`;
+            } else if (pattern === 'stripes-horizontal-thick') {
+                css += `background: repeating-linear-gradient(0deg, ${color}, ${color} 4px, #ffffff 4px, #ffffff 8px);`;
+            } else if (pattern === 'stripes-vertical-thick') {
+                css += `background: repeating-linear-gradient(90deg, ${color}, ${color} 4px, #ffffff 4px, #ffffff 8px);`;
+            } else if (pattern === 'stripes-diagonal') {
+                css += `background: repeating-linear-gradient(45deg, ${color}, ${color} 2px, #ffffff 2px, #ffffff 6px);`;
+            } else if (pattern === 'stripes-diagonal-reverse') {
+                css += `background: repeating-linear-gradient(-45deg, ${color}, ${color} 2px, #ffffff 2px, #ffffff 6px);`;
+            } else if (pattern === 'stripes-diagonal-thick') {
+                css += `background: repeating-linear-gradient(45deg, ${color}, ${color} 4px, #ffffff 4px, #ffffff 8px);`;
+            } else if (pattern === 'stripes-diagonal-reverse-thick') {
+                css += `background: repeating-linear-gradient(-45deg, ${color}, ${color} 4px, #ffffff 4px, #ffffff 8px);`;
+            } else if (pattern === 'crosshatch') {
+                css += `background: repeating-linear-gradient(0deg, ${color} 0, ${color} 1.5px, transparent 1.5px, transparent 6px), repeating-linear-gradient(90deg, ${color} 0, ${color} 1.5px, transparent 1.5px, transparent 6px); background-color: #ffffff;`;
+            } else if (pattern === 'crosshatch-thick') {
+                css += `background: repeating-linear-gradient(0deg, ${color} 0, ${color} 3px, transparent 3px, transparent 8px), repeating-linear-gradient(90deg, ${color} 0, ${color} 3px, transparent 3px, transparent 8px); background-color: #ffffff;`;
+            } else if (pattern === 'diagonal-crosshatch') {
+                css += `background: repeating-linear-gradient(45deg, ${color} 0, ${color} 1.5px, transparent 1.5px, transparent 6px), repeating-linear-gradient(-45deg, ${color} 0, ${color} 1.5px, transparent 1.5px, transparent 6px); background-color: #ffffff;`;
+            } else if (pattern === 'diagonal-crosshatch-thick') {
+                css += `background: repeating-linear-gradient(45deg, ${color} 0, ${color} 3px, transparent 3px, transparent 8px), repeating-linear-gradient(-45deg, ${color} 0, ${color} 3px, transparent 3px, transparent 8px); background-color: #ffffff;`;
+            } else if (pattern === 'checkerboard') {
+                css += `background-image: conic-gradient(${color} 90deg, #ffffff 90deg 180deg, ${color} 180deg 270deg, #ffffff 270deg); background-size: 8px 8px;`;
+            } else if (pattern === 'checkerboard-large') {
+                css += `background-image: conic-gradient(${color} 90deg, #ffffff 90deg 180deg, ${color} 180deg 270deg, #ffffff 270deg); background-size: 16px 16px;`;
+            }
+            return css;
+        }
+
+        function getPatternCss(pattern, color) {
+            return `min-width: 50px; width: 100%; height: 100%; ${getPatternBackground(pattern, color)}`;
+        }
+
+        // Generates precisely sized vector SVG for PDF export with strict clipping
+        function getPatternSvg(pattern, colorHex, exactWidth = null) {
+            const w = exactWidth ? exactWidth : 500;
+            const h = 18; 
+            
+            let svg = `<svg width="${exactWidth ? w : '100%'}" height="${exactWidth ? h : '100%'}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">`;
+            svg += `<defs><clipPath id="cp"><rect x="0" y="0" width="${w}" height="${h}"/></clipPath></defs>`;
+            svg += `<rect width="100%" height="100%" fill="#ffffff"/>`;
+            svg += `<g clip-path="url(#cp)">`;
+            
+            if (pattern === 'dots-1') {
+                for(let x = 4; x < w + 4; x += 8) { for(let y = 4; y < h + 4; y += 8) { svg += `<circle cx="${x}" cy="${y}" r="1" fill="${colorHex}"/>`; } }
+            } else if (pattern === 'dots-2') {
+                for(let x = 3; x < w + 3; x += 6) { for(let y = 3; y < h + 3; y += 6) { svg += `<circle cx="${x}" cy="${y}" r="1.5" fill="${colorHex}"/>`; } }
+            } else if (pattern === 'dots-3') {
+                for(let x = 3; x < w + 3; x += 6) { for(let y = 3; y < h + 3; y += 6) { svg += `<circle cx="${x}" cy="${y}" r="2" fill="${colorHex}"/>`; } }
+            } else if (pattern === 'dots-4') {
+                for(let x = 2; x < w + 2; x += 4) { for(let y = 2; y < h + 2; y += 4) { svg += `<circle cx="${x}" cy="${y}" r="1.5" fill="${colorHex}"/>`; } }
+            } else if (pattern === 'dots-5') {
+                for(let x = 2; x < w + 2; x += 4) { for(let y = 2; y < h + 2; y += 4) { svg += `<circle cx="${x}" cy="${y}" r="2" fill="${colorHex}"/>`; } }
+            } else if (pattern === 'stripes-horizontal') {
+                for(let y = 0; y < h; y += 6) { svg += `<rect x="0" y="${y}" width="${w}" height="2" fill="${colorHex}"/>`; }
+            } else if (pattern === 'stripes-vertical') {
+                for(let x = 0; x < w; x += 6) { svg += `<rect x="${x}" y="0" width="2" height="${h}" fill="${colorHex}"/>`; }
+            } else if (pattern === 'stripes-horizontal-thick') {
+                for(let y = 0; y < h; y += 8) { svg += `<rect x="0" y="${y}" width="${w}" height="4" fill="${colorHex}"/>`; }
+            } else if (pattern === 'stripes-vertical-thick') {
+                for(let x = 0; x < w; x += 8) { svg += `<rect x="${x}" y="0" width="4" height="${h}" fill="${colorHex}"/>`; }
+            } else if (pattern === 'stripes-diagonal') {
+                for(let i = -h; i < w + h; i += 6) { svg += `<line x1="${i}" y1="0" x2="${i+h}" y2="${h}" stroke="${colorHex}" stroke-width="2"/>`; }
+            } else if (pattern === 'stripes-diagonal-reverse') {
+                for(let i = -h; i < w + h; i += 6) { svg += `<line x1="${i}" y1="${h}" x2="${i+h}" y2="0" stroke="${colorHex}" stroke-width="2"/>`; }
+            } else if (pattern === 'stripes-diagonal-thick') {
+                for(let i = -h; i < w + h; i += 8) { svg += `<line x1="${i}" y1="0" x2="${i+h}" y2="${h}" stroke="${colorHex}" stroke-width="4"/>`; }
+            } else if (pattern === 'stripes-diagonal-reverse-thick') {
+                for(let i = -h; i < w + h; i += 8) { svg += `<line x1="${i}" y1="${h}" x2="${i+h}" y2="0" stroke="${colorHex}" stroke-width="4"/>`; }
+            } else if (pattern === 'crosshatch') {
+                for(let x = 0; x < w; x += 6) { svg += `<rect x="${x}" y="0" width="1.5" height="${h}" fill="${colorHex}"/>`; }
+                for(let y = 0; y < h; y += 6) { svg += `<rect x="0" y="${y}" width="${w}" height="1.5" fill="${colorHex}"/>`; }
+            } else if (pattern === 'crosshatch-thick') {
+                for(let x = 0; x < w; x += 8) { svg += `<rect x="${x}" y="0" width="3" height="${h}" fill="${colorHex}"/>`; }
+                for(let y = 0; y < h; y += 8) { svg += `<rect x="0" y="${y}" width="${w}" height="3" fill="${colorHex}"/>`; }
+            } else if (pattern === 'diagonal-crosshatch') {
+                for(let i = -h; i < w + h; i += 6) {
+                    svg += `<line x1="${i}" y1="0" x2="${i+h}" y2="${h}" stroke="${colorHex}" stroke-width="1.5"/>`;
+                    svg += `<line x1="${i}" y1="${h}" x2="${i+h}" y2="0" stroke="${colorHex}" stroke-width="1.5"/>`;
+                }
+            } else if (pattern === 'diagonal-crosshatch-thick') {
+                for(let i = -h; i < w + h; i += 8) {
+                    svg += `<line x1="${i}" y1="0" x2="${i+h}" y2="${h}" stroke="${colorHex}" stroke-width="3"/>`;
+                    svg += `<line x1="${i}" y1="${h}" x2="${i+h}" y2="0" stroke="${colorHex}" stroke-width="3"/>`;
+                }
+            } else if (pattern === 'checkerboard') {
+                for(let x = 0; x < w; x += 8) {
+                    for(let y = 0; y < h; y += 8) {
+                        if (Math.floor(x/8 + y/8) % 2 === 0) { svg += `<rect x="${x}" y="${y}" width="8" height="8" fill="${colorHex}"/>`; }
+                    }
+                }
+            } else if (pattern === 'checkerboard-large') {
+                for(let x = 0; x < w; x += 16) {
+                    for(let y = 0; y < h; y += 16) {
+                        if (Math.floor(x/16 + y/16) % 2 === 0) { svg += `<rect x="${x}" y="${y}" width="16" height="16" fill="${colorHex}"/>`; }
+                    }
+                }
+            }
+            svg += `</g>`;
+            // Subtle 1px border so it looks perfectly constrained
+            svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="none" stroke="#e5e7eb" stroke-width="1"/>`;
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function updateColorCellDisplay(rowEl, box) {
+            if (!rowEl) return;
+            const cell = rowEl.querySelector('.color-cell');
+            if (cell) cell.style.cssText = getPatternCss(box.pattern, box.colorHex);
+        }
+
+        // Global click listener to close pattern menus when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.pattern-dropdown-container')) {
+                document.querySelectorAll('.pattern-menu').forEach(m => m.classList.add('hidden'));
+            }
+        });
+
+        // Event listener for opening pattern menu and selecting visual patterns
+        labelsContainer.addEventListener('click', (e) => {
+            const toggleBtn = e.target.closest('.pattern-toggle-btn');
+            if (toggleBtn) {
+                const menu = toggleBtn.nextElementSibling;
+                document.querySelectorAll('.pattern-menu').forEach(m => {
+                    if (m !== menu) m.classList.add('hidden');
+                });
+                menu.classList.toggle('hidden');
+                return;
+            }
+
+            const optionBtn = e.target.closest('.pattern-option');
+            if (optionBtn) {
+                const newPattern = optionBtn.dataset.pattern;
+                const index = parseInt(optionBtn.dataset.index);
+                const sync = document.getElementById('sync-colors-toggle').checked;
+
+                if (sync && index === 0) {
+                    currentGeneratedBoxes.forEach(b => b.pattern = newPattern);
+                    document.querySelectorAll('.color-row').forEach((row, idx) => {
+                        updateColorCellDisplay(row, currentGeneratedBoxes[idx]);
+                        row.querySelectorAll('.pattern-option').forEach(btn => {
+                            if (btn.dataset.pattern === newPattern) {
+                                btn.classList.add('border-blue-500', 'ring-1', 'ring-blue-500');
+                                btn.classList.remove('border-gray-200');
+                            } else {
+                                btn.classList.remove('border-blue-500', 'ring-1', 'ring-blue-500');
+                                btn.classList.add('border-gray-200');
+                            }
+                        });
+                    });
+                } else {
+                    currentGeneratedBoxes[index].pattern = newPattern;
+                    updateColorCellDisplay(optionBtn.closest('.color-row'), currentGeneratedBoxes[index]);
+                    
+                    const menu = optionBtn.closest('.pattern-menu');
+                    menu.querySelectorAll('.pattern-option').forEach(btn => {
+                        if (btn.dataset.pattern === newPattern) {
+                            btn.classList.add('border-blue-500', 'ring-1', 'ring-blue-500');
+                            btn.classList.remove('border-gray-200');
+                        } else {
+                            btn.classList.remove('border-blue-500', 'ring-1', 'ring-blue-500');
+                            btn.classList.add('border-gray-200');
+                        }
+                    });
+                }
+                optionBtn.closest('.pattern-menu').classList.add('hidden');
+            }
+        });
+
+        // Color Picker Event Delegation
+        labelsContainer.addEventListener('input', (e) => {
+            const isColor = e.target.classList.contains('color-picker');
+
+            if (isColor) {
+                const sync = document.getElementById('sync-colors-toggle').checked;
+                const index = parseInt(e.target.dataset.index);
+                const newColor = e.target.value;
+
+                if (sync && index === 0) {
+                    currentGeneratedBoxes.forEach(b => b.colorHex = newColor);
+                    document.querySelectorAll('.color-picker').forEach(ctrl => {
+                        ctrl.value = newColor;
+                        updateColorCellDisplay(ctrl.closest('.color-row'), currentGeneratedBoxes[ctrl.dataset.index]);
+                    });
+                } else {
+                    currentGeneratedBoxes[index].colorHex = newColor;
+                    updateColorCellDisplay(e.target.closest('.color-row'), currentGeneratedBoxes[index]);
+                }
+            }
+        });
+
+        // Setup File Dropzones
+        function setupDropzone(dropzone, inputElement, statusElement, isBarcode = false) {
+            dropzone.addEventListener('click', () => inputElement.click());
+            dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+            dropzone.addEventListener('dragleave', () => { dropzone.classList.remove('dragover'); });
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    inputElement.files = e.dataTransfer.files;
+                    handleFileSelection(inputElement.files[0], statusElement, isBarcode);
+                }
+            });
+
+            inputElement.addEventListener('change', () => {
+                if (inputElement.files.length) {
+                    handleFileSelection(inputElement.files[0], statusElement, isBarcode);
+                }
+            });
+        }
+
+        function handleFileSelection(file, statusElement, isBarcode) {
+            statusElement.textContent = `Selected: ${file.name}`;
+            statusElement.classList.remove('hidden');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+
+                    if (isBarcode) {
+                        barcodeLookup = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
+                    } else {
+                        rawPackingData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showError(`Failed to parse ${file.name}. Ensure it's a valid Excel or CSV file.`);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        setupDropzone(dropPacking, filePacking, statusPacking, false);
+        setupDropzone(dropBarcode, fileBarcode, statusBarcode, true);
+
+        // Reset State Logic
+        btnReset.addEventListener('click', () => {
+            rawPackingData = null;
+            barcodeLookup = [];
+            currentGeneratedBoxes = [];
+            currentOrderNo = "";
+            currentTotalBoxes = 0;
+            currentExpDate = "";
+
+            filePacking.value = "";
+            fileBarcode.value = "";
+            statusPacking.classList.add('hidden');
+            statusBarcode.classList.add('hidden');
+
+            btnPrint.classList.add('hidden');
+            toggleContainer.classList.add('hidden');
+            toggleContainer.classList.remove('flex');
+            newBatchContainer.classList.add('hidden');
+            newBatchContainer.classList.remove('flex');
+            btnGenerate.classList.remove('hidden');
+            dropzonesContainer.classList.remove('hidden');
+
+            labelsContainer.innerHTML = `<div class="text-center text-gray-400 py-12 italic" id="placeholder-text">Live preview of labels will appear here.</div>`;
+            labelsContainer.classList.add('py-12');
+            errorMsg.classList.add('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Generate Labels Logic
+        btnGenerate.addEventListener('click', () => {
+            errorMsg.classList.add('hidden');
+            
+            if (!rawPackingData) {
+                showError("Please upload the Packing List Excel file.");
+                return;
+            }
+            if (!barcodeLookup.length) {
+                showError("Please upload the Barcode Excel file.");
+                return;
+            }
+
+            try {
+                const { orderNo, totalBoxes, generatedBoxes, expDate } = parsePackingList(rawPackingData);
+                currentOrderNo = orderNo;
+                currentTotalBoxes = totalBoxes;
+                currentGeneratedBoxes = generatedBoxes;
+                currentExpDate = expDate;
+                renderLabels(generatedBoxes, orderNo, totalBoxes, expDate);
+                
+                btnPrint.classList.remove('hidden');
+                toggleContainer.classList.remove('hidden');
+                toggleContainer.classList.add('flex');
+                
+                newBatchContainer.classList.remove('hidden');
+                newBatchContainer.classList.add('flex');
+                btnGenerate.classList.add('hidden');
+                dropzonesContainer.classList.add('hidden');
+
+            } catch (err) {
+                console.error(err);
+                showError("Failed to extract data. Please ensure the Excel structures match the standard template format.");
+            }
+        });
+
+        // Vector PDF Export Logic using pdfMake
+        btnPrint.addEventListener('click', () => {
+            if (!currentGeneratedBoxes || currentGeneratedBoxes.length === 0) return;
+
+            const content = [];
+
+            currentGeneratedBoxes.forEach((box, index) => {
+                const sizeOrder = getBoxSizeOrder(box);
+                const numCols = Math.max(sizeOrder.length, 1);
+                const totalCols = numCols + 1;
+                
+                // --- Dynamic width alignment ---
+                // A4 Total Width = 595.28 points. Margins [28, 20, 28, 20] = 56 horizontal.
+                // Available Width = 539.28. Left Col = 130. Size grid flexes by detected size count.
+                let leftColWidth = 130;
+                let safeGridWidth = 409.28;
+                let colWidth = safeGridWidth / numCols;
+                let tableWidths = [leftColWidth, ...Array(numCols).fill('*')];
+                
+                // Size headers + quantities use the exact detected order from the Packing List.
+                let sizeHeaders = [{ text: 'Size', bold: true, margin: [0,2,0,2] }];
+                let sizeValues = [{ text: 'Quantity', bold: true, margin: [0,2,0,2] }];
+                
+                sizeOrder.forEach(size => {
+                    let s = normalizeSizeLabel(size);
+                    sizeHeaders.push({ text: s, bold: true, alignment: 'center', margin: [0,2,0,2] });
+                    let qty = box.sizes[s] !== undefined && box.sizes[s] !== "" ? box.sizes[s].toString() : "";
+                    sizeValues.push({ text: qty, alignment: 'center', margin: [0,2,0,2] });
+                });
+
+                // Row: Color. Color name gets up to 2 size columns; visual fill/pattern takes the rest.
+                let colorTextCols = Math.min(2, numCols);
+                let colorFillCols = Math.max(numCols - colorTextCols, 0);
+                let colorRow = [
+                    { text: 'Color', bold: true, margin: [0,2,0,2] },
+                    { text: box.color, alignment: 'center', colSpan: colorTextCols, margin: [0,2,0,2] },
+                    ...pdfDummies(colorTextCols - 1)
+                ];
+                
+                if (colorFillCols > 0) {
+                    let exactColorWidth = Math.max(20, Math.floor(colWidth * colorFillCols) - 8);
+                    let colorCellDef = { colSpan: colorFillCols, margin: [0,0,0,0] };
+                    if (box.pattern === 'solid') {
+                        colorCellDef.text = '\u200B';
+                        colorCellDef.fillColor = box.colorHex;
+                        colorCellDef.margin = [0, 2, 0, 2];
+                    } else {
+                        colorCellDef.svg = getPatternSvg(box.pattern, box.colorHex, exactColorWidth);
+                        colorCellDef.width = exactColorWidth;
+                        colorCellDef.margin = [0, 1, 0, 1];
+                        colorCellDef.alignment = 'center';
+                    }
+                    colorRow.push(colorCellDef, ...pdfDummies(colorFillCols - 1));
+                }
+
+                // Row: Total under the first detected size, with remaining size cells merged.
+                let totalRow = [
+                    { text: 'Total', bold: true, margin: [0,2,0,2] },
+                    { text: box.totalQty.toString(), alignment: 'center', bold: true, margin: [0,2,0,2] }
+                ];
+                if (numCols > 1) {
+                    totalRow.push({ text: '', colSpan: numCols - 1, margin: [0,2,0,2] }, ...pdfDummies(numCols - 2));
+                }
+
+                // Row: Box number. Uses as many size columns as are available.
+                let boxNrRow = [{ text: 'BOX nr', bold: true, margin: [0,2,0,2] }];
+                if (numCols === 1) {
+                    boxNrRow.push({ text: box.boxNum.toString(), alignment: 'center', bold: true, margin: [0,2,0,2] });
+                } else if (numCols === 2) {
+                    boxNrRow.push(
+                        { text: box.boxNum.toString(), alignment: 'center', bold: true, margin: [0,2,0,2] },
+                        { text: currentTotalBoxes.toString(), alignment: 'center', bold: true, margin: [0,2,0,2] }
+                    );
+                } else {
+                    boxNrRow.push(
+                        { text: box.boxNum.toString(), alignment: 'center', bold: true, margin: [0,2,0,2] },
+                        { text: 'TO', alignment: 'center', bold: true, margin: [0,2,0,2] },
+                        { text: currentTotalBoxes.toString(), alignment: 'center', bold: true, margin: [0,2,0,2] }
+                    );
+                    if (numCols > 3) {
+                        boxNrRow.push({ text: '', colSpan: numCols - 3, margin: [0,2,0,2] }, ...pdfDummies(numCols - 4));
+                    }
+                }
+
+                // Row(s): Stickers, only for sizes that exist in this Packing List and have quantity.
+                let barcodeStack = [];
+                sizeOrder.forEach(size => {
+                    let s = normalizeSizeLabel(size);
+                    let qty = box.sizes[s];
+                    if (qty !== undefined && qty !== "") {
+                        let barcodeVal = findBarcode(box.styleNum, s);
+                        let eanText = `(02)${barcodeVal}(37)${qty}`;
+                        let barcodeId = makeBarcodeDomId(box.boxNum, s);
+                        let svgElem = document.getElementById(barcodeId);
+                        if (svgElem) {
+                            let svgStr = svgElem.outerHTML;
+                            if (!svgStr.includes('xmlns=')) {
+                                svgStr = svgStr.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+                            }
+                            barcodeStack.push([
+                                { text: 'Sticker', bold: true, margin: [0, 15, 0, 0] },
+                                { svg: svgStr, width: 200, alignment: 'center', margin: [0, 6, 0, 6], colSpan: numCols },
+                                ...pdfDummies(numCols - 1)
+                            ]);
+                        }
+                    }
+                });
+
+                // Bottom Rows (Expedition, Order, Magasin)
+                let expRow = [
+                    { text: 'Expedition date', bold: true, margin: [0,2,0,2] },
+                    { text: currentExpDate, alignment: 'center', colSpan: numCols, margin: [0,2,0,2] },
+                    ...pdfDummies(numCols - 1)
+                ];
+
+                let ordRow = [
+                    { text: 'N° production order', bold: true, margin: [0,2,0,2] },
+                    { text: currentOrderNo || 'N/A', alignment: 'center', colSpan: numCols, margin: [0,2,0,2] },
+                    ...pdfDummies(numCols - 1)
+                ];
+
+                let magRow = [
+                    { text: 'Magasin', bold: true, margin: [0,2,0,2] },
+                    { text: 'LGT01', alignment: 'center', colSpan: numCols, margin: [0,2,0,2] },
+                    ...pdfDummies(numCols - 1)
+                ];
+
+                // --- SINGLE UNIFIED TABLE WITH DYNAMIC SIZE COLUMNS ---
+                let labelContent = [
+                    {
+                        table: {
+                            widths: tableWidths,
+                            body: [
+                                [
+                                    { text: 'DELIVERY ADRESS\nKuehne + Nagel\nAvenue Louis Renault, ZAC du Val Bréon – BATIMENT 1, Quai 17\nF-77610 CHÂTRES, FRANCE', colSpan: totalCols, alignment: 'center', bold: true, margin: [0,2,0,2] },
+                                    ...pdfDummies(totalCols - 1)
+                                ],
+                                [
+                                    { text: 'Style Number', bold: true, margin: [0,2,0,2] },
+                                    { text: box.styleNum, alignment: 'center', colSpan: numCols, margin: [0,2,0,2] },
+                                    ...pdfDummies(numCols - 1)
+                                ],
+                                [
+                                    { text: 'Style Name', bold: true, margin: [0,2,0,2] },
+                                    { text: box.styleName, alignment: 'center', colSpan: numCols, margin: [0,2,0,2] },
+                                    ...pdfDummies(numCols - 1)
+                                ],
+                                colorRow,
+                                sizeHeaders,
+                                sizeValues,
+                                totalRow,
+                                boxNrRow,
+                                ...barcodeStack,
+                                expRow,
+                                ordRow,
+                                magRow
+                            ]
+                        },
+                        layout: {
+                            hLineWidth: () => 1,
+                            vLineWidth: () => 1,
+                            paddingLeft: () => 4,
+                            paddingRight: () => 4,
+                            paddingTop: () => 2,
+                            paddingBottom: () => 2
+                        },
+                        margin: [0, 0, 0, 0]
+                    }
+                ];
+
+                content.push({
+                    stack: [
+                        ...labelContent,
+                        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 539, y2: 0, lineWidth: 1, dash: { length: 4, space: 4 }, color: '#999' }], margin: [0, 15, 0, 15] }
+                    ],
+                    unbreakable: true,
+                    margin: [0, 0, 0, 5]
+                });
+            });
+
+            const docDefinition = {
+                pageSize: 'A4',
+                pageMargins: [28, 20, 28, 20],
+                defaultStyle: {
+                    font: 'Roboto',
+                    fontSize: 10,
+                    color: 'black'
+                },
+                content: content
+            };
+
+            pdfMake.createPdf(docDefinition).download(`Labels_${currentOrderNo || 'Export'}.pdf`);
+        });
+
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.classList.remove('hidden');
+        }
+
+        function parsePackingList(data) {
+            let orderNo = "";
+            let headerRowIdx = -1;
+            let totalPackages = 0;
+            let extractedExpDate = "";
+            
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length === 0) continue;
+
+                for (let j = 0; j < row.length; j++) {
+                    let cell = row[j];
+                    if (typeof cell === 'string') {
+                        if (cell.includes("PACKING LIST")) {
+                            const match = cell.match(/20\d{6}/); 
+                            if (match) {
+                                const d = match[0];
+                                extractedExpDate = `${d.substring(6,8)}.${d.substring(4,6)}.${d.substring(2,4)}`;
+                            }
+                        }
+                        
+                        if (cell.includes("Order No")) {
+                            for(let k = j + 1; k < row.length; k++){
+                                if(row[k] !== "") { orderNo = row[k].toString().trim(); break; }
+                            }
+                        }
+
+                        if (cell.includes("Total Packages")) {
+                            let match = cell.match(/Total Packages.*?(\d+)/i);
+                            if (match) {
+                                totalPackages = parseInt(match[1]);
+                            } else {
+                                for(let k = j + 1; k < row.length; k++){
+                                    if(row[k] !== "" && row[k] != null) {
+                                        let val = parseInt(row[k].toString().trim());
+                                        if (!isNaN(val)) { totalPackages = val; break; }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (cell.includes("CTN NO")) {
+                            headerRowIdx = i;
+                        }
+                    }
+                }
+                
+                if (headerRowIdx !== -1 && i >= headerRowIdx) break;
+            }
+
+            if (headerRowIdx === -1) throw new Error("Could not find table headers (CTN NO.) in Packing List.");
+            
+            if (!extractedExpDate) {
+                const today = new Date();
+                extractedExpDate = `${String(today.getDate()).padStart(2, '0')}.${String(today.getMonth()+1).padStart(2, '0')}.${String(today.getFullYear()).substring(2,4)}`;
+            }
+
+            const headerRow = data[headerRowIdx];
+            
+            const colMap = {
+                ctnStart: headerRow.findIndex(c => typeof c === 'string' && c.includes("CTN NO")),
+                styleNum: headerRow.findIndex(c => typeof c === 'string' && c.includes("REF NO")),
+                styleName: headerRow.findIndex(c => typeof c === 'string' && c.includes("STYLE")),
+                color: headerRow.findIndex(c => typeof c === 'string' && c.includes("COLOR")),
+                sizes: []
+            };
+
+            for (let i = colMap.color + 1; i < headerRow.length; i++) {
+                let val = headerRow[i];
+                let strVal = normalizeSizeLabel(val);
+                let upperVal = strVal.toUpperCase();
+
+                // Stop at the first non-size production column.
+                if (upperVal.includes("QTY") || upperVal.includes("TTL") || upperVal.includes("NET") || upperVal.includes("GR")) break;
+
+                // Accept any real size header: numeric sizes 32..54, letters XS..XXXL, TU/OS, etc.
+                if (isValidSizeHeader(strVal) && !colMap.sizes.some(s => s.name === strVal)) {
+                    colMap.sizes.push({ index: i, name: strVal });
+                }
+            }
+
+            if (colMap.sizes.length === 0) {
+                throw new Error("No dynamic size columns found between COLOR and QTY CTN.");
+            }
+
+            const detectedSizeOrder = colMap.sizes.map(s => s.name);
+            let generatedBoxes = [];
+            let maxBoxNumber = 0;
+            let lastStyleNum = "";
+            let lastStyleName = "";
+            let lastColor = "";
+
+            for (let i = headerRowIdx + 1; i < data.length; i++) {
+                const row = data[i];
+                if (!row) continue;
+                
+                // CRITICAL EXCLUSION: Aggressive scan for summary rows.
+                let isSummary = false;
+                for (let j = 0; j < row.length; j++) {
+                    let cellStr = String(row[j] || '').toUpperCase().trim();
+                    if (cellStr === "TOTAL" || cellStr === "ОБЩО" || cellStr === "GRAND TOTAL" || cellStr.includes("ОБЩО СКРОЕНО") || cellStr.includes("SHIPING SAMPLES") || cellStr.includes("БРОЙКА ЗА ОФИСА") || cellStr.includes("PPS") || cellStr.includes("VIP")) {
+                        isSummary = true;
+                        break;
+                    }
+                }
+                if (isSummary) break; // Hard exit!
+
+                let ctnCell = row[colMap.ctnStart];
+                if (ctnCell === "" || ctnCell == null) continue;
+
+                let startCtn = parseInt(String(ctnCell).trim());
+                if (isNaN(startCtn)) continue;
+
+                // Failsafe Exclusion: Do not run dummy lines past total packages
+                if (totalPackages > 0 && startCtn > totalPackages) continue;
+
+                let endCtn = startCtn;
+                for (let j = colMap.ctnStart + 1; j <= colMap.ctnStart + 3; j++) {
+                    if (row[j] && row[j].toString().toLowerCase().trim() === 'to') {
+                        let nextVal = row[j+1];
+                        if (nextVal !== "" && nextVal != null) { endCtn = parseInt(nextVal.toString().trim()); }
+                        break;
+                    }
+                }
+                if (isNaN(endCtn)) endCtn = startCtn;
+
+                let rowStyleNum = row[colMap.styleNum];
+                let rowStyleName = row[colMap.styleName];
+                let rowColor = row[colMap.color];
+
+                let styleNum = (rowStyleNum !== undefined && rowStyleNum !== "") ? rowStyleNum.toString().trim() : lastStyleNum;
+                let styleName = (rowStyleName !== undefined && rowStyleName !== "") ? rowStyleName.toString().trim() : lastStyleName;
+                let color = (rowColor !== undefined && rowColor !== "") ? rowColor.toString().trim() : lastColor;
+
+                lastStyleNum = styleNum;
+                lastStyleName = styleName;
+                lastColor = color;
+
+                let boxSizes = {};
+                let totalBoxQty = 0;
+
+                colMap.sizes.forEach(sizeCol => {
+                    let qtyStr = row[sizeCol.index];
+                    let cleanSize = normalizeSizeLabel(sizeCol.name);
+                    if (qtyStr !== "" && qtyStr != null) {
+                        let qty = parseInt(qtyStr.toString().trim());
+                        if (!isNaN(qty) && qty > 0) {
+                            boxSizes[cleanSize] = qty;
+                            totalBoxQty += qty;
+                        } else {
+                            boxSizes[cleanSize] = ""; 
+                        }
+                    } else {
+                        boxSizes[cleanSize] = ""; 
+                    }
+                });
+
+                if (totalBoxQty === 0) continue;
+
+                for (let b = startCtn; b <= endCtn; b++) {
+                    generatedBoxes.push({
+                        boxNum: b,
+                        styleNum: styleNum,
+                        styleName: styleName,
+                        color: color,
+                        colorHex: '#ffffff', // Default to white empty block
+                        pattern: 'solid',    // Default pattern
+                        sizeOrder: detectedSizeOrder,
+                        sizes: boxSizes,
+                        totalQty: totalBoxQty
+                    });
+                    if (b > maxBoxNumber) maxBoxNumber = b;
+                }
+            }
+
+            let finalTotalBoxes = totalPackages > 0 ? totalPackages : maxBoxNumber;
+            return { orderNo, totalBoxes: finalTotalBoxes, generatedBoxes, expDate: extractedExpDate };
+        }
+
+        function findBarcode(styleNum, size) {
+            let cleanStyle = (styleNum || '').toString().trim().toUpperCase();
+            let cleanSize = normalizeSizeLabel(size);
+
+            let match = barcodeLookup.find(row => {
+                if(!row.CODE_ART_COM || row.TAILLE == null || row.TAILLE === "") return false;
+                let rStyle = row.CODE_ART_COM.toString().toUpperCase();
+                let rSize = normalizeSizeLabel(row.TAILLE);
+                return rStyle.includes(cleanStyle) && rSize === cleanSize;
+            });
+
+            if (!match) {
+                match = barcodeLookup.find(row => {
+                    if(row.TAILLE == null || row.TAILLE === "") return false;
+                    let rSize = normalizeSizeLabel(row.TAILLE);
+                    return rSize === cleanSize;
+                });
+            }
+
+            return match && match.GENC ? match.GENC.toString().trim() : "0000000000000";
+        }
+
+        function renderLabels(boxes, orderNo, totalBoxes, expDate) {
+            labelsContainer.innerHTML = '';
+            labelsContainer.classList.remove('py-12');
+
+            boxes.forEach((box, index) => {
+                const sizeOrder = getBoxSizeOrder(box);
+                const numCols = Math.max(sizeOrder.length, 1);
+
+                // HTML grid now follows the detected Packing List size headers.
+                let sizeHeadersArr = [];
+                let sizeValuesArr = [];
+                let cellWidth = (100 / numCols).toFixed(2);
+                sizeOrder.forEach(size => {
+                    let s = normalizeSizeLabel(size);
+                    let qty = box.sizes[s] !== undefined && box.sizes[s] !== "" ? box.sizes[s] : "";
+                    sizeHeadersArr.push(`<td class="border border-black p-1 text-center font-bold" style="width: ${cellWidth}%;">${s}</td>`);
+                    sizeValuesArr.push(`<td class="border border-black p-1 text-center" style="width: ${cellWidth}%;">${qty}</td>`);
+                });
+                
+                let totalHtml = `<td class="border border-black p-1 text-center font-bold">${box.totalQty}</td>`;
+                if (numCols > 1) {
+                    totalHtml += `<td class="border border-black p-1" colspan="${numCols - 1}"></td>`;
+                }
+                
+                let boxNrHtml = '';
+                if (numCols === 1) {
+                    boxNrHtml = `<td class="border border-black p-1 text-center font-bold">${box.boxNum}</td>`;
+                } else if (numCols === 2) {
+                    boxNrHtml = `<td class="border border-black p-1 text-center font-bold">${box.boxNum}</td>
+                                 <td class="border border-black p-1 text-center font-bold">${totalBoxes}</td>`;
+                } else {
+                    boxNrHtml = `<td class="border border-black p-1 text-center font-bold">${box.boxNum}</td>
+                                 <td class="border border-black p-1 text-center font-bold">TO</td>
+                                 <td class="border border-black p-1 text-center font-bold">${totalBoxes}</td>`;
+                    if (numCols > 3) {
+                        boxNrHtml += `<td class="border border-black p-1" colspan="${numCols - 3}"></td>`;
+                    }
+                }
+                                
+                let colorTextCols = Math.min(2, numCols);
+                let colorFillCols = Math.max(numCols - colorTextCols, 0);
+                let colSpanColorText = `colspan="${colorTextCols}"`;
+                let colorFillHtml = colorFillCols > 0
+                    ? `<td class="border border-black p-0 color-cell" style="${getPatternCss(box.pattern, box.colorHex)}" colspan="${colorFillCols}"></td>`
+                    : '';
+
+                let stickersHtml = '';
+                sizeOrder.forEach(size => {
+                    let s = normalizeSizeLabel(size);
+                    let qty = box.sizes[s];
+                    if (qty !== undefined && qty !== "") {
+                        let barcodeVal = findBarcode(box.styleNum, s);
+                        let eanText = `(02)${barcodeVal}(37)${qty}`;
+                        let barcodeId = makeBarcodeDomId(box.boxNum, s);
+
+                        stickersHtml += `
+                            <tr>
+                                <td class="border border-black p-1.5 font-bold align-middle left-col">Sticker</td>
+                                <td class="border border-black p-1 text-center" colspan="${numCols}">
+                                    <div class="flex justify-center w-full py-1">
+                                        <svg id="${barcodeId}" style="max-height: 85px; max-width: 100%;"></svg>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                const labelHtml = `
+                    <div class="label-page bg-white max-w-[750px] mx-auto relative" style="font-family: Arial, sans-serif; color: black;">
+                        
+                        <!-- SINGLE HTML UNIFIED TABLE -->
+                        <table class="w-full border-collapse border border-black mb-0 text-[14px] color-row" style="table-layout: fixed;">
+                            <tr>
+                                <td colspan="${numCols + 1}" class="border border-black p-1.5 text-center font-bold text-base leading-snug">
+                                    DELIVERY ADRESS<br>Kuehne + Nagel<br>Avenue Louis Renault, ZAC du Val Bréon – BATIMENT 1, Quai 17<br>F-77610 CHÂTRES, FRANCE
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="border border-black p-1.5 font-bold left-col">Style Number</td>
+                                <td colspan="${numCols}" class="border border-black p-1.5 text-center">${box.styleNum}</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-black p-1.5 font-bold left-col">Style Name</td>
+                                <td colspan="${numCols}" class="border border-black p-1.5 text-center">${box.styleName}</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-black p-1.5 font-bold left-col">Color</td>
+                                <td class="border border-black p-1.5 text-center px-4" ${colSpanColorText}>
+                                    <div class="flex justify-between items-center w-full">
+                                        <span class="truncate pr-2">${box.color}</span>
+                                        <div class="print:hidden flex gap-2 relative flex-shrink-0">
+                                            <input type="color" value="${box.colorHex}" data-index="${index}" class="color-picker w-6 h-6 p-0 cursor-pointer border border-gray-300 rounded-sm" title="Select Color">
+                                            <div class="relative inline-block text-left pattern-dropdown-container">
+                                                <button type="button" class="pattern-toggle-btn border border-gray-300 rounded p-0 w-6 h-6 flex items-center justify-center bg-white hover:bg-gray-50 focus:outline-none" data-index="${index}" title="Select Pattern">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600 pointer-events-none"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg>
+                                                </button>
+                                                <div class="pattern-menu hidden absolute z-50 mt-1 w-[200px] rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none p-2 grid grid-cols-5 gap-2 right-0 origin-top-right print:hidden" data-index="${index}">
+                                                    <button type="button" data-pattern="solid" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'solid' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('solid', '#666666')}" title="Solid"></button>
+                                                    <button type="button" data-pattern="dots-1" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'dots-1' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('dots-1', '#666666')}" title="6.25% Gray (Dots)"></button>
+                                                    <button type="button" data-pattern="dots-2" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'dots-2' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('dots-2', '#666666')}" title="12.5% Gray (Dots)"></button>
+                                                    <button type="button" data-pattern="dots-3" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'dots-3' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('dots-3', '#666666')}" title="25% Gray (Dots)"></button>
+                                                    <button type="button" data-pattern="dots-4" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'dots-4' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('dots-4', '#666666')}" title="50% Gray (Dots)"></button>
+                                                    <button type="button" data-pattern="dots-5" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'dots-5' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('dots-5', '#666666')}" title="75% Gray (Dots)"></button>
+                                                    <button type="button" data-pattern="stripes-horizontal" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'stripes-horizontal' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('stripes-horizontal', '#666666')}" title="Thin Horizontal Stripe"></button>
+                                                    <button type="button" data-pattern="stripes-vertical" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'stripes-vertical' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('stripes-vertical', '#666666')}" title="Thin Vertical Stripe"></button>
+                                                    <button type="button" data-pattern="stripes-horizontal-thick" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'stripes-horizontal-thick' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('stripes-horizontal-thick', '#666666')}" title="Thick Horizontal Stripe"></button>
+                                                    <button type="button" data-pattern="stripes-vertical-thick" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'stripes-vertical-thick' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('stripes-vertical-thick', '#666666')}" title="Thick Vertical Stripe"></button>
+                                                    <button type="button" data-pattern="stripes-diagonal" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'stripes-diagonal' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('stripes-diagonal', '#666666')}" title="Thin Diagonal Stripe (/)"></button>
+                                                    <button type="button" data-pattern="stripes-diagonal-reverse" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'stripes-diagonal-reverse' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('stripes-diagonal-reverse', '#666666')}" title="Thin Reverse Diagonal Stripe (\)"></button>
+                                                    <button type="button" data-pattern="stripes-diagonal-thick" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'stripes-diagonal-thick' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('stripes-diagonal-thick', '#666666')}" title="Thick Diagonal Stripe (/)"></button>
+                                                    <button type="button" data-pattern="stripes-diagonal-reverse-thick" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'stripes-diagonal-reverse-thick' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('stripes-diagonal-reverse-thick', '#666666')}" title="Thick Reverse Diagonal Stripe (\)"></button>
+                                                    <button type="button" data-pattern="crosshatch" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'crosshatch' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('crosshatch', '#666666')}" title="Thin Crosshatch"></button>
+                                                    <button type="button" data-pattern="crosshatch-thick" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'crosshatch-thick' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('crosshatch-thick', '#666666')}" title="Thick Crosshatch"></button>
+                                                    <button type="button" data-pattern="diagonal-crosshatch" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'diagonal-crosshatch' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('diagonal-crosshatch', '#666666')}" title="Thin Diagonal Crosshatch"></button>
+                                                    <button type="button" data-pattern="diagonal-crosshatch-thick" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'diagonal-crosshatch-thick' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('diagonal-crosshatch-thick', '#666666')}" title="Thick Diagonal Crosshatch"></button>
+                                                    <button type="button" data-pattern="checkerboard" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'checkerboard' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('checkerboard', '#666666')}" title="Checkerboard"></button>
+                                                    <button type="button" data-pattern="checkerboard-large" data-index="${index}" class="pattern-option w-7 h-7 border ${box.pattern === 'checkerboard-large' ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-200'} hover:border-blue-500 rounded transition-all" style="${getPatternBackground('checkerboard-large', '#666666')}" title="Large Checkerboard"></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                ${colorFillHtml}
+                            </tr>
+                            <tr>
+                                <td class="border border-black p-1.5 font-bold left-col">Size</td>
+                                ${sizeHeadersArr.join('')}
+                            </tr>
+                            <tr>
+                                <td class="border border-black p-1.5 font-bold left-col">Quantity</td>
+                                ${sizeValuesArr.join('')}
+                            </tr>
+                            <tr>
+                                <td class="border border-black p-1.5 font-bold left-col">Total</td>
+                                ${totalHtml}
+                            </tr>
+                            <tr>
+                                <td class="border border-black p-1.5 font-bold left-col">BOX nr</td>
+                                ${boxNrHtml}
+                            </tr>
+                            ${stickersHtml}
+                            <tr>
+                                <td class="border border-black p-1.5 font-bold left-col">Expedition date</td>
+                                <td class="border border-black p-1.5 text-center" colspan="${numCols}">${expDate}</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-black p-1.5 font-bold left-col">N° production order</td>
+                                <td class="border border-black p-1.5 text-center" colspan="${numCols}">${orderNo || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-black p-1.5 font-bold left-col">Magasin</td>
+                                <td class="border border-black p-1.5 text-center" colspan="${numCols}">LGT01</td>
+                            </tr>
+                        </table>
+
+                        <!-- Cut Line Spacer -->
+                        <div class="w-full text-center text-gray-400 mt-4 mb-4 border-b border-dashed border-gray-400 pb-2 print:border-b-[1px] print:border-[#999]">
+                            ✂ - - - - Cut here - - - - 
+                        </div>
+
+                    </div>
+                `;
+                
+                labelsContainer.insertAdjacentHTML('beforeend', labelHtml);
+
+                sizeOrder.forEach(size => {
+                    let s = normalizeSizeLabel(size);
+                    let qty = box.sizes[s];
+                    if (qty !== undefined && qty !== "") {
+                        let barcodeVal = findBarcode(box.styleNum, s);
+                        let eanText = `(02)${barcodeVal}(37)${qty}`;
+                        let barcodeId = makeBarcodeDomId(box.boxNum, s);
+                        
+                        try {
+                            JsBarcode(`#${barcodeId}`, eanText, {
+                                format: "CODE128",
+                                displayValue: true,
+                                fontSize: 16,
+                                margin: 10,   // margin inside SVG so it doesn't touch borders
+                                height: 60,
+                                fontOptions: "bold",
+                                textMargin: 6
+                            });
+                        } catch (e) {
+                            console.error("Barcode generation failed for:", eanText, e);
+                        }
+                    }
+                });
+            });
+
+            document.getElementById('print-area').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

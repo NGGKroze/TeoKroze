@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRESSE Box Label Generator</title>
+  <script src="vendor/cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="vendor/cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --ink: #111827;
+      --muted: #64748b;
+      --line: #111111;
+      --accent: #1d4ed8;
+      --danger: #b91c1c;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: Arial, Helvetica, sans-serif; }
+    button, input { font: inherit; }
+
+    .app { max-width: 1180px; margin: 0 auto; padding: 24px; }
+    .header { text-align: center; margin-bottom: 20px; }
+    .header h1 { margin: 0; font-size: 30px; letter-spacing: .3px; }
+    .header p { margin: 8px 0 0; color: var(--muted); }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) auto;
+      gap: 16px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+
+    .drop-zone {
+      background: var(--panel);
+      border: 2px dashed #94a3b8;
+      border-radius: 16px;
+      padding: 22px;
+      cursor: pointer;
+      text-align: center;
+      transition: .15s ease;
+      min-height: 128px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .06);
+    }
+    .drop-zone:hover, .drop-zone.dragover { background: #eff6ff; border-color: var(--accent); }
+    .drop-zone strong { font-size: 18px; }
+    .drop-zone small { color: var(--muted); }
+    .drop-zone input { display: none; }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+      min-width: 220px;
+    }
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      color: white;
+      background: var(--accent);
+      box-shadow: 0 6px 14px rgba(29, 78, 216, .22);
+    }
+    .btn:hover { filter: brightness(.96); }
+    .btn.secondary { color: #0f172a; background: white; border: 1px solid #cbd5e1; box-shadow: none; }
+    .btn.danger { color: white; background: #dc2626; box-shadow: 0 6px 14px rgba(220, 38, 38, .18); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, .04);
+    }
+    .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    .card .value { margin-top: 5px; font-weight: 700; font-size: 17px; }
+
+    .message { display: none; padding: 12px 14px; border-radius: 12px; margin: 10px 0 16px; font-weight: 600; }
+    .message.error { display: block; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .message.ok { display: block; background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+
+    .color-panel { display: none; margin: 16px 0 22px; }
+    .color-panel.visible { display: block; }
+    .color-panel h2 { margin: 0 0 10px; font-size: 18px; }
+    .color-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    .color-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .color-item input[type="color"] { width: 42px; height: 32px; border: 1px solid #cbd5e1; padding: 0; background: white; border-radius: 7px; cursor: pointer; }
+    .swatch { width: 42px; height: 32px; border: 1px solid #111; border-radius: 7px; background: white; }
+
+    #print-area { padding: 22px 0 60px; }
+    .empty-preview { text-align: center; color: #94a3b8; font-style: italic; padding: 60px 0; }
+
+    .sheet-page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto 22px;
+      padding: 8mm 7mm;
+      background: white;
+      box-shadow: 0 12px 40px rgba(15, 23, 42, .17);
+      display: flex;
+      flex-direction: column;
+      gap: 6mm;
+      break-after: page;
+      page-break-after: always;
+    }
+    .sheet-page:last-child { break-after: auto; page-break-after: auto; }
+
+    .box-label {
+      width: 100%;
+      background: white;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .label-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 10.2pt;
+      color: black;
+    }
+    .label-table td {
+      border: 1px solid var(--line);
+      padding: 2.2px 4px;
+      height: 20px;
+      vertical-align: middle;
+      overflow: hidden;
+    }
+    .label-table .left { width: 16.5%; font-weight: 700; }
+    .label-table .size-col { width: 10.4375%; text-align: center; }
+    .label-table .center { text-align: center; }
+    .label-table .bold { font-weight: 700; }
+    .label-table .addr { text-align: center; font-weight: 700; white-space: pre-line; line-height: 1.25; padding: 6px 8px; }
+    .label-table .color-name-cell { padding: 1px 4px; }
+    .label-table .color-name-flex { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
+    .label-table .color-name-text { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 700; }
+    .label-table .label-color-input { width: 28px; height: 24px; padding: 0; border: 1px solid #64748b; border-radius: 5px; cursor: pointer; background: white; flex: 0 0 auto; }
+    .label-table .color-fill { background: white; min-height: 20px; }
+    .label-table .sticker-left { font-weight: 700; text-align: center; }
+    .label-table .barcode-cell { text-align: center; padding: 4px 5px; height: 70px; vertical-align: middle; }
+    .label-table .barcode-wrap { width: 100%; min-height: 60px; display: flex; align-items: center; justify-content: center; }
+    .label-table .barcode-cell svg { width: 220px; max-width: 94%; height: 54px; display: block; margin: 0 auto; }
+    .label-table .barcode-warning { font-size: 9px; color: #b91c1c; font-weight: 700; margin-top: 1px; }
+    .label-caption { text-align: right; color: #64748b; font-size: 11px; margin-top: 4px; }
+
+    .print-note { color: var(--muted); font-size: 13px; margin-top: 7px; }
+    .screen-only { display: inline-flex; }
+
+    @media (max-width: 900px) {
+      .toolbar { grid-template-columns: 1fr; }
+      .actions { flex-direction: row; flex-wrap: wrap; }
+      .status-grid { grid-template-columns: repeat(2, 1fr); }
+      .sheet-page { width: 100%; min-height: auto; padding: 12px; }
+    }
+
+    @page { size: A4 portrait; margin: 0; }
+    @media print {
+      body, html { margin: 0 !important; padding: 0 !important; background: white !important; }
+      .app { display: none !important; }
+      #print-area { padding: 0 !important; background: white !important; }
+      .sheet-page {
+        width: 210mm !important;
+        min-height: 297mm !important;
+        margin: 0 !important;
+        padding: 8mm 7mm !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .screen-only { display: none !important; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .label-table td { border-color: #000 !important; }
+      .label-caption { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app-ui">
+    <div class="header">
+      <h1>TRESSE Box Label Generator</h1>
+      <p>Drop the packing list XLSX and the labels will be generated automatically. Supports Product-only layouts without Référence CLIENT.</p>
+    </div>
+
+    <div class="toolbar">
+      <label class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv" />
+        <strong>Drop Packing List Excel here</strong>
+        <small id="file-status">or click to choose the XLSX file</small>
+      </label>
+
+      <div class="actions">
+        <button class="btn secondary" id="btn-print" disabled>Print / Save as PDF</button>
+        <button class="btn danger" id="btn-reset" disabled>Clear batch</button>
+      </div>
+    </div>
+
+    <div class="status-grid">
+      <div class="card"><div class="label">Order</div><div class="value" id="stat-order">—</div></div>
+      <div class="card"><div class="label">Expedition date</div><div class="value" id="stat-date">—</div></div>
+      <div class="card"><div class="label">Boxes</div><div class="value" id="stat-boxes">—</div></div>
+      <div class="card"><div class="label">Colors</div><div class="value" id="stat-colors">—</div></div>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <div id="color-panel" class="color-panel card">
+      <h2>Color fill selector</h2>
+      <div class="print-note">Change any color here or inside any label. Every label with the same color name updates automatically.</div>
+      <div class="color-list" id="color-list"></div>
+    </div>
+  </div>
+
+  <div id="print-area">
+    <div id="labels-container" class="empty-preview">Live preview will appear here after dropping the packing list.</div>
+  </div>
+
+  <script>
+    const LETTER_SIZES = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+    const EMPTY_SIZE_SLOTS = ['', '', '', '', '', '', '', ''];
+    const ADDRESS_TEXT = [
+      'DELIVERY ADRESS',
+      'LOGTEX MOUSSEY',
+      'Pour TRESSE',
+      '1 rue des Lacs, Parc logistique Entrée Sud',
+      '10800 MOUSSEY, FRANCE'
+    ].join('\n');
+    const STORAGE_PREFIX = 'tresse-box-label-color::';
+
+    const state = {
+      rows: null,
+      fileName: '',
+      boxes: [],
+      orderNo: '',
+      expDate: '',
+      totalBoxes: 0,
+      colorMap: {},
+      eanMap: new Map(),
+      sizeSlots: [...EMPTY_SIZE_SLOTS],
+      productLetterSizes: {}
+    };
+
+    const els = {
+      dropZone: document.getElementById('drop-zone'),
+      fileInput: document.getElementById('file-input'),
+      fileStatus: document.getElementById('file-status'),
+      btnPrint: document.getElementById('btn-print'),
+      btnReset: document.getElementById('btn-reset'),
+      message: document.getElementById('message'),
+      labels: document.getElementById('labels-container'),
+      colorPanel: document.getElementById('color-panel'),
+      colorList: document.getElementById('color-list'),
+      statOrder: document.getElementById('stat-order'),
+      statDate: document.getElementById('stat-date'),
+      statBoxes: document.getElementById('stat-boxes'),
+      statColors: document.getElementById('stat-colors')
+    };
+
+    function text(value) {
+      if (value === null || value === undefined) return '';
+      if (value instanceof Date) return value.toISOString();
+      return String(value).replace(/\s+/g, ' ').trim();
+    }
+
+    function textKeepBreaks(value) {
+      if (value === null || value === undefined) return '';
+      return String(value).trim();
+    }
+
+    function html(value) {
+      return textKeepBreaks(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function normalizeKey(value) {
+      return text(value).toUpperCase().replace(/\s+/g, ' ').trim();
+    }
+
+
+    function normalizeSize(value) {
+      const raw = text(value);
+      if (!raw) return '';
+      const compact = raw.toUpperCase().replace(/\s+/g, '').replace(/[._-]/g, '');
+      if (/^\d+(\.0)?$/.test(raw)) return String(parseInt(raw, 10));
+      const aliases = {
+        '2XS': 'XXS',
+        'XXS': 'XXS',
+        'XS': 'XS',
+        'S': 'S',
+        'M': 'M',
+        'L': 'L',
+        'XL': 'XL',
+        'XXL': 'XXL',
+        '2XL': 'XXL',
+        'XXXL': 'XXXL',
+        '3XL': 'XXXL'
+      };
+      return aliases[compact] || '';
+    }
+
+    function padToEight(values) {
+      const clean = values.filter(v => v !== undefined && v !== null).map(String);
+      while (clean.length < 8) clean.push('');
+      return clean.slice(0, 8);
+    }
+
+    function buildSizeSlotsFromBoxes(boxes) {
+      const seen = [];
+      boxes.forEach(box => {
+        box.activeSizes.forEach(size => {
+          if (size && !seen.includes(size)) seen.push(size);
+        });
+      });
+      const hasLetterSizes = seen.some(size => LETTER_SIZES.includes(size));
+      if (hasLetterSizes) return [...LETTER_SIZES];
+      const numeric = seen.filter(size => /^\d+$/.test(size)).sort((a, b) => Number(a) - Number(b));
+      return padToEight(numeric.length ? numeric : seen);
+    }
+
+    function extractProductLetterSizesFromSheets(sheetRowsByName) {
+      const productMap = {};
+      for (const sheet of sheetRowsByName) {
+        for (const row of sheet.rows) {
+          const product = text(row[0]);
+          if (!product) continue;
+          const letterSizes = [];
+          for (let c = 1; c < row.length; c++) {
+            const size = normalizeSize(row[c]);
+            if (LETTER_SIZES.includes(size)) letterSizes.push(size);
+          }
+          if (letterSizes.length) {
+            productMap[normalizeKey(product)] = [...new Set(letterSizes)];
+          }
+        }
+      }
+      return productMap;
+    }
+
+    function getDisplaySizeForProduct(product, sizeCol) {
+      const letters = state.productLetterSizes[normalizeKey(product)] || [];
+      if (letters.length && letters[sizeCol.position]) return letters[sizeCol.position];
+      return sizeCol.size;
+    }
+
+    function num(value) {
+      if (value === null || value === undefined || value === '') return null;
+      if (value instanceof Date) return value.getTime();
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      const cleaned = String(value).replace(/,/g, '.').replace(/[^0-9.\-]/g, '');
+      if (!cleaned) return null;
+      const parsed = Number(cleaned);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function qty(value) {
+      const n = num(value);
+      if (n === null) return 0;
+      return Math.round(n);
+    }
+
+    function isEmpty(value) {
+      return text(value) === '';
+    }
+
+    function findCol(row, patterns) {
+      for (let i = 0; i < row.length; i++) {
+        const v = text(row[i]);
+        if (!v) continue;
+        if (patterns.some(re => re.test(v))) return i;
+      }
+      return -1;
+    }
+
+    function firstValueRight(row, pattern) {
+      for (let i = 0; i < row.length; i++) {
+        if (pattern.test(text(row[i]))) {
+          for (let j = i + 1; j < row.length; j++) {
+            if (!isEmpty(row[j])) return row[j];
+          }
+        }
+      }
+      return '';
+    }
+
+    function findMeta(rows, pattern) {
+      for (const row of rows) {
+        const found = firstValueRight(row, pattern);
+        if (!isEmpty(found)) return found;
+      }
+      return '';
+    }
+
+    function excelDateToDate(serial) {
+      const whole = Math.floor(serial);
+      const ms = Date.UTC(1899, 11, 30) + whole * 86400000;
+      return new Date(ms);
+    }
+
+    function formatDate(value) {
+      let d = null;
+      if (value instanceof Date) {
+        d = value;
+      } else if (typeof value === 'number' && value > 20000 && value < 80000) {
+        d = excelDateToDate(value);
+      } else {
+        const s = text(value);
+        if (!s) return '';
+        const direct = new Date(s);
+        if (!Number.isNaN(direct.getTime())) d = direct;
+        else return s;
+      }
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const year = d.getUTCFullYear();
+      return `${day}.${month}.${year}`;
+    }
+
+    function splitEans(value) {
+      const raw = text(value).replace(/\s+/g, '');
+      if (!raw) return [];
+      const matches = raw.match(/\d{8,14}/g);
+      return matches ? matches.map(x => x.trim()) : [];
+    }
+
+    function eanKey(ref, color, size) {
+      return `${normalizeKey(ref)}|${normalizeKey(color)}|${String(size)}`;
+    }
+
+    function eanFallbackKey(ref, size) {
+      return `${normalizeKey(ref)}||${String(size)}`;
+    }
+
+    function getColorSuggestion(colorName) {
+      const k = normalizeKey(colorName);
+      const stored = localStorage.getItem(STORAGE_PREFIX + k);
+      if (stored && /^#[0-9a-fA-F]{6}$/.test(stored)) return stored;
+
+      const table = [
+        [/\bBLANC\b|\bWHITE\b/, '#ffffff'],
+        [/\bECRU\b|\bÉCRU\b|\bBEIGE\b|\bCREAM\b/, '#e8dcc8'],
+        [/\bNOIR\b|\bBLACK\b/, '#111111'],
+        [/\bBLUE\b|\bBLEU\b|\bNAVY\b|\bMARINE\b/, '#2563eb'],
+        [/\bRED\b|\bROUGE\b/, '#dc2626'],
+        [/\bGREEN\b|\bVERT\b/, '#16a34a'],
+        [/\bYELLOW\b|\bJAUNE\b/, '#fde047'],
+        [/\bPINK\b|\bROSE\b/, '#f9a8d4'],
+        [/\bGREY\b|\bGRAY\b|\bGRIS\b/, '#9ca3af'],
+        [/\bBROWN\b|\bMARRON\b/, '#92400e'],
+        [/\bORANGE\b/, '#f97316'],
+        [/\bPURPLE\b|\bVIOLET\b/, '#9333ea']
+      ];
+      for (const [re, hex] of table) if (re.test(k)) return hex;
+      return '#ffffff';
+    }
+
+    function parsePackingRows(rows) {
+      const headerIndex = rows.findIndex(row => {
+        const rowText = row.map(text).join(' | ');
+        return /colis/i.test(rowText) && /product/i.test(rowText) && /ean/i.test(rowText) && /coloris/i.test(rowText);
+      });
+
+      if (headerIndex < 0) throw new Error('Could not find the packing list header row with № colis / Product / EAN / Coloris.');
+
+      const header = rows[headerIndex] || [];
+      const sizeHeader = rows[headerIndex + 1] || [];
+
+      const colBox = findCol(header, [/№\s*colis/i, /colis/i, /ctn/i, /box/i]);
+      const colProduct = findCol(header, [/product/i, /style name/i]);
+      const colRef = findCol(header, [/référence/i, /reference/i, /ref/i]);
+      const colEan = findCol(header, [/ean/i, /genc/i, /barcode/i]);
+      const colColor = findCol(header, [/coloris/i, /color/i, /colour/i]);
+      const colQty = findCol(header, [/quantité\s*livrée/i, /quantite\s*livree/i, /quantity/i, /qty/i]);
+
+      const missing = [];
+      if (colBox < 0) missing.push('№ colis');
+      if (colProduct < 0) missing.push('Product');
+            if (colEan < 0) missing.push('EAN(13)');
+      if (colColor < 0) missing.push('Coloris');
+      if (colQty < 0) missing.push('Quantité livrée');
+      if (missing.length) throw new Error('Missing required columns: ' + missing.join(', '));
+
+      const sizeCols = [];
+      for (let c = colColor + 1; c < colQty; c++) {
+        const sizeFromSecondHeader = normalizeSize(sizeHeader[c]);
+        const sizeFromHeader = normalizeSize(header[c]);
+        const chosen = sizeFromSecondHeader || sizeFromHeader;
+        if (chosen) {
+          sizeCols.push({ index: c, size: chosen, position: sizeCols.length });
+        }
+      }
+      if (!sizeCols.length) throw new Error('Could not detect size columns between Coloris/Taille and Quantité livrée. Numeric sizes and letter sizes XXS–XXXL are supported.');
+
+      const orderNo = text(findMeta(rows, /commande/i));
+      const expDate = formatDate(findMeta(rows, /date\s*d[’'`]?envoi/i));
+      const totalBoxesMeta = qty(findMeta(rows, /nbre\s*de\s*colis\s*total/i));
+
+      const boxes = [];
+      const eanMap = new Map();
+      let lastProduct = '';
+      let lastRef = '';
+      let lastColor = '';
+      let maxBoxNo = 0;
+
+      for (let r = headerIndex + 2; r < rows.length; r++) {
+        const row = rows[r] || [];
+        const firstTexts = row.slice(0, Math.max(colQty + 1, 12)).map(text).join(' ').toUpperCase();
+        if (/\bTOTAL\b|GRAND TOTAL|ОБЩО/.test(firstTexts)) break;
+
+        const boxText = text(row[colBox]);
+        if (!boxText) continue;
+        const boxMatch = boxText.match(/\d+/);
+        if (!boxMatch) continue;
+        let startBox = parseInt(boxMatch[0], 10);
+        let endBox = startBox;
+        for (let c = colBox + 1; c <= Math.min(colBox + 3, row.length - 1); c++) {
+          if (/^to$/i.test(text(row[c]))) {
+            const maybeEnd = qty(row[c + 1]);
+            if (maybeEnd > 0) endBox = maybeEnd;
+          }
+        }
+        if (endBox < startBox) endBox = startBox;
+
+        const product = text(row[colProduct]) || lastProduct;
+        // Some TRESSE packing lists do not have a separate Référence CLIENT column.
+        // In that layout the Product column is the only style identifier, so use it as the style number too.
+        const refFromRow = colRef >= 0 ? text(row[colRef]) : '';
+        const ref = refFromRow || lastRef || product;
+        const color = text(row[colColor]) || lastColor;
+        if (product) lastProduct = product;
+        if (refFromRow || (!lastRef && product)) lastRef = ref;
+        if (color) lastColor = color;
+
+        const sizes = {};
+        const activeSizes = [];
+        let totalQty = 0;
+        for (const sc of sizeCols) {
+          const amount = qty(row[sc.index]);
+          if (amount > 0) {
+            const displaySize = getDisplaySizeForProduct(product, sc);
+            sizes[displaySize] = amount;
+            activeSizes.push(displaySize);
+            totalQty += amount;
+          }
+        }
+        if (totalQty <= 0) continue;
+
+        const delivered = qty(row[colQty]);
+        if (delivered > 0 && delivered !== totalQty) totalQty = delivered;
+
+        const eans = splitEans(row[colEan]);
+        const eansBySize = {};
+        if (eans.length === activeSizes.length) {
+          activeSizes.forEach((size, i) => { eansBySize[size] = eans[i]; });
+        } else if (eans.length === 1 && activeSizes.length === 1) {
+          eansBySize[activeSizes[0]] = eans[0];
+        } else if (eans.length > 1) {
+          activeSizes.forEach((size, i) => { if (eans[i]) eansBySize[size] = eans[i]; });
+        }
+
+        for (const size of activeSizes) {
+          const ean = eansBySize[size];
+          if (ean) {
+            eanMap.set(eanKey(ref, color, size), ean);
+            eanMap.set(eanFallbackKey(ref, size), ean);
+          }
+        }
+
+        for (let boxNo = startBox; boxNo <= endBox; boxNo++) {
+          boxes.push({
+            boxNo,
+            product,
+            ref,
+            color,
+            sizes: { ...sizes },
+            activeSizes: [...activeSizes],
+            eansBySize: { ...eansBySize },
+            totalQty
+          });
+          if (boxNo > maxBoxNo) maxBoxNo = boxNo;
+        }
+      }
+
+      if (!boxes.length) throw new Error('No box rows with quantities were found.');
+
+      for (const box of boxes) {
+        for (const size of box.activeSizes) {
+          if (!box.eansBySize[size]) {
+            box.eansBySize[size] = eanMap.get(eanKey(box.ref, box.color, size)) || eanMap.get(eanFallbackKey(box.ref, size)) || '';
+          }
+        }
+      }
+
+      return {
+        boxes,
+        orderNo,
+        expDate,
+        totalBoxes: totalBoxesMeta || maxBoxNo || boxes.length,
+        eanMap,
+        sizeSlots: buildSizeSlotsFromBoxes(boxes)
+      };
+    }
+
+    function makePages(boxes) {
+      const pages = [];
+      let current = [];
+      for (const box of boxes) {
+        const stickerCount = Math.max(1, box.activeSizes.length);
+        if (stickerCount > 1) {
+          if (current.length) pages.push(current);
+          pages.push([box]);
+          current = [];
+          continue;
+        }
+        current.push(box);
+        if (current.length === 2) {
+          pages.push(current);
+          current = [];
+        }
+      }
+      if (current.length) pages.push(current);
+      return pages;
+    }
+
+    function calculateEan13Checksum(first12Digits) {
+      const digits = String(first12Digits).replace(/\D/g, '').slice(0, 12);
+      if (digits.length !== 12) return '';
+      let sum = 0;
+      for (let i = 0; i < 12; i++) {
+        sum += Number(digits[i]) * (i % 2 === 0 ? 1 : 3);
+      }
+      return String((10 - (sum % 10)) % 10);
+    }
+
+    function ean13Code(ean) {
+      const clean = text(ean).replace(/\D/g, '');
+      if (!clean) return '';
+      if (clean.length === 13) return clean;
+      if (clean.length === 12) return clean + calculateEan13Checksum(clean);
+      const match13 = clean.match(/\d{13}/);
+      if (match13) return match13[0];
+      const match12 = clean.match(/\d{12}/);
+      return match12 ? match12[0] + calculateEan13Checksum(match12[0]) : '';
+    }
+
+    function renderLabel(box, index) {
+      const colorKey = normalizeKey(box.color || 'NO COLOR');
+      const fill = state.colorMap[colorKey] || getColorSuggestion(box.color);
+
+      const sizeSlots = state.sizeSlots && state.sizeSlots.length ? state.sizeSlots : EMPTY_SIZE_SLOTS;
+      const sizeHeaderCells = sizeSlots.map(size => `<td class="size-col bold">${html(size)}</td>`).join('');
+      const qtyCells = sizeSlots.map(size => {
+        const amount = size ? (box.sizes[size] || '') : '';
+        return `<td class="size-col center">${amount ? html(amount) : ''}</td>`;
+      }).join('');
+
+      const stickerRows = box.activeSizes.map((size, pos) => {
+        const ean = box.eansBySize[size] || '';
+        const code = ean13Code(ean);
+        const id = `barcode-${index}-${String(size).replace(/[^a-zA-Z0-9]/g, '')}-${pos}`;
+        const warn = code ? '' : '<div class="barcode-warning">Missing EAN(13)</div>';
+        return `
+          <tr>
+            <td class="left sticker-left">Sticker</td>
+            <td class="barcode-cell" colspan="8">
+              <div class="barcode-wrap">
+                ${code ? `<svg id="${id}" class="barcode-svg" data-code="${html(code)}"></svg>` : ''}
+              </div>
+              ${warn}
+            </td>
+          </tr>`;
+      }).join('') || `
+          <tr>
+            <td class="left sticker-left">Sticker</td>
+            <td class="barcode-cell" colspan="8">No sticker data</td>
+          </tr>`;
+
+      return `
+        <div class="box-label" data-label-index="${index}">
+          <table class="label-table">
+            <colgroup>
+              <col class="left" />
+              ${sizeSlots.map(() => '<col class="size-col" />').join('')}
+            </colgroup>
+            <tr>
+              <td class="addr" colspan="9">${html(ADDRESS_TEXT)}</td>
+            </tr>
+            <tr>
+              <td class="left">Style Number</td>
+              <td class="center" colspan="8">${html(box.ref)}</td>
+            </tr>
+            <tr>
+              <td class="left">Style Name</td>
+              <td class="center" colspan="8">${html(box.product)}</td>
+            </tr>
+            <tr class="color-row" data-color-key="${html(colorKey)}">
+              <td class="left">Color</td>
+              <td class="center color-name-cell" colspan="3">
+                <div class="color-name-flex">
+                  <span class="color-name-text">${html(box.color)}</span>
+                  <input class="label-color-input screen-only" type="color" value="${html(fill)}" data-color-key="${html(colorKey)}" title="Select fill for ${html(box.color)}" />
+                </div>
+              </td>
+              <td class="color-fill" data-color-key="${html(colorKey)}" colspan="5" style="background:${html(fill)}"></td>
+            </tr>
+            <tr>
+              <td class="left">Size</td>
+              ${sizeHeaderCells}
+            </tr>
+            <tr>
+              <td class="left">Quantity</td>
+              ${qtyCells}
+            </tr>
+            <tr>
+              <td class="left">Total</td>
+              <td class="size-col center bold">${html(box.totalQty)}</td>
+              <td colspan="7"></td>
+            </tr>
+            <tr>
+              <td class="left">BOX nr</td>
+              <td class="size-col center bold">${html(box.boxNo)}</td>
+              <td class="size-col center bold">TO</td>
+              <td class="size-col center bold">${html(state.totalBoxes)}</td>
+              <td colspan="5"></td>
+            </tr>
+            ${stickerRows}
+            <tr>
+              <td class="left">Expedition date</td>
+              <td class="center" colspan="8">${html(state.expDate)}</td>
+            </tr>
+            <tr>
+              <td class="left">N° production order</td>
+              <td class="center" colspan="8">${html(state.orderNo)}</td>
+            </tr>
+          </table>
+          <div class="label-caption screen-only">Box ${html(box.boxNo)} / ${html(state.totalBoxes)}</div>
+        </div>`;
+    }
+
+    function drawBarcodes() {
+      if (!window.JsBarcode) {
+        showMessage('JsBarcode did not load. Check internet connection, then reopen this HTML.', 'error');
+        return;
+      }
+      document.querySelectorAll('.barcode-svg').forEach(svg => {
+        const code = svg.getAttribute('data-code');
+        try {
+          JsBarcode(svg, code, {
+            format: 'EAN13',
+            displayValue: true,
+            fontSize: 14,
+            fontOptions: '',
+            textAlign: 'center',
+            textPosition: 'bottom',
+            textMargin: 1,
+            margin: 0,
+            height: 48,
+            width: 1.6,
+            background: '#ffffff',
+            lineColor: '#000000'
+          });
+        } catch (err) {
+          console.error('EAN13 barcode error', code, err);
+          svg.outerHTML = `<div class="barcode-warning">EAN13 failed: ${html(code)}</div>`;
+        }
+      });
+    }
+
+    function renderColorPanel() {
+      const colors = [...new Set(state.boxes.map(b => normalizeKey(b.color || 'NO COLOR')))].filter(Boolean);
+      els.colorList.innerHTML = colors.map(key => {
+        const firstName = state.boxes.find(b => normalizeKey(b.color || 'NO COLOR') === key)?.color || key;
+        const fill = state.colorMap[key] || getColorSuggestion(firstName);
+        state.colorMap[key] = fill;
+        return `
+          <div class="color-item" data-color-key="${html(key)}">
+            <strong>${html(firstName)}</strong>
+            <input type="color" value="${html(fill)}" data-color-key="${html(key)}" class="panel-color-input" title="Fill all ${html(firstName)} labels" />
+            <div class="swatch" data-color-key="${html(key)}" style="background:${html(fill)}"></div>
+          </div>`;
+      }).join('');
+      els.colorPanel.classList.toggle('visible', colors.length > 0);
+    }
+
+    function renderLabels() {
+      const pages = makePages(state.boxes);
+      els.labels.className = '';
+      els.labels.innerHTML = pages.map((page, pageIndex) => `
+        <section class="sheet-page" data-page="${pageIndex + 1}">
+          ${page.map(box => renderLabel(box, state.boxes.indexOf(box))).join('')}
+        </section>
+      `).join('');
+      drawBarcodes();
+    }
+
+    function updateStats() {
+      const colorCount = new Set(state.boxes.map(b => normalizeKey(b.color))).size || 0;
+      els.statOrder.textContent = state.orderNo || '—';
+      els.statDate.textContent = state.expDate || '—';
+      els.statBoxes.textContent = state.boxes.length ? `${state.boxes.length} labels / ${state.totalBoxes} boxes` : '—';
+      els.statColors.textContent = colorCount ? String(colorCount) : '—';
+    }
+
+    function applyColor(colorKey, hexValue) {
+      if (!/^#[0-9a-fA-F]{6}$/.test(hexValue)) return;
+      state.colorMap[colorKey] = hexValue;
+      localStorage.setItem(STORAGE_PREFIX + colorKey, hexValue);
+      document.querySelectorAll(`[data-color-key="${cssEscape(colorKey)}"]`).forEach(el => {
+        if (el.matches('input[type="color"]')) el.value = hexValue;
+        if (el.classList.contains('color-fill') || el.classList.contains('swatch')) el.style.backgroundColor = hexValue;
+      });
+    }
+
+    function cssEscape(value) {
+      if (window.CSS && typeof window.CSS.escape === 'function') return CSS.escape(value);
+      return String(value).replace(/"/g, '\\"');
+    }
+
+    function showMessage(message, type = 'ok') {
+      els.message.className = `message ${type}`;
+      els.message.textContent = message;
+    }
+
+    function clearMessage() {
+      els.message.className = 'message';
+      els.message.textContent = '';
+    }
+
+    function generateFromRows() {
+      clearMessage();
+      if (!state.rows) {
+        showMessage('Please load a packing list first.', 'error');
+        return;
+      }
+      try {
+        const parsed = parsePackingRows(state.rows);
+        state.boxes = parsed.boxes;
+        state.orderNo = parsed.orderNo;
+        state.expDate = parsed.expDate;
+        state.totalBoxes = parsed.totalBoxes;
+        state.eanMap = parsed.eanMap;
+        state.sizeSlots = parsed.sizeSlots || [...EMPTY_SIZE_SLOTS];
+        state.colorMap = {};
+        for (const box of state.boxes) {
+          const key = normalizeKey(box.color || 'NO COLOR');
+          state.colorMap[key] = getColorSuggestion(box.color);
+        }
+        renderColorPanel();
+        renderLabels();
+        updateStats();
+        els.btnPrint.disabled = false;
+        els.btnReset.disabled = false;
+        showMessage(`Generated ${state.boxes.length} labels from ${state.fileName}.`, 'ok');
+      } catch (err) {
+        console.error(err);
+        showMessage(err.message || 'Failed to parse the packing list.', 'error');
+      }
+    }
+
+    function resetBatch() {
+      state.rows = null;
+      state.fileName = '';
+      state.boxes = [];
+      state.orderNo = '';
+      state.expDate = '';
+      state.totalBoxes = 0;
+      state.colorMap = {};
+      state.eanMap = new Map();
+      state.sizeSlots = [...EMPTY_SIZE_SLOTS];
+      state.productLetterSizes = {};
+      els.fileInput.value = '';
+      els.fileStatus.textContent = 'or click to choose the XLSX file';
+      els.btnPrint.disabled = true;
+      els.btnReset.disabled = true;
+      els.colorPanel.classList.remove('visible');
+      els.colorList.innerHTML = '';
+      els.labels.className = 'empty-preview';
+      els.labels.textContent = 'Live preview will appear here after dropping the packing list.';
+      updateStats();
+      clearMessage();
+    }
+
+    function loadFile(file) {
+      clearMessage();
+      if (!file) return;
+      resetBatch();
+      state.fileName = file.name;
+      els.fileStatus.textContent = `Selected: ${file.name}`;
+      const reader = new FileReader();
+      reader.onload = event => {
+        try {
+          if (!window.XLSX) throw new Error('SheetJS did not load. Check internet connection, then reopen this HTML.');
+          const data = new Uint8Array(event.target.result);
+          const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+          const sheetRowsByName = workbook.SheetNames.map(name => ({
+            name,
+            rows: XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, defval: '', raw: true })
+          }));
+          state.productLetterSizes = extractProductLetterSizesFromSheets(sheetRowsByName);
+          const selectedSheet = sheetRowsByName.find(sheet =>
+            sheet.rows.some(row => row.map(text).join(' ').toUpperCase().includes('PACKING LIST')) ||
+            sheet.rows.some(row => /colis/i.test(row.map(text).join(' ')) && /ean/i.test(row.map(text).join(' ')))
+          ) || sheetRowsByName[0];
+          state.rows = selectedSheet.rows;
+          els.btnReset.disabled = false;
+          generateFromRows();
+        } catch (err) {
+          console.error(err);
+          showMessage(err.message || 'Could not read this Excel file.', 'error');
+        }
+      };
+      reader.onerror = () => showMessage('Could not read the file.', 'error');
+      reader.readAsArrayBuffer(file);
+    }
+
+    els.dropZone.addEventListener('dragover', event => {
+      event.preventDefault();
+      els.dropZone.classList.add('dragover');
+    });
+    els.dropZone.addEventListener('dragleave', () => els.dropZone.classList.remove('dragover'));
+    els.dropZone.addEventListener('drop', event => {
+      event.preventDefault();
+      els.dropZone.classList.remove('dragover');
+      loadFile(event.dataTransfer.files[0]);
+    });
+    els.fileInput.addEventListener('change', event => loadFile(event.target.files[0]));
+    els.btnPrint.addEventListener('click', () => window.print());
+    els.btnReset.addEventListener('click', resetBatch);
+
+    document.addEventListener('input', event => {
+      const input = event.target;
+      if (input.matches('.label-color-input, .panel-color-input')) {
+        applyColor(input.dataset.colorKey, input.value);
+      }
+    });
+
+    updateStats();
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "longchamp",
+  "name": "Longchamp",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 130,
+  "summary": "Excel label generator",
+  "requires": [
+    "Excel workbook или CSV файл"
+  ],
+  "note": "Бърз workbook-to-label процес за Longchamp.",
+  "formats": [
+    "XLSX",
+    "XLS",
+    "CSV"
+  ]
+}

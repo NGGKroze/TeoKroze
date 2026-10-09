@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERES Label Generator</title>
+    <!-- Tailwind CSS for UI styling -->
+    <script src="vendor/cdn.tailwindcss.com/tailwindcss.js"></script>
+    <!-- PapaParse for robust CSV reading -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <!-- ExcelJS for deep Excel parsing (reads cell background colors) -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    
+    <!-- Using standalone html2canvas and jsPDF for bulletproof PDF generation -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* Screen/Preview Styles */
+        body { background-color: #f3f4f6; transition: background-color 0.2s; }
+        
+        .page-preview-wrapper {
+            background-color: white;
+            width: 210mm; /* Exact A4 width */
+            height: 297mm; /* Exact A4 height */
+            margin: 0 auto 20px auto;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 10mm;
+            box-sizing: border-box;
+            display: block; 
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Shared Label Styles */
+        .label { 
+            height: 136mm; /* Exactly half of the printable A4 space minus the gap */
+            width: 100%; 
+            box-sizing: border-box; 
+            color: black;
+            font-family: Arial, sans-serif;
+            background-color: white;
+            display: flex; 
+            flex-direction: column;
+        }
+        
+        .label:first-child {
+            margin-bottom: 5mm; 
+        }
+
+        /* Seamless Table Layouts */
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 0; table-layout: fixed; }
+        .header-table td, .header-table th { border: 1px solid black; padding: 6px; font-size: 14px; vertical-align: top; text-align: left; }
+        
+        /* Negative top margin makes borders overlap, eliminating the disconnect between header and content */
+        .content-table { width: 100%; border-collapse: collapse; margin-top: -1px; margin-bottom: 0; height: 100%; table-layout: fixed; border-top: none; }
+        .content-table td, .content-table th { border: 1px solid black; padding: 6px; font-size: 14px; vertical-align: top; text-align: left; }
+        .content-table th { border-top: none; } 
+        
+        /* Utility Classes */
+        .center-text { text-align: center !important; }
+        .left-text { text-align: left !important; }
+        .right-text { text-align: right !important; }
+        .bold-text { font-weight: bold; }
+        .thin-header { padding: 3px 6px !important; }
+        
+        /* Utility classes for Total and Carton rows */
+        .slim-cell { padding: 4px 6px !important; }
+        .large-text { font-size: 16px !important; }
+        .align-right-pad { padding-right: 15px !important; } 
+        
+        .sticker-color-cell {
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+
+        /* Drag and drop states */
+        .drag-over {
+            border-color: #3B82F6 !important; 
+            background-color: #EFF6FF !important; 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans text-slate-800">
+
+    <!-- Control Panel -->
+    <div id="controlPanel" class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">ERES Label Generator</h1>
+                <p class="text-sm text-slate-500">Drag and drop your packing list (.xlsx or .csv) to generate printable A4 labels.</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button id="newBatchBtn" onclick="startNewBatch()" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-md font-medium transition-colors shadow-sm text-sm border border-slate-300">
+                    New Batch
+                </button>
+                <div class="flex flex-col items-end">
+                    <button id="printBtn" onclick="generatePDF()" disabled class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm">
+                        Generate PDF Labels
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Live Preview Area -->
+    <div class="flex-grow p-4 sm:p-8" id="mainWorkspace">
+        <div id="loadingIndicator" class="hidden text-center py-12">
+            <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-slate-600 font-medium">Processing Packing List...</p>
+        </div>
+
+        <!-- Drop Zone Area -->
+        <div id="emptyState" class="text-center py-20 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 max-w-2xl mx-auto transition-colors duration-200">
+            <svg class="w-12 h-12 text-slate-400 mx-auto mb-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <h3 class="text-lg font-medium text-slate-900 mb-1 pointer-events-none">Drag and drop your packing list here</h3>
+            <p class="text-slate-500 text-sm mb-6 pointer-events-none">Supports Excel (.xlsx) and CSV formats</p>
+            
+            <label class="cursor-pointer bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-md font-medium transition-colors shadow-sm text-sm">
+                Browse Files
+                <input type="file" id="fileInput" accept=".csv, .xlsx" class="hidden" onchange="handleFileUpload(event)">
+            </label>
+        </div>
+
+        <!-- Rendered Pages go here -->
+        <div id="previewContainer" class="flex flex-col items-center"></div>
+    </div>
+
+    <script>
+        // Mapping text to hex colors for fallback if an explicit cell color isn't found
+        const STICKER_COLOR_MAP = {
+            'pale blue': '#DCE6F1',
+            'militare': '#B2B272',
+            'violet': '#8B5CF6',
+            'blue': '#3B82F6',
+            'red': '#EF4444',
+            'green': '#10B981',
+            'yellow': '#FBBF24',
+            'orange': '#F97316',
+            'pink': '#F472B6',
+            'black': '#000000',
+            'white': '#FFFFFF',
+            'grey': '#9CA3AF',
+            'gray': '#9CA3AF'
+        };
+
+        function getHexColorFallback(colorText) {
+            const cleanText = colorText.trim().toLowerCase().replace(/\s+/g, ' '); // normalizes multiple spaces
+            // Check if the text itself is a hex code (e.g., #DCE6F1)
+            if (/^#[0-9A-F]{3,6}$/i.test(cleanText)) {
+                return cleanText;
+            }
+            return STICKER_COLOR_MAP[cleanText] || cleanText; 
+        }
+
+        // Setup Drag and Drop functionality
+        const dropZone = document.getElementById('emptyState');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const file = dt.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }, false);
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+            event.target.value = ''; 
+        }
+
+        function startNewBatch() {
+            document.getElementById('previewContainer').innerHTML = '';
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('printBtn').disabled = true;
+            document.getElementById('newBatchBtn').classList.add('hidden');
+            document.getElementById('fileInput').value = ''; 
+        }
+
+        // Safe cell text extraction to prevent ExcelJS crashes
+        function getSafeText(cell) {
+            if (!cell || cell.value === null || cell.value === undefined) return '';
+            
+            let val = cell.value;
+            
+            if (val && typeof val === 'object') {
+                if (val.formula) {
+                    return (val.result !== undefined && val.result !== null) ? String(val.result) : '';
+                }
+                if (Array.isArray(val.richText)) {
+                    return val.richText.map(rt => rt.text || '').join('');
+                }
+                if (val.text !== undefined) {
+                    return String(val.text);
+                }
+                if (val.error !== undefined) {
+                    return String(val.error);
+                }
+            }
+            
+            return String(val);
+        }
+
+        // Bulletproof PDF Generator
+        async function generatePDF() {
+            const btn = document.getElementById('printBtn');
+            btn.innerHTML = 'Generating PDF... Please wait';
+            btn.disabled = true;
+
+            window.scrollTo(0, 0);
+            
+            const pages = document.querySelectorAll('.page-preview-wrapper');
+            const { jsPDF } = window.jspdf;
+            
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            try {
+                for (let i = 0; i < pages.length; i++) {
+                    const pageElement = pages[i];
+                    
+                    const originalBoxShadow = pageElement.style.boxShadow;
+                    const originalMargin = pageElement.style.margin;
+                    pageElement.style.boxShadow = 'none';
+                    pageElement.style.margin = '0';
+                    
+                    const canvas = await html2canvas(pageElement, { 
+                        scale: 2, 
+                        useCORS: true, 
+                        scrollY: 0,
+                        backgroundColor: '#ffffff'
+                    });
+                    
+                    pageElement.style.boxShadow = originalBoxShadow;
+                    pageElement.style.margin = originalMargin;
+
+                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                    
+                    if (i > 0) {
+                        pdf.addPage();
+                    }
+                    
+                    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                }
+
+                pdf.save('ERES_Labels.pdf');
+
+            } catch (err) {
+                console.error("PDF generation failed:", err);
+                alert("An error occurred while creating the PDF. See console for details.");
+            } finally {
+                btn.innerHTML = 'Generate PDF Labels';
+                btn.disabled = false;
+            }
+        }
+
+        function processFile(file) {
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('previewContainer').innerHTML = '';
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            document.getElementById('printBtn').disabled = true;
+            document.getElementById('newBatchBtn').classList.add('hidden');
+
+            const isExcel = file.name.toLowerCase().endsWith('.xlsx');
+            const reader = new FileReader();
+
+            if (isExcel) {
+                reader.onload = async function(e) {
+                    try {
+                        await processExcelData(e.target.result);
+                    } catch (error) {
+                        console.error(error);
+                        alert("Error reading Excel file: " + error.message);
+                        resetState();
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                reader.onload = function(e) {
+                    setTimeout(() => parseCSVData(e.target.result), 100);
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        async function processExcelData(arrayBuffer) {
+            const workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.load(arrayBuffer);
+            
+            let targetSheetName = workbook.worksheets[0].name;
+            workbook.worksheets.forEach(ws => {
+                if (ws.name.trim().toUpperCase() === 'PL') {
+                    targetSheetName = ws.name;
+                }
+            });
+            
+            const worksheet = workbook.getWorksheet(targetSheetName);
+            
+            let headerRowIdx = -1;
+            let colMap = {}; 
+            let fields = [];
+            
+            worksheet.eachRow((row, rowNumber) => {
+                if (headerRowIdx !== -1) return;
+                
+                let hasRef = false;
+                let hasColoris = false;
+                
+                row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                    let rawText = getSafeText(cell);
+                    let val = rawText ? rawText.trim().toUpperCase() : '';
+                    if (val === 'REF ARTICLE') hasRef = true;
+                    if (val === 'COLORIS') hasColoris = true;
+                });
+                
+                if (hasRef && hasColoris) {
+                    headerRowIdx = rowNumber;
+                    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                        let rawText = getSafeText(cell);
+                        let fieldName = rawText ? rawText.trim() : `__COL_${colNumber}__`;
+                        if (colNumber === 1 && (!rawText || rawText.trim() === '')) {
+                            fieldName = 'PO_NUMBER';
+                        }
+                        colMap[colNumber] = fieldName;
+                        fields.push(fieldName);
+                    });
+                }
+            });
+
+            if (headerRowIdx === -1) {
+                alert("Could not find standard headers ('REF ARTICLE' and 'COLORIS') in this document.");
+                resetState();
+                return;
+            }
+
+            const data = [];
+            worksheet.eachRow((row, rowNumber) => {
+                if (rowNumber <= headerRowIdx) return;
+                
+                let rowObj = {};
+                let explicitColor = null;
+                
+                row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+                    const fieldName = colMap[colNumber];
+                    if (!fieldName) return;
+                    
+                    let rawText = getSafeText(cell);
+                    rowObj[fieldName] = rawText ? rawText.trim() : '';
+                    
+                    // Explicitly extract the cell background color from Excel
+                    if (fieldName.toUpperCase() === 'STICKER') {
+                        const fill = cell.fill;
+                        if (fill) {
+                            let c = fill.fgColor || fill.bgColor;
+                            // Ensure argb exists and isn't the completely transparent default ('00000000')
+                            if (c && c.argb && c.argb !== '00000000') {
+                                let argb = c.argb;
+                                explicitColor = '#' + (argb.length === 8 ? argb.substring(2) : argb);
+                            }
+                        }
+                    }
+                });
+                
+                rowObj['_EXPLICIT_COLOR_'] = explicitColor;
+                data.push(rowObj);
+            });
+
+            generateLabels(data, fields);
+        }
+
+        function resetState() {
+            document.getElementById('loadingIndicator').classList.add('hidden');
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('printBtn').disabled = true;
+            document.getElementById('newBatchBtn').classList.add('hidden');
+        }
+
+        function parseCSVData(csvText) {
+            const lines = csvText.split(/\r?\n/);
+            let headerIdx = -1;
+            
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].includes('REF ARTICLE') && lines[i].includes('COLORIS')) {
+                    headerIdx = i;
+                    break;
+                }
+            }
+
+            if (headerIdx === -1) {
+                alert("Could not find standard headers ('REF ARTICLE' and 'COLORIS') in this document.");
+                resetState();
+                return;
+            }
+
+            const csvContent = lines.slice(headerIdx).join('\n');
+
+            Papa.parse(csvContent, {
+                header: true,
+                skipEmptyLines: true,
+                transformHeader: function(h) { return h ? h.trim() : h; },
+                complete: function(results) {
+                    generateLabels(results.data, results.meta.fields.map(f => f ? f.trim() : f));
+                }
+            });
+        }
+
+        function generateLabels(data, fields) {
+            const poCol = fields.includes('PO_NUMBER') ? 'PO_NUMBER' : fields[0];
+            
+            let idxColoris = fields.findIndex(f => f.toUpperCase().includes('COLORIS'));
+            let idxTotal = fields.findIndex(f => f.toUpperCase() === 'TOTAL' || f.toUpperCase() === 'TOTAL QTY');
+            let idxColis = fields.findIndex(f => f.toUpperCase().includes('COLIS') || f.toUpperCase() === 'N° COLIS');
+
+            if (idxColoris === -1) {
+                alert("Missing 'COLORIS' column required for processing.");
+                resetState();
+                return;
+            }
+
+            let endIdx = idxTotal !== -1 ? idxTotal : (idxColis !== -1 ? idxColis : fields.length);
+            let rawSizeCols = fields.slice(idxColoris + 1, endIdx);
+            const validSizeCols = rawSizeCols.filter(sc => sc && !['STICKER', 'N° PALETTE', 'TOTAL'].includes(sc.toUpperCase()));
+
+            // Intelligent Summary Row Filtering
+            // Some ERES PL files put small UNI quantities on the detail row,
+            // but the carton / palette / sticker data is on the next summary row.
+            // Normalize those rows first so they are not skipped.
+            const normalizedRows = data.map((row, rowIndex) => {
+                const normalized = { ...row };
+                const nextRow = data[rowIndex + 1] || {};
+
+                let poStr = String(normalized[poCol] || "").trim();
+                const hasPo = /\d/.test(poStr);
+                const hasRef = !!(normalized['REF ARTICLE'] && normalized['REF ARTICLE'].trim());
+                const hasSizeQty = validSizeCols.some(sc => {
+                    const val = parseInt(normalized[sc], 10);
+                    return !isNaN(val) && val > 0;
+                });
+
+                if (hasPo && hasRef && hasSizeQty) {
+                    // If N° COLIS is blank on the PO row, take it from the following summary row.
+                    if (isNaN(parseInt(normalized[fields[idxColis]], 10)) && !isNaN(parseInt(nextRow[fields[idxColis]], 10))) {
+                        normalized[fields[idxColis]] = nextRow[fields[idxColis]];
+                    }
+
+                    // If palette is also blank, copy it from the following summary row.
+                    const paletteField = fields.find(f => f && f.toUpperCase().includes('PALETTE'));
+                    if (paletteField && !String(normalized[paletteField] || '').trim() && String(nextRow[paletteField] || '').trim()) {
+                        normalized[paletteField] = nextRow[paletteField];
+                    }
+
+                    // In some files the STICKER text/color is also placed on the summary row.
+                    if (!String(normalized['STICKER'] || '').trim() && String(nextRow['STICKER'] || '').trim()) {
+                        normalized['STICKER'] = nextRow['STICKER'];
+                        normalized['_EXPLICIT_COLOR_'] = nextRow['_EXPLICIT_COLOR_'];
+                    }
+
+                    // If COLORIS is blank only on the UNI detail row, inherit the closest previous COLORIS.
+                    if (!String(normalized['COLORIS'] || '').trim()) {
+                        for (let back = rowIndex - 1; back >= 0; back--) {
+                            const previousColoris = String(data[back]['COLORIS'] || '').trim();
+                            if (previousColoris) {
+                                normalized['COLORIS'] = previousColoris;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                return normalized;
+            });
+
+            const validRows = normalizedRows.filter(row => {
+                // 1. Must have a valid carton number
+                const colisVal = parseInt(row[fields[idxColis]], 10);
+                if (isNaN(colisVal)) return false; 
+                
+                // 2. Must have Core Details
+                const hasRef = !!(row['REF ARTICLE'] && row['REF ARTICLE'].trim());
+                const hasColoris = !!(row['COLORIS'] && row['COLORIS'].trim());
+                if (!hasRef || !hasColoris) return false;
+
+                // 3. P.O. Number check: Must contain numbers. If it's pure text, treat as summary
+                let poStr = String(row[poCol] || "").trim();
+                if (!/\d/.test(poStr)) {
+                    return false;
+                }
+
+                // 4. Skip rows where STICKER has explicit color styling but no text (Summaries/Formatting rows)
+                const stickerText = (row['STICKER'] || "").trim();
+                const explicitColor = row['_EXPLICIT_COLOR_'];
+                if (explicitColor && stickerText === '') {
+                    return false;
+                }
+
+                return true;
+            });
+
+            if (validRows.length === 0) {
+                alert("No valid carton rows found in the uploaded file.");
+                resetState();
+                return;
+            }
+
+            // Calculate Max Cartons per grouping to safely write "OF [MAX]"
+            const maxCartons = {};
+            validRows.forEach(row => {
+                let poStr = row[poCol] || "";
+                let colorStr = row['COLORIS'] || "";
+                let groupKey = poStr + "_||_" + colorStr;
+                let colisNum = parseInt(row[fields[idxColis]], 10);
+                
+                if (!maxCartons[groupKey]) {
+                    maxCartons[groupKey] = 0;
+                }
+                if (colisNum > maxCartons[groupKey]) {
+                    maxCartons[groupKey] = colisNum;
+                }
+            });
+
+            let pagesHtml = '';
+            let currentLabelsHtml = '';
+            let labelCount = 0;
+
+            validRows.forEach((row, idx) => {
+                let poNum = row[poCol] || "";
+                if (poNum) {
+                    let parsedPo = parseFloat(poNum);
+                    if (!isNaN(parsedPo) && String(parsedPo) === String(poNum).trim()) {
+                        poNum = parsedPo.toString();
+                    } else if (typeof poNum === 'number') {
+                        poNum = poNum.toString();
+                    }
+                }
+
+                let coloris = row['COLORIS'] || "";
+                let refArticle = row['REF ARTICLE'] || "";
+                let themeTissu = row['THEME TISSU'] || "";
+                let cartonNum = parseInt(row[fields[idxColis]], 10);
+                let groupKey = poNum + "_||_" + coloris;
+                let maxCarton = maxCartons[groupKey];
+                
+                // Color Logic: Prioritize explicit Excel background color. Fallback to dictionary map/raw hex text.
+                let stickerColor = 'transparent';
+                let stickerText = (row['STICKER'] || "").trim();
+                if (stickerText && stickerText.toLowerCase() !== 'nan') {
+                    if (row['_EXPLICIT_COLOR_']) {
+                        stickerColor = row['_EXPLICIT_COLOR_'];
+                    } else {
+                        stickerColor = getHexColorFallback(stickerText);
+                    }
+                }
+                
+                let totalQty = 0;
+                let sizesQty = [];
+                validSizeCols.forEach(sc => {
+                    let val = parseInt(row[sc], 10);
+                    if (!isNaN(val) && val > 0) {
+                        sizesQty.push({ size: sc, qty: val });
+                        totalQty += val;
+                    }
+                });
+
+                if (totalQty === 0 && row['TOTAL']) {
+                    let potentialTotal = parseInt(row['TOTAL'], 10);
+                    if (!isNaN(potentialTotal)) totalQty = potentialTotal;
+                }
+
+                if (sizesQty.length === 0) {
+                    sizesQty.push({ size: "-", qty: 0 });
+                }
+
+                let rowspan = sizesQty.length;
+                let firstSize = sizesQty[0].size;
+                let firstQty = sizesQty[0].qty;
+
+                let labelHtml = `
+                <div class="label">
+                    <table class="header-table">
+                      <tr>
+                        <td style="width: 50%;">
+                           <strong>PARCEL FOR:</strong><br>
+                           CCSAS DMF, LES ENTREPORTS DE L'OISE<br>
+                           ERES SAS, ZONE 1,<br>
+                           Batiment 1, 60880 LE MEUX<br>
+                           FRANCE
+                        </td>
+                        <td style="width: 50%;">
+                           <strong>SUPPLIER NAME:</strong><br>
+                           PELINTEX BULGARIA<br>
+                           5 HRISTO BOTEV<br>
+                           7000 RUSE<br>
+                           BULGARIA
+                        </td>
+                      </tr>
+                      <tr>
+                        <!-- Color block explicitly on the left, full width of the cell -->
+                        <td class="sticker-color-cell" style="width: 50%; background-color: ${stickerColor}; border: 1px solid black;"></td> 
+                        <!-- PO Number on the right, aligned text, under supplier name -->
+                        <td class="left-text bold-text" style="width: 50%; font-size: 16px;">P.O. NUMBER: ${poNum}</td>
+                      </tr>
+                    </table>
+
+                    <table class="content-table">
+                      <tr>
+                        <th style="width: 25%;" class="center-text thin-header">COLOR</th>
+                        <th style="width: 45%;" class="center-text thin-header">REF.</th>
+                        <th style="width: 15%;" class="center-text thin-header">SIZE</th>
+                        <th style="width: 15%;" class="center-text thin-header">TOTAL QTY</th>
+                      </tr>
+                      <tr>
+                        <td rowspan="${rowspan}">${coloris}</td>
+                        <td rowspan="${rowspan}">${refArticle} ${themeTissu}</td>
+                        <td class="center-text">${firstSize}</td>
+                        <td class="center-text">${firstQty}</td>
+                      </tr>
+                `;
+
+                for (let i = 1; i < sizesQty.length; i++) {
+                    labelHtml += `
+                      <tr>
+                        <td class="center-text">${sizesQty[i].size}</td>
+                        <td class="center-text">${sizesQty[i].qty}</td>
+                      </tr>
+                    `;
+                }
+
+                labelHtml += `
+                      <tr>
+                        <td class="bold-text slim-cell large-text" style="border-right: none; border-bottom: none;">TOTAL</td>
+                        <td class="bold-text right-text slim-cell large-text align-right-pad" style="border-left: none; border-right: none; border-bottom: none;">${totalQty}</td>
+                        <td class="center-text bold-text slim-cell large-text" style="border-left: none; border-right: none; border-bottom: none;">PIECES</td>
+                        <td class="center-text bold-text slim-cell large-text" style="border-left: none; border-bottom: none;"></td>
+                      </tr>
+                      <tr>
+                        <td class="bold-text slim-cell large-text" style="border: 1px solid black;">CARTON NUMBER</td>
+                        <td class="bold-text right-text slim-cell large-text align-right-pad" style="border: 1px solid black;">${cartonNum}</td>
+                        <td class="center-text bold-text slim-cell large-text" style="border: 1px solid black;">OF</td>
+                        <td class="center-text bold-text slim-cell large-text" style="border: 1px solid black;">${maxCarton}</td>
+                      </tr>
+                    </table>
+                </div>
+                `;
+
+                currentLabelsHtml += labelHtml;
+                labelCount++;
+
+                if (labelCount === 2) {
+                    pagesHtml += `<div class="page-preview-wrapper">${currentLabelsHtml}</div>`;
+                    currentLabelsHtml = '';
+                    labelCount = 0;
+                }
+            });
+
+            if (labelCount > 0) {
+                pagesHtml += `<div class="page-preview-wrapper">${currentLabelsHtml}</div>`;
+            }
+
+            document.getElementById('loadingIndicator').classList.add('hidden');
+            document.getElementById('previewContainer').innerHTML = pagesHtml;
+            document.getElementById('printBtn').disabled = false;
+            document.getElementById('newBatchBtn').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

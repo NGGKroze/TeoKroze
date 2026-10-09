@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Excel Label Generator v2</title>
+    <!-- Tailwind CSS -->
+    <script src="vendor/cdn.tailwindcss.com/tailwindcss.js"></script>
+    <!-- SheetJS for Excel Parsing -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- ExcelJS for styled Excel Label Export -->
+    <script src="vendor/cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    
+    <style>
+        body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; }
+        .drop-zone { border: 2px dashed #9ca3af; transition: all 0.2s ease-in-out; }
+        .drop-zone.dragover { background-color: #e5e7eb; border-color: #3b82f6; }
+        textarea { resize: vertical; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <div class="max-w-6xl w-full bg-white rounded-xl shadow-xl overflow-hidden">
+        
+        <!-- Header -->
+        <div class="bg-blue-600 text-white p-6">
+            <h1 class="text-2xl font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M3 15h6"/><path d="M3 18h6"/><path d="M13 15h6"/><path d="M13 18h6"/></svg>
+                Packing List Excel Label Generator v3 - Template Match
+            </h1>
+            <p class="text-blue-100 text-sm mt-1">Drop your Excel Packing List (.xlsx) to automatically generate styled Excel labels matching the uploaded Longchamp template. Version v2: 4 labels per worksheet.</p>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Sidebar: Settings & Dropzone -->
+            <div class="md:col-span-1 flex flex-col gap-5">
+                
+                <!-- Dropzone -->
+                <div id="dropZone" class="drop-zone rounded-lg p-8 text-center cursor-pointer bg-gray-50 hover:bg-gray-100">
+                    <svg class="mx-auto h-12 w-12 text-gray-400 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p class="text-sm text-gray-600 font-medium">Click or drag & drop Packing List (.xlsx)</p>
+                    <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls, .csv" />
+                </div>
+
+                <!-- Settings -->
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">Label Configuration</h3>
+                    
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <label class="block text-gray-600 mb-1">PO / Order No.</label>
+                            <input type="text" id="poInput" class="w-full border border-gray-300 rounded px-3 py-2 bg-white" placeholder="Auto-filled from file">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 mb-1">Parcel For (Receiver)</label>
+                            <textarea id="receiverInput" rows="5" class="w-full border border-gray-300 rounded px-3 py-2 bg-white">LONGCHAMP S.A.S
+Z.I. d'ETRICHE
+RUE EIFFEL
+49500 SEGRE
+FRANCE</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 mb-1">Supplier Name</label>
+                            <textarea id="supplierInput" rows="4" class="w-full border border-gray-300 rounded px-3 py-2 bg-white">PELINTEX BULGARIA
+5 HRISTO BOTEV
+7000 RUSE
+BULGARIA</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="generateBtn" disabled class="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download Excel Labels v3
+                </button>
+            </div>
+
+            <!-- Main Panel: Preview -->
+            <div class="md:col-span-2 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-800">Parsed Labels Preview</h2>
+                    <span id="labelCount" class="text-sm font-medium bg-blue-100 text-blue-800 py-1 px-3 rounded-full">0 Labels loaded</span>
+                </div>
+                
+                <div class="bg-white border border-gray-200 rounded-lg overflow-hidden flex-1 flex flex-col">
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-sm text-left whitespace-nowrap">
+                            <thead class="bg-gray-100 text-gray-600">
+                                <tr>
+                                    <th class="px-4 py-3 border-b">Carton</th>
+                                    <th class="px-4 py-3 border-b">Code / Color</th>
+                                    <th class="px-4 py-3 border-b">Sizes (Qty)</th>
+                                    <th class="px-4 py-3 border-b">Total Qty</th>
+                                    <th class="px-4 py-3 border-b">N.W. / G.W.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewBody" class="divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="5" class="px-4 py-12 text-center text-gray-400">
+                                        Drop an Excel file to see the parsed data here.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let parsedLabels = [];
+        let totalCartonsExtracted = 0;
+
+        // UI Elements
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const previewBody = document.getElementById('previewBody');
+        const poInput = document.getElementById('poInput');
+        const labelCount = document.getElementById('labelCount');
+
+        // Drag & Drop Setup
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        // File Processing
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    processPackingList(jsonData);
+                } catch (error) {
+                    alert("Error reading Excel file. Please ensure it is a valid format.");
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processPackingList(rows) {
+            parsedLabels = [];
+            totalCartonsExtracted = 0;
+            let orderNo = "";
+            let headerRowIdx = -1;
+
+            // 1. Scan for Meta Info (Order No, Total Cartons) & Find Header Row
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row) continue;
+
+                for (let j = 0; j < row.length; j++) {
+                    const cell = String(row[j] || "").trim().toLowerCase();
+                    
+                    // Extract Order No
+                    if (cell.includes('order no')) {
+                        for (let k = j + 1; k < Math.min(j + 5, row.length); k++) {
+                            if (row[k]) { orderNo = String(row[k]).trim(); break; }
+                        }
+                    }
+                    
+                    // Extract Total Cartons
+                    if (cell.includes('total packages') || cell.includes('total ctns')) {
+                        for (let k = j + 1; k < Math.min(j + 5, row.length); k++) {
+                            if (row[k] && !isNaN(parseInt(row[k]))) { totalCartonsExtracted = parseInt(row[k]); break; }
+                        }
+                    }
+
+                    // Identify the main table header
+                    if (cell === 'ctn no.' || cell === 'ctn no') {
+                        headerRowIdx = i;
+                    }
+                }
+            }
+
+            if (headerRowIdx === -1) {
+                alert("Could not find 'CTN NO.' header in the file. Please check the format.");
+                return;
+            }
+
+            // Populate PO Input
+            poInput.value = orderNo;
+
+            // 2. Identify Columns
+            const header = [];
+            const rawHeaderRow = rows[headerRowIdx] || [];
+            for (let j = 0; j < rawHeaderRow.length; j++) {
+                header.push(String(rawHeaderRow[j] || "").trim().toUpperCase());
+            }
+
+            const colIdx = {
+                ctn: header.indexOf('CTN NO.'),
+                to: header.findIndex(h => h === 'TO'),
+                ref: header.indexOf('REF NO.'),
+                color: header.indexOf('COLOR'),
+                qtyCtn: header.findIndex(h => h.includes('QTY') && h.includes('CTN')),
+                netWt: header.findIndex(h => h.includes('NET WT')),
+                grWt: header.findIndex(h => h.includes('GR. WT'))
+            };
+
+            // Dynamically find size columns (between COLOR and QTY CTN)
+            let sizeCols = [];
+            if (colIdx.color !== -1 && colIdx.qtyCtn !== -1) {
+                for (let i = colIdx.color + 1; i < colIdx.qtyCtn; i++) {
+                    if (header[i]) sizeCols.push({ idx: i, name: header[i] });
+                }
+            }
+
+            // 3. Process Rows
+            let currentRef = "";
+            let currentColor = "";
+            let maxCtnFound = 0;
+
+            for (let i = headerRowIdx + 1; i < rows.length; i++) {
+                const row = rows[i] || [];
+                if (row.length === 0) continue;
+
+                // Stop parsing if we hit summary rows at the bottom
+                let cell0 = String(row[0] || "").trim().toUpperCase();
+                let cell1 = String(row[1] || "").trim().toUpperCase();
+                let cell2 = String(row[2] || "").trim().toUpperCase();
+                if (cell0.includes('TOTAL') || cell1.includes('TOTAL') || cell2.includes('TOTAL') ||
+                    cell0.includes('GRAND') || cell1.includes('GRAND')) {
+                    break;
+                }
+
+                let ctnStart = parseInt(row[colIdx.ctn]);
+                if (isNaN(ctnStart)) continue; // Skip non-data rows
+
+                // Determine Carton End Range
+                let ctnEnd = ctnStart;
+                
+                if (colIdx.to !== -1 && String(row[colIdx.to] || "").trim().toUpperCase() === 'TO') {
+                    // Standard format: [1] [To] [3]
+                    ctnEnd = parseInt(row[colIdx.to + 1]) || ctnStart;
+                } else if (!isNaN(parseInt(row[colIdx.ctn + 1])) && parseInt(row[colIdx.ctn + 1]) >= ctnStart) {
+                    // Alternative: [1] [3] (To column implicitly omitted but end number exists)
+                    ctnEnd = parseInt(row[colIdx.ctn + 1]);
+                } else if (!isNaN(parseInt(row[colIdx.ctn + 2])) && parseInt(row[colIdx.ctn + 2]) >= ctnStart) {
+                    // Alternative: [1] [] [3] (Blank To column)
+                    ctnEnd = parseInt(row[colIdx.ctn + 2]);
+                }
+
+                if (ctnEnd > maxCtnFound) maxCtnFound = ctnEnd;
+
+                // Carry-over empty Ref/Color from previous rows
+                if (row[colIdx.ref] && String(row[colIdx.ref]).trim()) currentRef = String(row[colIdx.ref]).trim();
+                if (row[colIdx.color] && String(row[colIdx.color]).trim()) currentColor = String(row[colIdx.color]).trim();
+
+                // Extract Sizes and Quantities for this carton
+                let sizesInCtn = [];
+                let totalQty = 0;
+                for (let sizeCol of sizeCols) {
+                    let qty = parseFloat(row[sizeCol.idx]);
+                    if (!isNaN(qty) && qty > 0) {
+                        sizesInCtn.push({ size: sizeCol.name, qty: qty });
+                        totalQty += qty;
+                    }
+                }
+
+                // If fallback needed, try to grab TTL QTY explicitly if sizes didn't parse
+                if (totalQty === 0 && row[colIdx.qtyCtn]) {
+                    totalQty = parseFloat(row[colIdx.qtyCtn]) || 0;
+                }
+
+                let netWt = parseFloat(row[colIdx.netWt]) || 0;
+                let grWt = parseFloat(row[colIdx.grWt]) || 0;
+
+                // Generate a specific record for each physical carton
+                for (let c = ctnStart; c <= ctnEnd; c++) {
+                    parsedLabels.push({
+                        cartonNo: c,
+                        ref: currentRef,
+                        color: currentColor.replace("007", "").trim(), // Cleaning up internal codes based on sample
+                        sizes: sizesInCtn,
+                        totalQty: totalQty,
+                        netWt: netWt,
+                        grWt: grWt
+                    });
+                }
+            }
+
+            // Validate total cartons
+            if (totalCartonsExtracted < maxCtnFound) {
+                totalCartonsExtracted = maxCtnFound;
+            }
+
+            updatePreview();
+        }
+
+        function updatePreview() {
+            previewBody.innerHTML = '';
+            labelCount.innerText = `${parsedLabels.length} Labels loaded`;
+            
+            if (parsedLabels.length > 0) {
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('bg-blue-400');
+            }
+
+            // Show max 100 rows in preview for performance
+            const previewLimit = Math.min(parsedLabels.length, 100);
+            
+            for (let i = 0; i < previewLimit; i++) {
+                const l = parsedLabels[i];
+                let sizesStr = l.sizes.map(s => `<span class="font-semibold">${s.size}</span>: ${s.qty}`).join(', ');
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-4 py-2 font-medium">Box ${l.cartonNo} of ${totalCartonsExtracted}</td>
+                    <td class="px-4 py-2">${l.ref} / ${l.color}</td>
+                    <td class="px-4 py-2">${sizesStr || '-'}</td>
+                    <td class="px-4 py-2 font-bold">${l.totalQty}</td>
+                    <td class="px-4 py-2 text-gray-500">${l.netWt.toFixed(2)} / ${l.grWt.toFixed(2)}</td>
+                `;
+                previewBody.appendChild(tr);
+            }
+
+            if (parsedLabels.length > previewLimit) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="5" class="px-4 py-3 text-center text-gray-500 bg-gray-50 italic">... and ${parsedLabels.length - previewLimit} more labels</td>`;
+                previewBody.appendChild(tr);
+            }
+        }
+        // Excel Generation Trigger
+        generateBtn.addEventListener('click', async () => {
+            if (parsedLabels.length === 0) return;
+            await createExcelLabels();
+        });
+
+        function setButtonBusy(isBusy) {
+            generateBtn.disabled = isBusy || parsedLabels.length === 0;
+            generateBtn.innerHTML = isBusy
+                ? `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Generating Excel...`
+                : `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Excel Labels v3`;
+        }
+
+        function sanitizeFilename(value) {
+            return String(value || 'Labels')
+                .replace(/[\/:*?"<>|]+/g, '_')
+                .replace(/\s+/g, '_')
+                .replace(/^_+|_+$/g, '') || 'Labels';
+        }
+
+        function thinBorder() {
+            return { style: 'thin', color: { argb: 'FF000000' } };
+        }
+
+        function mediumBorder() {
+            return { style: 'medium', color: { argb: 'FF000000' } };
+        }
+
+        function cloneBorder(border) {
+            return border ? { style: border.style, color: border.color } : undefined;
+        }
+
+        function setCellBorderSides(cell, sides = {}) {
+            const existing = cell.border || {};
+            cell.border = {
+                top: sides.top === undefined ? existing.top : cloneBorder(sides.top),
+                left: sides.left === undefined ? existing.left : cloneBorder(sides.left),
+                bottom: sides.bottom === undefined ? existing.bottom : cloneBorder(sides.bottom),
+                right: sides.right === undefined ? existing.right : cloneBorder(sides.right)
+            };
+        }
+
+        function setRangeOuterBorder(ws, r1, c1, r2, c2, borderStyle = thinBorder()) {
+            for (let r = r1; r <= r2; r++) {
+                for (let c = c1; c <= c2; c++) {
+                    const sides = {};
+                    if (r === r1) sides.top = borderStyle;
+                    if (r === r2) sides.bottom = borderStyle;
+                    if (c === c1) sides.left = borderStyle;
+                    if (c === c2) sides.right = borderStyle;
+                    setCellBorderSides(ws.getCell(r, c), sides);
+                }
+            }
+        }
+
+        function setRangeGridBorder(ws, r1, c1, r2, c2, borderStyle = thinBorder()) {
+            for (let r = r1; r <= r2; r++) {
+                for (let c = c1; c <= c2; c++) {
+                    ws.getCell(r, c).border = {
+                        top: borderStyle,
+                        left: borderStyle,
+                        bottom: borderStyle,
+                        right: borderStyle
+                    };
+                }
+            }
+        }
+
+        function setBlockFill(ws, r1, c1, r2, c2) {
+            for (let r = r1; r <= r2; r++) {
+                for (let c = c1; c <= c2; c++) {
+                    ws.getCell(r, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+                }
+            }
+        }
+
+        function mergeAndSet(ws, r1, c1, r2, c2, value, style = {}) {
+            ws.mergeCells(r1, c1, r2, c2);
+            const cell = ws.getCell(r1, c1);
+            cell.value = value;
+            if (style.font) cell.font = style.font;
+            if (style.alignment) cell.alignment = style.alignment;
+            if (style.fill) cell.fill = style.fill;
+            if (style.numFmt) cell.numFmt = style.numFmt;
+            if (style.border) cell.border = style.border;
+            return cell;
+        }
+
+        function setCell(ws, row, col, value, style = {}) {
+            const cell = ws.getCell(row, col);
+            cell.value = value;
+            if (style.font) cell.font = style.font;
+            if (style.alignment) cell.alignment = style.alignment;
+            if (style.fill) cell.fill = style.fill;
+            if (style.numFmt) cell.numFmt = style.numFmt;
+            if (style.border) cell.border = style.border;
+            return cell;
+        }
+
+        function applyStyleToRange(ws, r1, c1, r2, c2, style = {}) {
+            for (let r = r1; r <= r2; r++) {
+                for (let c = c1; c <= c2; c++) {
+                    const cell = ws.getCell(r, c);
+                    if (style.font) cell.font = style.font;
+                    if (style.alignment) cell.alignment = style.alignment;
+                    if (style.numFmt) cell.numFmt = style.numFmt;
+                    if (style.fill) cell.fill = style.fill;
+                }
+            }
+        }
+
+        function splitLines(value) {
+            return String(value || '')
+                .split(/\r?\n/)
+                .map(line => line.trim())
+                .filter(Boolean);
+        }
+
+        function buildTemplateLabel(ws, rowStart, colStart, label, layoutInfo) {
+            if (!label) return;
+
+            const c = colStart;
+            const r = rowStart;
+            const thin = thinBorder();
+            const medium = mediumBorder();
+
+            const fontTitle = { name: 'Calibri', size: 12, bold: true, underline: true };
+            const fontTitleNoUnderline = { name: 'Calibri', size: 12, bold: true };
+            const fontBig = { name: 'Calibri', size: 16, bold: false };
+            const fontBigBold = { name: 'Calibri', size: 16, bold: true };
+            const center = { horizontal: 'center', vertical: 'middle', wrapText: true, shrinkToFit: true };
+            const left = { horizontal: 'left', vertical: 'middle', wrapText: true, shrinkToFit: true };
+            const leftTop = { horizontal: 'left', vertical: 'top', wrapText: true, shrinkToFit: true };
+
+            setBlockFill(ws, r, c, r + 13, c + 5);
+
+            // Address/header area: same row structure as the supplied Excel template.
+            const receiver = layoutInfo.receiverAddressLines;
+            const supplier = layoutInfo.supplierLines;
+            const country = layoutInfo.receiverCountry;
+
+            mergeAndSet(ws, r, c, r, c + 2, 'PARCEL FOR:', { font: fontTitle, alignment: leftTop });
+            mergeAndSet(ws, r, c + 3, r, c + 5, 'SUPPLIER NAME:', { font: fontTitle, alignment: leftTop });
+
+            for (let i = 0; i < 4; i++) {
+                mergeAndSet(ws, r + 1 + i, c, r + 1 + i, c + 2, receiver[i] || '', { font: fontBig, alignment: left });
+                mergeAndSet(ws, r + 1 + i, c + 3, r + 1 + i, c + 5, supplier[i] || '', { font: fontBig, alignment: left });
+            }
+
+            mergeAndSet(ws, r + 5, c, r + 5, c + 2, country, { font: fontTitleNoUnderline, alignment: left });
+            mergeAndSet(ws, r + 5, c + 3, r + 5, c + 5, layoutInfo.poText, { font: fontTitleNoUnderline, alignment: left });
+
+            // Black label section borders.
+            setRangeOuterBorder(ws, r, c, r + 4, c + 2, medium);
+            setRangeOuterBorder(ws, r, c + 3, r + 4, c + 5, medium);
+            setRangeOuterBorder(ws, r + 5, c, r + 5, c + 2, medium);
+            setRangeOuterBorder(ws, r + 5, c + 3, r + 5, c + 5, medium);
+
+            // Size matrix.
+            setRangeGridBorder(ws, r + 6, c, r + 10, c + 5, thin);
+            // Stronger line around header row and bottom of matrix, like the template.
+            setRangeOuterBorder(ws, r + 6, c, r + 6, c + 5, medium);
+            for (let cc = c; cc <= c + 5; cc++) setCellBorderSides(ws.getCell(r + 10, cc), { bottom: medium });
+
+            setCell(ws, r + 6, c, 'COLOR', { font: fontTitleNoUnderline, alignment: center });
+            mergeAndSet(ws, r + 6, c + 1, r + 6, c + 2, 'CODE ARTICLE', { font: fontTitleNoUnderline, alignment: center });
+            setCell(ws, r + 6, c + 3, 'SIZE', { font: fontTitleNoUnderline, alignment: center });
+            mergeAndSet(ws, r + 6, c + 4, r + 6, c + 5, 'TOTAL QTY', { font: fontTitleNoUnderline, alignment: center });
+
+            for (let i = 0; i < 4; i++) {
+                const row = r + 7 + i;
+                const sData = label.sizes[i];
+                let sizeText = sData ? sData.size : '';
+                let qtyText = sData ? String(sData.qty) : '';
+                if (label.sizes.length === 0 && i === 0) qtyText = String(label.totalQty || '');
+
+                setCell(ws, row, c, i === 0 ? (label.color || '') : '', { font: fontBig, alignment: center });
+                mergeAndSet(ws, row, c + 1, row, c + 2, i === 0 ? (label.ref || '') : '', { font: fontBig, alignment: center });
+                setCell(ws, row, c + 3, sizeText, { font: fontBig, alignment: center });
+                mergeAndSet(ws, row, c + 4, row, c + 5, qtyText, { font: fontBig, alignment: center });
+            }
+
+            // Summary rows.
+            setRangeGridBorder(ws, r + 11, c, r + 13, c + 5, thin);
+            for (let cc = c; cc <= c + 5; cc++) setCellBorderSides(ws.getCell(r + 11, cc), { top: medium });
+            for (let cc = c; cc <= c + 5; cc++) setCellBorderSides(ws.getCell(r + 13, cc), { bottom: medium });
+            setCellBorderSides(ws.getCell(r + 11, c), { left: medium });
+            setCellBorderSides(ws.getCell(r + 12, c), { left: medium });
+            setCellBorderSides(ws.getCell(r + 13, c), { left: medium });
+            setCellBorderSides(ws.getCell(r + 11, c + 5), { right: medium });
+            setCellBorderSides(ws.getCell(r + 12, c + 5), { right: medium });
+            setCellBorderSides(ws.getCell(r + 13, c + 5), { right: medium });
+
+            setCell(ws, r + 11, c, 'TOTAL ', { font: fontBigBold, alignment: center });
+            setCell(ws, r + 11, c + 2, Number(label.totalQty || 0), { font: fontBigBold, alignment: center, numFmt: '0' });
+            setCell(ws, r + 11, c + 3, 'PIECES', { font: fontBigBold, alignment: center });
+
+            mergeAndSet(ws, r + 12, c, r + 12, c + 1, 'CARTON NUMBER', { font: fontBigBold, alignment: center });
+            setCell(ws, r + 12, c + 2, Number(label.cartonNo || 0), { font: fontBigBold, alignment: center, numFmt: '0' });
+            setCell(ws, r + 12, c + 3, 'OF', { font: fontBigBold, alignment: center });
+            mergeAndSet(ws, r + 12, c + 4, r + 12, c + 5, Number(layoutInfo.totalCartons || 0), { font: fontBigBold, alignment: center, numFmt: '0' });
+
+            mergeAndSet(ws, r + 13, c, r + 13, c + 1, 'NETT WEIGHT KG', { font: fontBig, alignment: center });
+            setCell(ws, r + 13, c + 2, Number(label.netWt || 0), { font: fontBig, alignment: center, numFmt: '0.0' });
+            mergeAndSet(ws, r + 13, c + 3, r + 13, c + 4, 'GROSS WEIGHT KG', { font: fontBigBold, alignment: center });
+            setCell(ws, r + 13, c + 5, Number(label.grWt || 0), { font: fontBigBold, alignment: center, numFmt: '0.0' });
+        }
+
+        function applyTemplateSheetLayout(ws) {
+            // Exact layout based on the uploaded Excel template: A:F label, G gap, H:M label.
+            for (let col = 1; col <= 13; col++) {
+                ws.getColumn(col).width = (col === 7) ? 1 : 12.109375;
+            }
+
+            const heights = [
+                15, 22.5, 22.5, 22.5, 22.5, 15, 15, 22.5, 22.5, 22.5, 22.5, 26.25, 18.75, 18.75, 6.75,
+                15, 22.5, 22.5, 22.5, 22.5, 15, 15, 22.5, 22.5, 22.5, 22.5, 26.25, 18.75, 18.75
+            ];
+            heights.forEach((h, idx) => ws.getRow(idx + 1).height = h);
+
+            ws.views = [{ showGridLines: true, view: 'pageBreakPreview', zoomScale: 90, zoomScaleNormal: 60 }];
+            ws.pageSetup = {
+                paperSize: 9,
+                orientation: 'landscape',
+                scale: 97,
+                fitToPage: false,
+                horizontalCentered: false,
+                verticalCentered: false,
+                margins: {
+                    left: 0,
+                    right: 0,
+                    top: 0.11811023622047245,
+                    bottom: 0.11811023622047245,
+                    header: 0,
+                    footer: 0
+                }
+            };
+            ws.properties.defaultRowHeight = 26.25;
+        }
+
+        function makeSheetName(ref, firstCarton, lastCarton, sheetNo) {
+            const base = `${ref || 'Labels'}  ${firstCarton || ''}-${lastCarton || ''}`
+                .replace(/[\\/?*:\[\]]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim() || `Labels ${sheetNo}`;
+            return base.substring(0, 31);
+        }
+
+        async function createExcelLabels() {
+            if (typeof ExcelJS === 'undefined') {
+                alert('Excel export library did not load. Please check your internet connection or download ExcelJS locally.');
+                return;
+            }
+
+            setButtonBusy(true);
+
+            try {
+                const receiverRaw = document.getElementById('receiverInput').value.trim();
+                const supplierRaw = document.getElementById('supplierInput').value.trim();
+                const orderNo = poInput.value.trim();
+
+                const receiverLines = splitLines(receiverRaw);
+                const receiverCountry = receiverLines.length > 1 ? receiverLines.pop() : '';
+                const receiverAddressLines = receiverLines.slice(0, 4);
+                while (receiverAddressLines.length < 4) receiverAddressLines.push('');
+
+                const supplierLines = splitLines(supplierRaw).slice(0, 4);
+                while (supplierLines.length < 4) supplierLines.push('');
+
+                const workbook = new ExcelJS.Workbook();
+                workbook.creator = 'Packing List Excel Label Generator v3 Template Match';
+                workbook.created = new Date();
+                workbook.modified = new Date();
+                workbook.calcProperties.fullCalcOnLoad = true;
+
+                const totalSheets = Math.ceil(parsedLabels.length / 4);
+                const layoutInfo = {
+                    receiverAddressLines,
+                    receiverCountry,
+                    supplierLines,
+                    poText: orderNo ? `PO ${orderNo}` : '',
+                    totalCartons: totalCartonsExtracted || parsedLabels.length
+                };
+
+                const usedSheetNames = new Set();
+                for (let s = 0; s < totalSheets; s++) {
+                    const base = s * 4;
+                    const firstLabel = parsedLabels[base];
+                    const lastLabel = parsedLabels[Math.min(base + 3, parsedLabels.length - 1)];
+                    let sheetName = makeSheetName(firstLabel?.ref, firstLabel?.cartonNo, lastLabel?.cartonNo, s + 1);
+                    const originalName = sheetName;
+                    let counter = 2;
+                    while (usedSheetNames.has(sheetName)) {
+                        const suffix = ` (${counter})`;
+                        sheetName = originalName.substring(0, 31 - suffix.length) + suffix;
+                        counter++;
+                    }
+                    usedSheetNames.add(sheetName);
+
+                    const ws = workbook.addWorksheet(sheetName);
+                    applyTemplateSheetLayout(ws);
+
+                    buildTemplateLabel(ws, 1, 1, parsedLabels[base], layoutInfo);
+                    buildTemplateLabel(ws, 1, 8, parsedLabels[base + 1], layoutInfo);
+                    buildTemplateLabel(ws, 16, 1, parsedLabels[base + 2], layoutInfo);
+                    buildTemplateLabel(ws, 16, 8, parsedLabels[base + 3], layoutInfo);
+
+                    ws.pageSetup.printArea = 'A1:M29';
+                }
+
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Labels_PO_${sanitizeFilename(orderNo)}_v3.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error(error);
+                alert('Error generating Excel labels. Check the console for details.');
+            } finally {
+                setButtonBusy(false);
+            }
+        }
+
+    </script>
+</body>
+</html>

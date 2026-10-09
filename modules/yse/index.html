@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ysé Label Generator - Direct PDF Export</title>
+    <!-- Tailwind CSS -->
+    <script src="vendor/cdn.tailwindcss.com/tailwindcss.js"></script>
+    <!-- SheetJS (for parsing Excel files) -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- JsBarcode (for generating vector SVG barcodes) -->
+    <script src="vendor/cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <!-- jsPDF & html2canvas (For robust, direct PDF generation) -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Icons -->
+    <script src="vendor/unpkg.com/lucide@latest.js"></script>
+
+    <style>
+        @import url('vendor/fonts/Inter_wght_400_600_700.css');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        
+        /* A4 Page Definition - LANDSCAPE MODE */
+        .page-a4 {
+            width: 297mm; 
+            height: 209mm; /* Marginally under 210mm to prevent overflow */
+            page-break-after: always;
+            box-sizing: border-box;
+            background: white;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Screen Preview Styling */
+        .preview-area .page-a4 {
+            margin: 0 auto 2rem auto;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+        }
+
+        /* Layout Types */
+        .multi-page {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 0;
+            align-items: center;
+            justify-items: center;
+        }
+        
+        .single-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Multi Label Container */
+        .label-container-multi {
+            width: 100%;
+            height: 100%;
+            padding: 6mm;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .preview-area .label-container-multi {
+            border: 1px dashed #e5e7eb; /* Visual cutline guide for preview only */
+        }
+
+        /* Shared Label Inner Frame */
+        .template-inner {
+            border: 3px solid #000;
+            box-sizing: border-box;
+            background: white;
+            color: black;
+            overflow: hidden;
+        }
+
+        /* Exact Square enforcement for Multi Labels */
+        .square-label {
+            width: 95mm;
+            height: 95mm;
+            border: 2px solid #000;
+            box-sizing: border-box;
+            background: white;
+            color: black;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .drag-active {
+            border-color: #3b82f6 !important;
+            background-color: #eff6ff !important;
+        }
+        
+        /* Custom Scrollbar for tabs */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-gray-800 relative">
+
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center z-10">
+            <div class="flex items-center gap-3">
+                <i data-lucide="package" class="w-6 h-6 text-blue-600"></i>
+                <h1 class="font-bold text-xl text-gray-900">Ysé Label Generator</h1>
+            </div>
+            <div class="text-xs font-semibold px-3 py-1 bg-green-100 text-green-800 rounded-full">
+                Robust PDF Engine Enabled
+            </div>
+        </header>
+
+        <main class="flex-grow p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-screen-2xl mx-auto w-full">
+            
+            <!-- Left Sidebar -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Dropzone -->
+                <div class="bg-white p-5 rounded-xl border shadow-sm">
+                    <h2 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="file-spreadsheet" class="w-5 h-5 text-gray-500"></i>
+                        Import Packing List
+                    </h2>
+                    
+                    <div id="dropzone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-50 transition-colors">
+                        <i data-lucide="upload-cloud" class="w-10 h-10 text-gray-400 mx-auto mb-3"></i>
+                        <p class="text-sm text-gray-600 font-medium mb-1">Drag & drop an Excel file</p>
+                        <p class="text-xs text-gray-400">Supports .xlsx or .csv</p>
+                        <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls, .csv" />
+                    </div>
+                    
+                    <div id="fileInfo" class="hidden mt-4 bg-green-50 border border-green-200 rounded p-3 flex items-start gap-3">
+                        <i data-lucide="check-circle" class="w-5 h-5 text-green-600 shrink-0 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-semibold text-green-800" id="fileName">File.xlsx</p>
+                            <p class="text-xs text-green-600" id="fileStats">0 labels detected</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Panel (Individual Buttons) -->
+                <div id="exportPanel" class="bg-white p-5 rounded-xl border shadow-sm hidden">
+                    <h2 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="download" class="w-5 h-5 text-gray-500"></i>
+                        Download Labels
+                    </h2>
+                    <div class="bg-blue-50 text-blue-800 text-[13px] p-3 rounded-lg border border-blue-100 mb-4 leading-relaxed">
+                        Click below to generate and directly download the PDF file for each INBSHIP.
+                    </div>
+                    <div id="exportButtonsContainer" class="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Preview Area -->
+            <div class="lg:col-span-3 bg-gray-200/50 rounded-xl border border-gray-300 p-6 flex flex-col" style="height: calc(100vh - 120px);">
+                
+                <!-- Dynamic Tabs Container for INBSHIPs -->
+                <div id="tabsContainer" class="flex overflow-x-auto scrollbar-hide border-b border-gray-300 mb-6 hidden gap-2 shrink-0">
+                    <!-- Tabs injected here via JS -->
+                </div>
+
+                <!-- Preview Board -->
+                <div class="flex-grow overflow-y-auto">
+                    <div id="previewEmpty" class="h-full flex flex-col items-center justify-center text-gray-400">
+                        <i data-lucide="file-search" class="w-16 h-16 mb-4 opacity-50"></i>
+                        <p class="text-lg font-medium">Waiting for Excel file...</p>
+                        <p class="text-sm mt-1">Generated labels will appear here.</p>
+                    </div>
+                    
+                    <div id="previewContainer" class="preview-area hidden flex-col items-center">
+                        <!-- Labels injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // DOM Elements
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileNameEl = document.getElementById('fileName');
+        const fileStatsEl = document.getElementById('fileStats');
+        const tabsContainer = document.getElementById('tabsContainer');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewEmpty = document.getElementById('previewEmpty');
+        const exportPanel = document.getElementById('exportPanel');
+        const exportButtonsContainer = document.getElementById('exportButtonsContainer');
+
+        let groupedBoxes = {};
+        let currentTab = "";
+
+        // Drag & Drop Listeners
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag-active'); });
+        dropzone.addEventListener('dragleave', () => { dropzone.classList.remove('drag-active'); });
+        dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classList.remove('drag-active'); if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+        dropzone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => { if(e.target.files.length) handleFile(e.target.files[0]); });
+
+        // TRUE DIRECT PDF DOWNLOAD FUNCTION (Using explicit Canvas to PDF conversion)
+        window.triggerDownload = async function(inb, fileName, btnElement) {
+            // Provide immediate visual feedback that processing has started
+            const originalBtnContent = btnElement.innerHTML;
+            btnElement.innerHTML = `
+                <div class="flex justify-center items-center w-full py-1 text-blue-600 font-bold text-sm">
+                    <i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i> Generating PDF...
+                </div>
+            `;
+            btnElement.disabled = true;
+            lucide.createIcons();
+            
+            // 1. Generate exact HTML logic
+            let htmlContent = '';
+            let multiBuffer = [];
+            const boxesToRender = groupedBoxes[inb] || [];
+
+            function flushMultiBuffer() {
+                if (multiBuffer.length > 0) {
+                    for (let i = 0; i < multiBuffer.length; i += 4) {
+                        let chunk = multiBuffer.slice(i, i + 4);
+                        let pageContent = '';
+                        chunk.forEach(b => {
+                            pageContent += `<div class="label-container-multi">${getLabelHtml(b)}</div>`;
+                        });
+                        // Fill empty grid squares
+                        for (let j = chunk.length; j < 4; j++) {
+                            pageContent += `<div class="label-container-multi opacity-0 border-none"><div class="square-label border-none"></div></div>`;
+                        }
+                        htmlContent += `<div class="page-a4 multi-page">${pageContent}</div>`;
+                    }
+                    multiBuffer = [];
+                }
+            }
+
+            boxesToRender.forEach(b => {
+                if (!b.isMulti) {
+                    flushMultiBuffer();
+                    htmlContent += `<div class="page-a4 single-page">${getLabelHtml(b)}</div>`;
+                } else {
+                    multiBuffer.push(b);
+                }
+            });
+            flushMultiBuffer();
+
+            // 2. Create an On-Screen but Off-Viewport container
+            const printArea = document.createElement('div');
+            printArea.style.position = 'absolute';
+            printArea.style.left = '-9999px';
+            printArea.style.top = '0';
+            printArea.style.width = '297mm'; // A4 landscape width
+            printArea.style.background = 'white';
+            printArea.innerHTML = htmlContent;
+            document.body.appendChild(printArea);
+
+            // 3. Generate Barcodes in the render container
+            printArea.querySelectorAll('.barcode-target').forEach(svg => {
+                let val = svg.getAttribute('data-value');
+                let h = parseInt(svg.getAttribute('data-height') || 70);
+                let w = parseFloat(svg.getAttribute('data-width') || 2.2);
+                if (val) {
+                    JsBarcode(svg, val, { format: "CODE128", displayValue: false, height: h, width: w, margin: 0, lineColor: "#000" });
+                }
+            });
+
+            // Wait 800ms to allow SVGs and fonts to fully paint into the DOM
+            await new Promise(r => setTimeout(r, 800));
+
+            // 4. Generate PDF explicitly page by page
+            try {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape A4
+                
+                const pages = printArea.querySelectorAll('.page-a4');
+                
+                for (let i = 0; i < pages.length; i++) {
+                    if (i > 0) pdf.addPage();
+                    
+                    // Capture the element using html2canvas
+                    const canvas = await html2canvas(pages[i], {
+                        scale: 2, 
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#ffffff'
+                    });
+                    
+                    // Convert canvas to image and add to PDF
+                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                    pdf.addImage(imgData, 'JPEG', 0, 0, 297, 210);
+                }
+
+                // Trigger download
+                pdf.save(`${fileName}.pdf`);
+
+                // Restore button with success state
+                btnElement.innerHTML = `
+                    <div class="overflow-hidden text-left w-full">
+                        <p class="font-bold text-gray-900 text-[13px] mb-0.5 truncate">${inb}</p>
+                        <p class="text-[10px] font-mono text-gray-500 truncate">${fileName}.pdf</p>
+                    </div>
+                    <div class="icon-wrapper text-green-600 bg-green-50 border border-green-200 shadow-sm p-1.5 rounded flex-shrink-0 ml-2">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                    </div>
+                `;
+                btnElement.classList.replace('hover:bg-blue-50', 'hover:bg-green-50');
+                btnElement.classList.replace('hover:border-blue-200', 'hover:border-green-200');
+                btnElement.disabled = false;
+            } catch (err) {
+                console.error("PDF Generation Error: ", err);
+                alert("An error occurred while generating the PDF. Please try again.");
+                btnElement.innerHTML = originalBtnContent;
+                btnElement.disabled = false;
+            } finally {
+                lucide.createIcons();
+                document.body.removeChild(printArea); // Cleanup memory
+            }
+        }
+
+        function handleFile(file) {
+            fileNameEl.textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]]; // Process first sheet
+                    const json = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                    
+                    parsePackingList(json);
+                } catch (error) {
+                    console.error(error);
+                    alert("Error reading Excel file.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function parsePackingList(json) {
+            let headerIdx = -1;
+            let cols = {};
+            
+            for (let i = 0; i < json.length; i++) {
+                let rowStr = json[i].join(' ').toUpperCase();
+                if (rowStr.includes('RÉFÉRENCE') || rowStr.includes('REFERENCE') || (rowStr.includes('COLIS') && rowStr.includes('QUANT'))) {
+                    headerIdx = i;
+                    json[i].forEach((colName, index) => {
+                        let name = String(colName).trim().toUpperCase();
+                        if (name.includes('PRODUIT') || name.includes('THÈME') || name.includes('THEME')) cols['PRODUCT'] = index;
+                        if (name.includes('RÉFÉRENCE') || name.includes('REFERENCE')) cols['REF'] = index;
+                        if (name.includes('QUANT') || name === 'QTY') cols['QTY'] = index;
+                        if (name.includes('NUMÉRO COLIS') || name.includes('NUMERO COLIS') || name === 'BOX') cols['BOX'] = index;
+                        if (name.includes('PALETTE') || name === 'PAL') cols['PAL'] = index;
+                        if (name.includes('INBSHIP')) cols['INBSHIP'] = index;
+                    });
+                    break;
+                }
+            }
+
+            if (headerIdx === -1 || cols['BOX'] === undefined || cols['QTY'] === undefined) {
+                return alert("Required columns (Reference, Quantity, Box number) not found.");
+            }
+
+            let boxStats = {};
+            let rawRows = [];
+            let maxBoxes = {}, maxPals = {};
+            let currentProduct = '', currentRef = '', currentInbship = '', currentPal = '', currentBox = '';
+            let isParsingData = true;
+
+            for (let i = headerIdx + 1; i < json.length; i++) {
+                let row = json[i];
+                let firstCell = String(row[0] || '').trim().toUpperCase();
+
+                if (firstCell.includes('RÉFÉRENCE') || firstCell.includes('REFERENCE')) {
+                    isParsingData = false;
+                    currentProduct = ''; currentRef = ''; currentInbship = ''; currentPal = ''; currentBox = '';
+                    continue; 
+                }
+                
+                if (firstCell.includes('PRODUIT') || firstCell.includes('THEME') || firstCell.includes('THÈME')) {
+                    isParsingData = true;
+                    currentProduct = ''; currentRef = ''; currentInbship = ''; currentPal = ''; currentBox = '';
+                    continue; 
+                }
+
+                if (!isParsingData) continue; 
+
+                // Fill down merged cells logic
+                let product = row[cols['PRODUCT']] ? String(row[cols['PRODUCT']]).trim() : currentProduct;
+                let ref = row[cols['REF']] ? String(row[cols['REF']]).trim() : currentRef;
+                let inbship = row[cols['INBSHIP']] ? String(row[cols['INBSHIP']]).trim() : currentInbship;
+                let pal = row[cols['PAL']] ? String(row[cols['PAL']]).trim() : currentPal;
+                let box = row[cols['BOX']] ? String(row[cols['BOX']]).trim() : currentBox;
+                let qty = parseInt(row[cols['QTY']], 10) || 0;
+
+                if (qty > 0 && (ref || inbship) && box) {
+                    currentProduct = product; currentRef = ref; currentInbship = inbship; currentPal = pal; currentBox = box;
+
+                    let groupKey = inbship || 'NO_INBSHIP';
+                    let uniqueBoxId = `${groupKey}_${box}`; 
+
+                    // Track how many lines belong to the same box to detect multi
+                    if (!boxStats[uniqueBoxId]) {
+                        boxStats[uniqueBoxId] = { rowCount: 0 };
+                    }
+                    boxStats[uniqueBoxId].rowCount += 1;
+
+                    // Track maximums
+                    let numBox = parseInt(box, 10), numPal = parseInt(pal, 10);
+                    if (!isNaN(numBox)) { maxBoxes[groupKey] = Math.max(maxBoxes[groupKey] || 0, numBox); }
+                    if (!isNaN(numPal)) { maxPals[groupKey] = Math.max(maxPals[groupKey] || 0, numPal); }
+
+                    // Push each valid row as its own distinct label entry
+                    rawRows.push({
+                        product: product, ref: ref, inbship: groupKey, pal: pal, box: box, qty: qty, uniqueBoxId: uniqueBoxId, groupKey: groupKey
+                    });
+                }
+            }
+
+            groupedBoxes = {};
+            let totalLabelsCount = 0;
+
+            rawRows.forEach(row => {
+                let b = { ...row };
+                b.maxBox = maxBoxes[b.groupKey] || b.box;
+                b.maxPal = maxPals[b.groupKey] || b.pal;
+                
+                // If the box has more than 1 row mapped to it, ALL its labels become "Multi"
+                b.isMulti = boxStats[b.uniqueBoxId].rowCount > 1;
+
+                if (!groupedBoxes[b.groupKey]) groupedBoxes[b.groupKey] = [];
+                groupedBoxes[b.groupKey].push(b);
+                totalLabelsCount++;
+            });
+
+            // Sort boxes sequentially
+            Object.keys(groupedBoxes).forEach(key => {
+                groupedBoxes[key].sort((a, b) => parseInt(a.box, 10) - parseInt(b.box, 10));
+            });
+
+            const availableTabs = Object.keys(groupedBoxes);
+            if (availableTabs.length > 0) {
+                fileStatsEl.textContent = `${totalLabelsCount} labels generated across ${availableTabs.length} INBSHIP(s).`;
+                fileInfo.classList.remove('hidden');
+                exportPanel.classList.remove('hidden');
+                
+                populateExportButtons(availableTabs);
+                
+                currentTab = availableTabs[0];
+                renderTabs();
+                renderLabels();
+            } else {
+                alert("No valid boxes were found in the file.");
+            }
+        }
+
+        function populateExportButtons(tabs) {
+            exportButtonsContainer.innerHTML = '';
+            
+            tabs.forEach(inb => {
+                const firstBox = groupedBoxes[inb][0];
+                const refName = firstBox && firstBox.ref ? firstBox.ref : 'LABEL';
+                const safeFileName = `${refName}_${inb}`.replace(/[^a-zA-Z0-9_\- ]/g, '_').trim();
+                
+                const btn = document.createElement('button');
+                btn.className = 'w-full flex justify-between items-center p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-colors text-left group';
+                btn.innerHTML = `
+                    <div class="overflow-hidden">
+                        <p class="font-bold text-gray-900 text-[13px] mb-0.5 truncate">${inb}</p>
+                        <p class="text-[10px] font-mono text-gray-500 truncate">${safeFileName}.pdf</p>
+                    </div>
+                    <div class="icon-wrapper text-blue-600 bg-white border border-gray-200 shadow-sm p-1.5 rounded group-hover:bg-blue-600 group-hover:text-white transition-colors flex-shrink-0 ml-2">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </div>
+                `;
+                btn.onclick = function() {
+                    triggerDownload(inb, safeFileName, this);
+                };
+                exportButtonsContainer.appendChild(btn);
+            });
+            lucide.createIcons();
+        }
+
+        function renderTabs() {
+            const inbships = Object.keys(groupedBoxes);
+            tabsContainer.innerHTML = '';
+            
+            inbships.forEach(inb => {
+                const isActive = inb === currentTab;
+                const btn = document.createElement('button');
+                btn.className = `whitespace-nowrap py-2.5 px-5 font-bold text-sm rounded-t-lg transition-colors border-b-2 ${isActive ? 'border-blue-600 bg-white text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`;
+                btn.textContent = `${inb} (${groupedBoxes[inb].length})`;
+                btn.onclick = () => switchTab(inb);
+                tabsContainer.appendChild(btn);
+            });
+            
+            tabsContainer.classList.remove('hidden');
+        }
+
+        window.switchTab = function(inbship) {
+            currentTab = inbship;
+            renderTabs();
+            renderLabels();
+        };
+
+        function getLabelHtml(b) {
+            let barcodeVal = (b.inbship && b.inbship !== 'NO_INBSHIP') ? b.inbship : b.ref;
+            if (!barcodeVal) barcodeVal = '0000000000';
+            
+            if (!b.isMulti) {
+                // SINGLE MODEL (A4 Landscape, distinctly wider than tall)
+                return `
+                <div class="w-full h-full flex items-center justify-center bg-white p-4">
+                    <div class="template-inner flex flex-col justify-between p-8" style="width: 250mm; height: 160mm; max-width: 100%; max-height: 100%;">
+                        
+                        <!-- Top Section (REF, Fixed Text, Barcode, INBSHIP, Info) -->
+                        <div class="flex flex-col w-max mx-auto">
+                            <div class="font-bold text-[2.8rem] uppercase tracking-wider mb-2 w-full flex justify-between">
+                                <span>REF:</span> <span>${b.ref}</span>
+                            </div>
+                            
+                            <div class="font-bold text-[1.1rem] uppercase tracking-wide mb-1 text-gray-700 text-center w-full">
+                                CODE BARRE LIVRAISON
+                            </div>
+                            
+                            <svg class="barcode-target" data-value="${barcodeVal}" data-height="140" data-width="2.4"></svg>
+                            
+                            <div class="font-bold text-[1.3rem] uppercase tracking-widest mt-1 mb-1 text-center w-full">
+                                ${b.inbship !== 'NO_INBSHIP' ? b.inbship : ''}
+                            </div>
+                            
+                            <!-- Middle Grid -->
+                            <div class="flex w-[calc(100%+4rem)] -ml-8 text-[1.2rem] leading-tight font-bold uppercase mt-3">
+                                <div class="flex flex-col text-left gap-0.5 w-[55%]">
+                                    <div>COLIS ${b.box} / ${b.maxBox}</div>
+                                    <div>PALETTE ${b.pal} / ${b.maxPal}</div>
+                                    <div>QUANTITE TOTALE: ${b.qty}</div>
+                                </div>
+                                <div class="flex flex-col text-left gap-0.5 w-[45%] pl-4">
+                                    <div>MARQUE: Ysé</div>
+                                    <div>SKU: ${b.ref}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Bottom Section -->
+                        <div class="flex flex-col w-max mx-auto">
+                            <!-- Hidden barcode copy to perfectly align the bottom REF to the edges of the barcode -->
+                            <div class="h-0 overflow-hidden">
+                                <svg class="barcode-target" data-value="${barcodeVal}" data-height="10" data-width="2.4"></svg>
+                            </div>
+                            <div class="font-bold text-[2.8rem] uppercase tracking-wider w-full mt-2 flex justify-between">
+                                <span>REF:</span> <span>${b.ref}</span>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>`;
+            } else {
+                // MULTI MODEL (Exact Square shape enforced inside Grid)
+                return `
+                <div class="square-label">
+                    <div class="font-bold text-[2.2rem] uppercase tracking-wider mb-2">
+                        REF: ${b.ref}
+                    </div>
+                    
+                    <div class="flex justify-center items-center w-full mb-1">
+                        <svg class="barcode-target" data-value="${barcodeVal}" data-height="85" data-width="2.2"></svg>
+                    </div>
+                    
+                    <div class="font-bold text-[1.1rem] uppercase tracking-widest mt-1 mb-2 text-center w-full">
+                        ${b.inbship !== 'NO_INBSHIP' ? b.inbship : ''}
+                    </div>
+                    
+                    <div class="flex w-full px-2 text-[1.1rem] leading-tight font-bold uppercase mt-1">
+                        <div class="flex flex-col text-left gap-0.5 w-1/2">
+                            <div>COLIS ${b.box} / ${b.maxBox}</div>
+                            <div>PALETTE ${b.pal} / ${b.maxPal}</div>
+                        </div>
+                        <div class="flex flex-col text-left gap-0.5 w-1/2 pl-4">
+                            <div>MARQUE: Ysé</div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+        }
+
+        function renderLabels() {
+            const boxesToRender = groupedBoxes[currentTab] || [];
+            
+            previewContainer.innerHTML = '';
+            previewEmpty.classList.add('hidden'); previewContainer.classList.remove('hidden');
+            previewContainer.style.display = 'flex';
+            
+            let previewHtml = '';
+            let multiBuffer = [];
+
+            function flushMulti() {
+                if (multiBuffer.length > 0) {
+                    for (let i = 0; i < multiBuffer.length; i += 4) {
+                        let chunk = multiBuffer.slice(i, i + 4);
+                        let pageContent = '';
+                        chunk.forEach(b => {
+                            pageContent += `<div class="label-container-multi">${getLabelHtml(b)}</div>`;
+                        });
+                        for (let j = chunk.length; j < 4; j++) {
+                            pageContent += `<div class="label-container-multi opacity-0 border-none"><div class="square-label border-none"></div></div>`;
+                        }
+                        previewHtml += `<div class="page-a4 multi-page">${pageContent}</div>`;
+                    }
+                    multiBuffer = [];
+                }
+            }
+
+            boxesToRender.forEach(b => {
+                if (!b.isMulti) {
+                    flushMulti(); 
+                    previewHtml += `<div class="page-a4 single-page">${getLabelHtml(b)}</div>`;
+                } else {
+                    multiBuffer.push(b); 
+                }
+            });
+            flushMulti(); 
+
+            previewContainer.innerHTML = previewHtml;
+
+            // Draw Barcodes synchronously for Preview
+            document.querySelectorAll('#previewContainer .barcode-target').forEach(svg => {
+                let val = svg.getAttribute('data-value');
+                let h = parseInt(svg.getAttribute('data-height') || 70);
+                let w = parseFloat(svg.getAttribute('data-width') || 2.2);
+                if (val) {
+                    JsBarcode(svg, val, {
+                        format: "CODE128", displayValue: false,
+                        height: h, width: w, margin: 0, lineColor: "#000"
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

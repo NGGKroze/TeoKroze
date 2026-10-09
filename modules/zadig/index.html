@@ -1,0 +1,2796 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Генератор Packing List + Box Labels</title>
+  <script src="vendor/cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="vendor/cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="vendor/cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="vendor/cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <style>
+    :root {
+      --bg: #f5f6fa;
+      --card: #ffffff;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d9dee8;
+      --accent: #2f6df6;
+      --accent-dark: #1c4fb7;
+      --ok: #0f8f4d;
+      --warn: #b86e00;
+      --bad: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+    header {
+      padding: 28px 32px 18px;
+      background: linear-gradient(135deg, #12213f, #293b73);
+      color: #fff;
+    }
+    header h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: -0.02em; }
+    header p { margin: 0; color: #dbe7ff; max-width: 960px; }
+    main { padding: 24px 32px 40px; max-width: 1500px; margin: 0 auto; }
+    .grid { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(18, 33, 63, 0.06);
+      overflow: hidden;
+    }
+    .card h2 {
+      margin: 0;
+      padding: 18px 20px;
+      font-size: 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcff;
+    }
+    .card .body { padding: 18px 20px; }
+    .dropzone {
+      border: 2px dashed #9fb5e8;
+      background: #f3f7ff;
+      border-radius: 14px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+    .dropzone.drag { background: #e9f0ff; border-color: var(--accent); transform: translateY(-1px); }
+    .dropzone strong { display: block; font-size: 17px; margin-bottom: 6px; }
+    .dropzone span { color: var(--muted); font-size: 13px; }
+
+    .mode-tabs { display: flex; gap: 8px; margin-bottom: 14px; background: #f1f4fb; border: 1px solid var(--line); border-radius: 12px; padding: 6px; }
+    .mode-tab { flex: 1; border: 0; background: transparent; color: #344054; font-weight: 800; padding: 9px 10px; border-radius: 9px; cursor: pointer; }
+    .mode-tab.active { background: #fff; color: var(--accent-dark); box-shadow: 0 1px 4px rgba(16,24,40,.12); }
+    .mode-panel[hidden] { display: none !important; }
+    .manual-file-list { margin-top: 10px; display: grid; gap: 6px; }
+    .manual-file-item { border: 1px solid var(--line); background: #f8fafc; border-radius: 10px; padding: 8px 10px; font-size: 12px; }
+    input[type="file"] { display: none; }
+    label.setting { display: block; margin: 13px 0; font-size: 13px; color: #344054; }
+    label.setting span { display: block; margin-bottom: 6px; font-weight: 650; }
+    input[type="text"], input[type="number"], input[type="date"], select {
+      width: 100%;
+      border: 1px solid #cdd5e4;
+      border-radius: 10px;
+      padding: 10px 11px;
+      font: inherit;
+      background: #fff;
+      color: var(--ink);
+    }
+    input[type="color"] {
+      width: 52px;
+      height: 36px;
+      padding: 2px;
+      border: 1px solid #cdd5e4;
+      border-radius: 10px;
+      background: #fff;
+      vertical-align: middle;
+    }
+    input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+    .settings-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .settings-row.three { grid-template-columns: repeat(3, 1fr); }
+    .checkbox-setting { display: flex; gap: 10px; align-items: center; margin: 13px 0; font-size: 13px; color: #344054; font-weight: 650; }
+    .params-panel { margin: 12px 0 18px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #fbfcff; }
+    .params-panel .btns { margin-top: 0; margin-bottom: 10px; }
+    .params-table th, .params-table td { padding: 6px 6px; font-size: 12px; }
+    .params-table input[type="number"] { min-width: 74px; padding: 7px 8px; border-radius: 8px; }
+    .params-table input[type="checkbox"] { width: 16px; height: 16px; }
+    .params-style { min-width: 170px; }
+    .params-muted { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .model-param-grid { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 10px; align-items: end; margin: 10px 0 12px; }
+    .model-param-grid .setting { margin: 0; }
+    .model-check { margin: 0 0 2px; min-height: 40px; align-items: center; }
+    @media (max-width: 1180px) { .model-param-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); } }
+    .color-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0; }
+    .color-row code { font-weight: 700; background: #eef2f8; padding: 3px 7px; border-radius: 7px; }
+    .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    button {
+      border: 0;
+      border-radius: 11px;
+      padding: 11px 15px;
+      font-weight: 750;
+      font: inherit;
+      cursor: pointer;
+      color: #fff;
+      background: var(--accent);
+      transition: 0.15s ease;
+    }
+    button:hover { background: var(--accent-dark); }
+    button.secondary { color: var(--ink); background: #eef2f8; }
+    button.secondary:hover { background: #dfe7f4; }
+    button:disabled { cursor: not-allowed; opacity: 0.55; }
+    .status { margin-top: 14px; font-size: 13px; color: var(--muted); min-height: 20px; }
+    .status.good { color: var(--ok); }
+    .status.warn { color: var(--warn); }
+    .status.bad { color: var(--bad); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid #e7ebf2; padding: 9px 8px; text-align: left; vertical-align: middle; }
+    th { background: #f8fafc; font-size: 12px; color: #344054; position: sticky; top: 0; z-index: 1; }
+    td.num, th.num { text-align: right; }
+    td.center, th.center { text-align: center; }
+    .table-wrap { max-height: 650px; overflow: auto; }
+    .pill { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px; background: #eef2ff; color: #2c4aa5; font-weight: 800; font-size: 12px; }
+    .small { font-size: 12px; color: var(--muted); }
+    .log { max-height: 180px; overflow: auto; background: #0d1526; color: #d9e4ff; border-radius: 12px; padding: 10px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; white-space: pre-wrap; }
+    .empty { padding: 35px; text-align: center; color: var(--muted); }
+    .inline-input { width: 58px; }
+    .group-color { display: flex; align-items: center; gap: 8px; }
+    .note { background: #fff7e6; border: 1px solid #ffd591; padding: 11px 12px; border-radius: 11px; color: #6b4500; font-size: 13px; margin-top: 12px; }
+    .collapsible { margin: 16px 0; border: 1px solid var(--line); border-radius: 12px; background: #fbfcff; padding: 0; }
+    .collapsible summary { list-style: none; cursor: pointer; padding: 12px 14px; font-weight: 800; color: #263857; user-select: none; }
+    .collapsible summary::-webkit-details-marker { display: none; }
+    .collapsible summary::after { content: "▼"; float: right; font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .collapsible:not([open]) summary::after { content: "▶"; }
+    .collapsible > .settings-row, .collapsible > label.setting { margin-left: 12px; margin-right: 12px; }
+    .tiny { padding: 7px 10px; border-radius: 8px; font-size: 12px; }
+    .action-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .selected-color-row { background: #eef5ff; outline: 2px solid #9fc2ff; outline-offset: -2px; }
+    .clickable-color-row { cursor: pointer; }
+    .clickable-color-row:hover { background: #f3f7ff; }
+    .pl-preview-panel { max-height: 430px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .pl-preview-head { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 8px 14px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: #fbfcff; font-size: 12px; }
+    .pl-preview-head strong { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .02em; }
+    .pl-preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .pl-preview-table th, .pl-preview-table td { border: 1px solid #d7dde9; padding: 6px 7px; text-align: center; vertical-align: middle; }
+    .pl-preview-table th { position: static; background: #f8fafc; font-weight: 800; }
+    .pl-preview-table td.ref { white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .pl-preview-table tr.mixed td { background: #fff8b5; }
+    .pl-preview-table tr.total td { border: 0; background: #fff; font-weight: 800; }
+    .pl-preview-table tr.total td.under { border-bottom: 3px double #000; }
+    .pl-preview-note { padding: 10px 14px; color: var(--muted); font-size: 12px; border-bottom: 1px solid var(--line); }
+
+    .size-summary-panel { border-bottom: 1px solid var(--line); padding: 12px 14px; background: #fff; }
+    .size-summary-line { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+    .size-chip { display: inline-flex; align-items: center; border: 1px solid #dbe3f0; background: #f8fbff; border-radius: 999px; padding: 4px 9px; font-size: 12px; font-weight: 800; color: #263857; }
+    .size-edit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)); gap: 8px; }
+    .size-edit-item { border: 1px solid #dbe3f0; border-radius: 10px; padding: 7px 8px; background: #fbfcff; }
+    .size-edit-item span { display: block; font-size: 11px; color: var(--muted); font-weight: 800; margin-bottom: 4px; }
+    .size-edit-item input { width: 100%; padding: 7px 8px; border: 1px solid #cfd8e8; border-radius: 8px; font-weight: 800; text-align: center; }
+    .preview-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+    .preview-edit-note { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+    .pl-preview-table input.cell-input { width: 100%; min-width: 54px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 5px; font: inherit; text-align: center; background: #fff; }
+    .pl-preview-table input.cell-input.ref { min-width: 138px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .pl-preview-table input.cell-input.colorsize { min-width: 112px; }
+    .pl-preview-table input.cell-input:focus { outline: 2px solid rgba(37, 99, 235, .22); border-color: #2563eb; }
+    .pl-preview-table td.actions { min-width: 130px; white-space: nowrap; }
+    .pl-preview-table td.mixed-check { min-width: 74px; }
+    .pl-preview-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); background: #fff; }
+    .pl-preview-table tr.manual td { background: #f7fbff; }
+    .pl-preview-table tr.mixed td { background: #fff8b5; }
+    @media (max-width: 1180px) { .pl-preview-head { grid-template-columns: repeat(2, minmax(140px, 1fr)); } }
+    @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } main { padding: 16px; } header { padding: 24px 18px; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Генератор Packing List + Box Labels</h1>
+  <p>Пусни Zadig &amp; Voltaire PDF поръчки. Програмата чете редовете, групира по destination + style + color, създава отделен packing list и отделен label workbook за всяка група.</p>
+  <p style="margin-top:8px;font-size:12px;color:#bcd1ff;">Версия: 2026-06-05o — manual PL tab с label scale controls</p>
+</header>
+<main>
+  <div class="grid">
+    <section class="card">
+      <h2>1. Качване и настройки</h2>
+      <div class="body">
+        <div class="mode-tabs">
+          <button id="orderModeTab" class="mode-tab active" type="button">1. PDF поръчка → PL + Labels</button>
+          <button id="manualModeTab" class="mode-tab" type="button">2. Готов PL → Labels</button>
+        </div>
+        <div id="orderModePanel" class="mode-panel">
+        <div id="dropzone" class="dropzone">
+          <strong>Пусни PDF поръчките тук</strong>
+          <span>или кликни, за да избереш един или повече PDF файлове</span>
+          <input id="fileInput" type="file" accept="application/pdf,.pdf" multiple />
+        </div>
+        <div class="settings-row">
+          <label class="setting"><span>Дата на packing list</span><input id="dateInput" type="date" /></label>
+          <label class="setting"><span>Начален PKL номер</span><input id="pklStart" type="number" min="1" value="1" /></label>
+        </div>
+        <details id="globalParamsDetails" class="collapsible">
+          <summary>Глобални параметри за кашони — кликни за ръчна редакция</summary>
+          <div class="settings-row">
+            <label class="setting"><span>Макс. бройки в кашон</span><input id="capacity" type="number" min="1" value="20" /></label>
+            <label class="setting"><span>Правило за остатъци</span>
+              <select id="mixMode">
+                <option value="smart" selected>Smart packing — по примерните packing lists</option>
+                <option value="greedy">Пълни остатъците максимално</option>
+                <option value="exact">Смесвай само остатъци, които точно пълнят кашон</option>
+                <option value="never">Не смесвай размери</option>
+              </select>
+            </label>
+          </div>
+          <div class="settings-row">
+            <label class="checkbox-setting"><input id="allowPlusOne" type="checkbox" checked /> Разреши допълнителни бройки над max</label>
+            <label class="setting"><span>Допълнителни бройки</span><input id="maxExtraUnits" type="number" min="0" step="1" value="1" /></label>
+          </div>
+          <div class="settings-row three">
+            <label class="setting"><span>Кашон L cm</span><input id="boxL" type="number" min="0" step="0.1" value="60" /></label>
+            <label class="setting"><span>Кашон W cm</span><input id="boxW" type="number" min="0" step="0.1" value="40" /></label>
+            <label class="setting"><span>Кашон H cm</span><input id="boxH" type="number" min="0" step="0.1" value="40" /></label>
+          </div>
+          <div class="settings-row">
+            <label class="setting"><span>Празен кашон kg</span><input id="emptyKg" type="number" min="0" step="0.01" value="1.20" /></label>
+            <label class="setting"><span>1 бр. изделие kg</span><input id="pieceKg" type="number" min="0" step="0.001" value="0.370" /></label>
+          </div>
+        </details>
+        <label class="setting"><span>Имена на PL файловете</span>
+          <select id="filenameMode">
+            <option value="sample">STYLE COLOR PL PO-DEPOT.xlsx</option>
+            <option value="withRef">STYLE COLOR STYLE-REF PL PO-DEPOT.xlsx</option>
+          </select>
+        </label>
+        <details id="depotColorsDetails" class="collapsible">
+          <summary>Депо / default label цветове — кликни за редакция</summary>
+          <div style="padding:0 12px 12px;">
+            <div id="destinationColors"></div>
+          </div>
+        </details>
+        <div class="btns">
+          <button id="parseButton" class="secondary" disabled>Анализирай PDF</button>
+          <button id="downloadButton" disabled>Изтегли всичко ZIP</button>
+          <button id="clearButton" class="secondary">Изчисти</button>
+        </div>
+        <div id="status" class="status">Изчаква PDF файлове.</div>
+        <div id="downloadLink" class="download-link" hidden></div>
+        <div class="note">Цветът на label се опитва да се вземе автоматично от цветното квадратче в края на PDF поръчката. Може да го смениш ръчно от preview таблицата.</div>
+        </div>
+        <div id="manualModePanel" class="mode-panel" hidden>
+          <div id="manualDropzone" class="dropzone">
+            <strong>Пусни готови packing lists тук</strong>
+            <span>Excel .xlsx/.xls или PDF packing list. Ще се генерират само labels по готовите кашони.</span>
+            <input id="manualFileInput" type="file" accept=".xlsx,.xls,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" multiple />
+          </div>
+          <div class="btns">
+            <button id="manualAnalyzeButton" class="secondary" disabled>Прочети PL</button>
+            <button id="manualDownloadLabelsButton" disabled>Изтегли Labels ZIP</button>
+            <button id="manualClearButton" class="secondary">Изчисти PL</button>
+          </div>
+          <div id="manualFileList" class="manual-file-list"></div>
+          <div class="note">Този таб не създава нови packing lists от order PDF. Чете готов PL, показва го в editable preview и прави box labels по FROM#/TO# кашоните. В preview можеш да зададеш L/W/H на кашона, за да се скалира label-ът: H≤10 cm → 10 cm, H<30 cm → H-1 cm, H≥30 cm → standard A4. Ако качиш PDF packing list, програмата го чете по същия layout като примерните MAEL WOOL файлове.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. Преглед</h2>
+      <div class="body">
+        <div id="summary" class="small">Няма анализирани файлове.</div>
+        <h3 style="font-size:15px;margin:16px 0 8px;">Параметри по модел</h3>
+        <div id="modelParams" class="params-panel small">Анализирай PDF файлове, за да зададеш параметри по модел.</div>
+        <h3 style="font-size:15px;margin:16px 0 8px;">Live preview на избрания packing list</h3>
+        <div id="packingListPreview" class="pl-preview-panel"><div class="empty">Кликни цвят от избрания модел, за да видиш packing list preview.</div></div>
+        <h3 style="font-size:15px;margin:16px 0 8px;">Packing list групи</h3>
+        <div id="preview" class="table-wrap"><div class="empty">Тук ще се покажат разпознатите packing lists.</div></div>
+        <h3 style="font-size:15px;margin:20px 0 8px;">Лог</h3>
+        <div id="log" class="log">Готово.</div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+/* global pdfjsLib, ExcelJS, JSZip, saveAs */
+pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const APP_VERSION = "2026-06-05p-hangers-mode";
+document.title = `Генератор Packing List + Box Labels ${APP_VERSION}`;
+
+const state = { mode: "orders", files: [], manualFiles: [], orders: [], groups: [], selectedModelKey: "", selectedGroupIndex: -1, lastDownloadUrl: null, analysisToken: 0 };
+const defaults = {
+  QEU: { color: "#ffffff", name: "QEU" },
+  QUS: { color: "#ff00ff", name: "QUS" },
+  QLK: { color: "#11aee2", name: "QLK" },
+  QPR: { color: "#f2f2f2", name: "QPR" },
+  OTHER: { color: "#ffffff", name: "OTHER" }
+};
+
+const els = {
+  dropzone: document.getElementById("dropzone"),
+  fileInput: document.getElementById("fileInput"),
+  parseButton: document.getElementById("parseButton"),
+  downloadButton: document.getElementById("downloadButton"),
+  clearButton: document.getElementById("clearButton"),
+  status: document.getElementById("status"),
+  log: document.getElementById("log"),
+  summary: document.getElementById("summary"),
+  preview: document.getElementById("preview"),
+  destinationColors: document.getElementById("destinationColors"),
+  dateInput: document.getElementById("dateInput"),
+  pklStart: document.getElementById("pklStart"),
+  capacity: document.getElementById("capacity"),
+  mixMode: document.getElementById("mixMode"),
+  allowPlusOne: document.getElementById("allowPlusOne"),
+  maxExtraUnits: document.getElementById("maxExtraUnits"),
+  boxL: document.getElementById("boxL"),
+  boxW: document.getElementById("boxW"),
+  boxH: document.getElementById("boxH"),
+  emptyKg: document.getElementById("emptyKg"),
+  pieceKg: document.getElementById("pieceKg"),
+  filenameMode: document.getElementById("filenameMode"),
+  modelParams: document.getElementById("modelParams"),
+  packingListPreview: document.getElementById("packingListPreview"),
+  downloadLink: document.getElementById("downloadLink"),
+  orderModeTab: document.getElementById("orderModeTab"),
+  manualModeTab: document.getElementById("manualModeTab"),
+  orderModePanel: document.getElementById("orderModePanel"),
+  manualModePanel: document.getElementById("manualModePanel"),
+  manualDropzone: document.getElementById("manualDropzone"),
+  manualFileInput: document.getElementById("manualFileInput"),
+  manualAnalyzeButton: document.getElementById("manualAnalyzeButton"),
+  manualDownloadLabelsButton: document.getElementById("manualDownloadLabelsButton"),
+  manualClearButton: document.getElementById("manualClearButton"),
+  manualFileList: document.getElementById("manualFileList")
+};
+
+function todayForInput() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+els.dateInput.value = todayForInput();
+
+function setupDestinationColors() {
+  els.destinationColors.innerHTML = "";
+  for (const [code, cfg] of Object.entries(defaults)) {
+    const row = document.createElement("div");
+    row.className = "color-row";
+    row.innerHTML = `<span><code>${code}</code> label цвят</span><input type="color" id="color_${code}" value="${cfg.color}">`;
+    els.destinationColors.appendChild(row);
+  }
+}
+setupDestinationColors();
+
+function setStatus(message, type = "") {
+  els.status.textContent = message;
+  els.status.className = `status ${type}`;
+}
+function log(message) {
+  const time = new Date().toLocaleTimeString();
+  els.log.textContent += `\n[${time}] ${message}`;
+  els.log.scrollTop = els.log.scrollHeight;
+}
+function resetLog() { els.log.textContent = "Готово."; }
+
+function getSettings() {
+  const colors = {};
+  for (const code of Object.keys(defaults)) colors[code] = document.getElementById(`color_${code}`).value;
+  return {
+    date: els.dateInput.value || todayForInput(),
+    pklStart: Math.max(1, Number(els.pklStart.value || 1)),
+    capacity: Math.max(1, Number(els.capacity.value || 20)),
+    allowPlusOne: !!els.allowPlusOne.checked,
+    maxExtraUnits: !!els.allowPlusOne.checked ? Math.max(0, Math.floor(Number(els.maxExtraUnits.value || 0))) : 0,
+    mixMode: els.mixMode.value,
+    boxL: Math.max(0, Number(els.boxL.value || 0)),
+    boxW: Math.max(0, Number(els.boxW.value || 0)),
+    boxH: Math.max(0, Number(els.boxH.value || 0)),
+    emptyKg: Math.max(0, Number(els.emptyKg.value || 0)),
+    pieceKg: Math.max(0, Number(els.pieceKg.value || 0)),
+    colors,
+    filenameMode: els.filenameMode.value
+  };
+}
+
+function orderParamsFromSettings(settings = getSettings()) {
+  return {
+    capacity: settings.capacity,
+    allowPlusOne: settings.allowPlusOne,
+    maxExtraUnits: settings.maxExtraUnits,
+    boxL: settings.boxL,
+    boxW: settings.boxW,
+    boxH: settings.boxH,
+    emptyKg: settings.emptyKg,
+    pieceKg: settings.pieceKg
+  };
+}
+
+function learnedParamsForStyle(styleName, depot = "", base = orderParamsFromSettings()) {
+  const style = normalizeSpaces(styleName).toUpperCase();
+  const out = { ...base };
+  // Learned from uploaded reference packing lists:
+  // OVERFAVO WS uses 30 pcs/carton and 0.315 kg per piece.
+  // OVERFAV WS and OVERFAV WS SKULL PLF use 20 pcs/carton and 0.510 kg per piece.
+  if (/\bMOLLYS\s+WOOL\b/.test(style)) {
+    out.capacity = 9999;
+    out.pieceKg = 1.2405;
+    out.emptyKg = 0;
+  } else if (/\bOVERFAVO\s+WS\b/.test(style)) {
+    out.capacity = 30;
+    out.pieceKg = 0.315;
+  } else if (/\bOVERFAV\s+WS\b/.test(style)) {
+    out.capacity = 20;
+    out.pieceKg = 0.510;
+  }
+  if (String(depot || "").toUpperCase() === "QLK") {
+    out.boxH = 20;
+    out.emptyKg = 0.80;
+  }
+  return out;
+}
+
+function calcVolume(params) {
+  return round3((Number(params.boxL || 0) * Number(params.boxW || 0) * Number(params.boxH || 0)) / 1000000);
+}
+
+function paramsForGroup(group, settings = getSettings()) {
+  return { ...settings, ...(group.params || orderParamsFromSettings(settings)), mixMode: settings.mixMode };
+}
+
+function isHangersGroup(group) {
+  return !!(group && group.hangers);
+}
+
+function hangerCartonize(items, settings, existingCarton = null) {
+  const lines = aggregateItems(items).map(it => ({ ...it, packages: 1 })).filter(it => Number(it.quantity || 0) > 0);
+  const totalQty = lines.reduce((s, l) => s + Number(l.quantity || 0), 0);
+  const autoNet = round3(totalQty * Number(settings.pieceKg || 0));
+  const carton = existingCarton ? cloneCarton(existingCarton) : {};
+  return [{
+    no: 1,
+    lines,
+    totalQty,
+    isMixed: false,
+    hanger: true,
+    net: carton.manualNet ? round3(carton.net || 0) : autoNet,
+    gross: carton.manualGross ? round3(carton.gross || 0) : autoNet,
+    volume: carton.manualVolume ? round3(carton.volume || 0) : calcVolume(settings),
+    manualNet: !!carton.manualNet,
+    manualGross: !!carton.manualGross,
+    manualVolume: !!carton.manualVolume,
+    manualMixed: false
+  }].filter(c => c.totalQty > 0 || c.lines.length);
+}
+
+function formatDateDisplay(dateString) {
+  const [y, m, d] = dateString.split("-");
+  return `${d}/${m}/${y}`;
+}
+function pklNumber(dateString, sequence) {
+  const clean = dateString.replaceAll("-", "");
+  return `PL${clean}${String(sequence).padStart(3, "0")}`;
+}
+function sanitizeFileName(name) {
+  return name.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 150);
+}
+function safeSheetName(name) {
+  const cleaned = name.replace(/[\\/*?:\[\]]/g, " ").trim() || "Sheet";
+  return cleaned.slice(0, 31);
+}
+function normalizeSpaces(s) { return String(s || "").replace(/\s+/g, " ").trim(); }
+function styleRefFromArticle(article) {
+  return article.replace(/(?:X\d{2}|T\d{2})$/i, "");
+}
+function parseColorSize(line) {
+  const raw = normalizeSpaces(line).replace(/\s+\//g, "/").replace(/\/\s+/g, "/");
+  const parts = raw.split("/");
+  const color = normalizeSpaces(parts[0] || "");
+  let size = normalizeSpaces(parts.slice(1).join("/") || "");
+  size = size.replace(/^SIZE\s+/i, "");
+  return { color, size };
+}
+function sizeRank(size) {
+  const s = String(size || "").toUpperCase().replace(/^SIZE\s+/, "").trim();
+  const ranks = { XXS: 0, XS: 1, S: 2, M: 3, L: 4, XL: 5, XXL: 6, XXXL: 7 };
+  if (s in ranks) return ranks[s];
+  const n = Number(s.match(/\d+/)?.[0] || 999);
+  return 100 + n;
+}
+function parseEuropeanMoney(s) {
+  return Number(String(s || "").replace(/\s/g, "").replace(",", "."));
+}
+
+function isJunkLine(line) {
+  const s = normalizeSpaces(line);
+  if (!s) return true;
+  return /^(ZV FRANCE|ArtEast, LLC|A division of|453 Broome Street|New-York|TEL\s*:|FAX\s*:|SIRET|CODE APE|4771 Z|CARTON|Date de|livraison|Date commande|Acheteur|N° ordre|Fournisseur|Florence Gauthier|Ines Zouaoui|PELINTEX|BULGARIE|Page \d+ of \d+|Adresse livr|Cond\. livraison|Devise|DDP|Rendu droits acquittés|EUR|Adresse fourn|5 Hristo|2-nd floor|7000 RUSE|Cond\. paiement|Méthode pmt CF|75 jours|Wire|Code article|Désignation|Prix achat|UPA|Quantité|U\/M|Mnt ligne|BG|Bulgaria|MID:|Custom goods|Total|Net total|PLEASE RETURN|APPROVED|THE SIGNATURE|GENERAL TERMS|BUYER|SELLER)$/i.test(s);
+}
+
+async function fileToArrayBuffer(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function textItemsToLines(items) {
+  const rows = [];
+  const tolerance = 2.5;
+  for (const it of items) {
+    const text = String(it.str || "").trim();
+    if (!text) continue;
+    const x = it.transform[4];
+    const y = it.transform[5];
+    let row = rows.find(r => Math.abs(r.y - y) <= tolerance);
+    if (!row) { row = { y, parts: [] }; rows.push(row); }
+    row.parts.push({ x, text });
+  }
+  rows.sort((a, b) => b.y - a.y);
+  return rows.map(r => r.parts.sort((a, b) => a.x - b.x).map(p => p.text).join(" ").replace(/\s+/g, " ").trim());
+}
+
+async function extractPdfText(file) {
+  const buf = await fileToArrayBuffer(file);
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const allLines = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    allLines.push(...textItemsToLines(content.items), "");
+  }
+  return allLines.join("\n");
+}
+
+function rgbToHex(r, g, b) {
+  return "#" + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+}
+
+async function detectPdfLabelColor(file) {
+  try {
+    const buf = await fileToArrayBuffer(file);
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    const page = await pdf.getPage(pdf.numPages);
+    const viewport = page.getViewport({ scale: 0.9 });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    const regions = [
+      [0.40, 0.40, 0.60, 0.70],
+      [0.34, 0.35, 0.66, 0.78]
+    ];
+    let best = null;
+    for (const [x1p, y1p, x2p, y2p] of regions) {
+      const x1 = Math.floor(canvas.width * x1p), y1 = Math.floor(canvas.height * y1p);
+      const x2 = Math.floor(canvas.width * x2p), y2 = Math.floor(canvas.height * y2p);
+      const img = ctx.getImageData(x1, y1, Math.max(1, x2 - x1), Math.max(1, y2 - y1));
+      let rSum = 0, gSum = 0, bSum = 0, count = 0;
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 16) {
+        const r = d[i], g = d[i + 1], b = d[i + 2], a = d[i + 3];
+        if (a < 220) continue;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b), avg = (r + g + b) / 3;
+        if (avg < 115 || avg > 252) continue;       // skip black text and pure white page
+        if ((max - min) < 6) continue;              // skip grey lines/text shadows
+        rSum += r; gSum += g; bSum += b; count++;
+      }
+      if (!best || count > best.count) best = { count, r: rSum / Math.max(1, count), g: gSum / Math.max(1, count), b: bSum / Math.max(1, count) };
+    }
+    if (!best || best.count < 80) return null;
+    return rgbToHex(best.r, best.g, best.b);
+  } catch (err) {
+    console.warn("Could not detect PDF label color", err);
+    return null;
+  }
+}
+
+function parseHeader(text, fileName) {
+  const normalized = text.replace(/\r/g, "");
+  const depot = (normalized.match(/\b\d{2}[WS]\s*-\s*COL\s*-\s*(Q[A-Z]{2})\s*-\s*PRD/i)?.[1]
+    || normalized.match(/\b(QEU|QUS|QLK|QPR)\b/i)?.[1]
+    || fileName.match(/\b(QEU|QUS|QLK|QPR)\b/i)?.[1]
+    || "OTHER").toUpperCase();
+  const orderNo = normalized.match(/\b100\d{7}\b/)?.[0] || fileName.match(/\b100\d{7}\b/)?.[0] || "UNKNOWN";
+  const season = normalized.match(/\b(\d{2}[WS])\s*-\s*COL/i)?.[1] || "";
+  let deliveryAddress = "";
+  const addr = normalized.match(/Adresse livr\s+([\s\S]*?)\s+Cond\. livraison/i);
+  if (addr) deliveryAddress = addr[1].split("\n").map(normalizeSpaces).filter(Boolean).join("\n");
+  const deliveryDate = normalized.match(/\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\n?\s*\d{4}\b/i)?.[0]?.replace(/\s+/g, " ") || "";
+  return { depot, orderNo, season, deliveryAddress, deliveryDate, fileName };
+}
+
+function parsePdfTotalPce(text) {
+  const m = String(text || "").match(/\bTotal\s+PCE\s+([\d\s]+)/i);
+  if (!m) return null;
+  const n = Number(String(m[1]).replace(/\s/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+
+function parseItems(text) {
+  const normalized = text.replace(/\r/g, "\n");
+  const article = "[A-Z]{2,5}[A-Z0-9]{6,}(?:X\\d{2}|T\\d{2})";
+  const items = [];
+
+  function pushItem(raw) {
+    if (!raw || !raw.article || !raw.designation || !(Number(raw.quantity) > 0) || !raw.ean || !raw.color || !raw.size) return;
+    items.push({
+      article: String(raw.article).trim(),
+      styleRef: styleRefFromArticle(String(raw.article).trim()),
+      designation: normalizeSpaces(raw.designation),
+      price: Number(raw.price || 0),
+      quantity: Number(raw.quantity || 0),
+      amount: Number(raw.amount || 0),
+      ean: String(raw.ean).trim(),
+      color: normalizeSpaces(raw.color),
+      size: normalizeSpaces(raw.size).replace(/^SIZE\s+/i, ""),
+      originalColorSize: normalizeSpaces(raw.originalColorSize || `${raw.color}/${raw.size}`)
+    });
+  }
+
+  // Fast parser for normal rows where PDF text extraction keeps all fields close together.
+  const rowPattern = new RegExp(`(${article})\\s+([A-Z][A-Z0-9 .&'/-]+?)\\s+(\\d[\\d\\s]*,\\d{2})\\s+PCE\\s+(\\d+)\\s+PCE\\s+([\\d\\s]+,\\d{2})\\s+(\\d{13})\\s+([^\\n]*?\\/[^\\n]+?)(?=\\n(?:Custom goods|BG|MID:|${article}|Total|ZV FRANCE|ArtEast)|$)`, "gi");
+  let match;
+  while ((match = rowPattern.exec(normalized)) !== null) {
+    const [, articleCode, designation, price, quantity, amount, ean, colorSizeRaw] = match;
+    const { color, size } = parseColorSize(colorSizeRaw);
+    pushItem({ article: articleCode, designation, price: parseEuropeanMoney(price), quantity, amount: parseEuropeanMoney(amount), ean, color, size, originalColorSize: colorSizeRaw });
+  }
+
+  // Robust line parser. This is intentionally run even when the fast parser found rows.
+  // Some ZV PDFs split a PO line across a page break: article/qty stays at the bottom of one page,
+  // while EAN + COLOR/SIZE appears at the top of the next page after headers.
+  const lines = normalized.split("\n").map(normalizeSpaces).filter(Boolean);
+  const articleRegex = new RegExp(`^(${article})(?:\\s+(.+))?$`, "i");
+  const fullLineRegex = new RegExp(`^(${article})\\s+(.+?)\\s+(\\d[\\d\\s]*,\\d{2})\\s+PCE\\s+(\\d+)\\s+PCE\\s+([\\d\\s]+,\\d{2})(?:\\s+.*)?$`, "i");
+
+
+  function findEanColorSizeInBlock(blockLines) {
+    for (let bi = 0; bi < blockLines.length; bi++) {
+      const line = blockLines[bi];
+      let m = line.match(/(?:^|\s)(\d{13})\s+([A-Z0-9][A-Z0-9 .'-]*?\s*\/\s*(?:SIZE\s*)?[A-Z0-9]+)\b/i);
+      if (m) return { ean: m[1], colorSizeRaw: normalizeSpaces(m[2]) };
+      m = line.match(/^(\d{13})$/);
+      if (m) {
+        for (let bj = bi + 1; bj < Math.min(blockLines.length, bi + 8); bj++) {
+          const candidate = blockLines[bj];
+          if (isJunkLine(candidate) || /^Custom goods/i.test(candidate)) continue;
+          if (/\//.test(candidate)) return { ean: m[1], colorSizeRaw: candidate };
+        }
+      }
+    }
+    return null;
+  }
+
+  function parseArticleBlock(blockLines) {
+    if (!blockLines.length) return;
+    const firstArticleLine = blockLines.find(l => articleRegex.test(l));
+    if (!firstArticleLine) return;
+    articleRegex.lastIndex = 0;
+    const articleStart = firstArticleLine.match(articleRegex);
+    if (!articleStart) return;
+    const full = firstArticleLine.match(fullLineRegex) || blockLines.map(l => l.match(fullLineRegex)).find(Boolean);
+    let articleCode = articleStart[1];
+    let designation = "";
+    let price = 0;
+    let quantity = 0;
+    let amount = 0;
+
+    if (full) {
+      articleCode = full[1];
+      designation = normalizeSpaces(full[2]);
+      price = parseEuropeanMoney(full[3]);
+      quantity = Number(full[4]);
+      amount = parseEuropeanMoney(full[5]);
+    } else {
+      designation = normalizeSpaces(articleStart[2] || "");
+      if (!designation) {
+        const startIdx = blockLines.indexOf(firstArticleLine);
+        const nextDesignation = blockLines.find((l, idx) => idx > startIdx && !isJunkLine(l) && !/PCE|\d{13}|\//.test(l));
+        designation = normalizeSpaces(nextDesignation || "");
+      }
+      const joined = blockLines.join(" ");
+      const pq = joined.match(/(\d[\d\s]*,\d{2})\s+PCE\s+(\d+)\s+PCE\s+([\d\s]+,\d{2})/i);
+      if (pq) {
+        price = parseEuropeanMoney(pq[1]);
+        quantity = Number(pq[2]);
+        amount = parseEuropeanMoney(pq[3]);
+      }
+    }
+
+    const eanColor = findEanColorSizeInBlock(blockLines);
+    if (!eanColor) return;
+    const { color, size } = parseColorSize(eanColor.colorSizeRaw);
+    pushItem({ article: articleCode, designation, price, quantity, amount, ean: eanColor.ean, color, size, originalColorSize: eanColor.colorSizeRaw });
+  }
+
+  // Block parser: every article row owns the following lines until the next article row.
+  // This is the safest pass for these ZV PDFs because some orders split article/qty and EAN/color/size
+  // around page breaks or between page header/footer lines.
+  for (let i = 0; i < lines.length; i++) {
+    if (!articleRegex.test(lines[i])) continue;
+    articleRegex.lastIndex = 0;
+    const blockLines = [];
+    for (let j = i; j < Math.min(lines.length, i + 60); j++) {
+      if (j > i && articleRegex.test(lines[j])) break;
+      articleRegex.lastIndex = 0;
+      if (/^Total\s+PCE/i.test(lines[j])) break;
+      blockLines.push(lines[j]);
+    }
+    parseArticleBlock(blockLines);
+  }
+
+  // Repair pass: parse every article/price/qty row and look ahead for its EAN + COLOR/SIZE.
+  // This catches rows split by page footer/header, for example:
+  // KMSW01859600X06 OVERFAV WS ... 21 PCE ... at page bottom,
+  // then 3607624762986 JAPON /XL after the next page header.
+  for (let i = 0; i < lines.length; i++) {
+    const full = lines[i].match(fullLineRegex);
+    if (!full) continue;
+    for (let j = i + 1; j < Math.min(lines.length, i + 32); j++) {
+      if (j > i + 1 && lines[j].match(fullLineRegex)) break;
+      const eanWithColorSize = lines[j].match(/^(\d{13})\s+(.+?\/.+)$/);
+      if (!eanWithColorSize) continue;
+      const { color, size } = parseColorSize(eanWithColorSize[2]);
+      pushItem({
+        article: full[1],
+        designation: normalizeSpaces(full[2]),
+        price: parseEuropeanMoney(full[3]),
+        quantity: Number(full[4]),
+        amount: parseEuropeanMoney(full[5]),
+        ean: eanWithColorSize[1],
+        color,
+        size,
+        originalColorSize: eanWithColorSize[2]
+      });
+      break;
+    }
+  }
+
+  let cur = null;
+  let needQtyAfterPrice = false;
+
+  function completeIfReady() {
+    if (cur && cur.article && cur.designation && Number(cur.quantity) > 0 && cur.ean && cur.color && cur.size) {
+      pushItem(cur);
+      cur = null;
+      needQtyAfterPrice = false;
+      return true;
+    }
+    return false;
+  }
+
+  for (const line of lines) {
+    const full = line.match(fullLineRegex);
+    if (full) {
+      if (cur) completeIfReady();
+      cur = {
+        article: full[1],
+        designation: normalizeSpaces(full[2]),
+        price: parseEuropeanMoney(full[3]),
+        quantity: Number(full[4]),
+        amount: parseEuropeanMoney(full[5])
+      };
+      needQtyAfterPrice = false;
+      continue;
+    }
+
+    if (cur) {
+      const eanWithColorSize = line.match(/^(\d{13})\s+(.+?\/.+)$/);
+      if (eanWithColorSize) {
+        cur.ean = eanWithColorSize[1];
+        const { color, size } = parseColorSize(eanWithColorSize[2]);
+        cur.color = color;
+        cur.size = size;
+        cur.originalColorSize = eanWithColorSize[2];
+        completeIfReady();
+        continue;
+      }
+    }
+
+    const am = line.match(articleRegex);
+    if (am) {
+      if (cur) completeIfReady();
+      cur = { article: am[1], designation: normalizeSpaces(am[2] || ""), quantity: 0 };
+      needQtyAfterPrice = false;
+      continue;
+    }
+
+    if (!cur || isJunkLine(line)) continue;
+
+    if (!cur.designation && /^[A-Z0-9][A-Z0-9 .&'/-]+$/.test(line) && !/PCE|\d{13}|\//.test(line)) {
+      cur.designation = line;
+      continue;
+    }
+
+    const priceLine = line.match(/(\d[\d\s]*,\d{2})\s+PCE/i);
+    if (priceLine) {
+      cur.price = parseEuropeanMoney(priceLine[1]);
+      const qtySameLine = line.match(/PCE\s+(\d+)\s+PCE/i);
+      if (qtySameLine) cur.quantity = Number(qtySameLine[1]);
+      const amountSameLine = line.match(/PCE\s+\d+\s+PCE\s+([\d\s]+,\d{2})/i);
+      if (amountSameLine) cur.amount = parseEuropeanMoney(amountSameLine[1]);
+      needQtyAfterPrice = !qtySameLine;
+      continue;
+    }
+
+    if (needQtyAfterPrice && /^\d+$/.test(line)) {
+      cur.quantity = Number(line);
+      needQtyAfterPrice = false;
+      continue;
+    }
+
+    if (!cur.ean && /^\d{13}$/.test(line)) {
+      cur.ean = line;
+      continue;
+    }
+
+    if (cur.ean && !cur.color && line.includes("/")) {
+      const { color, size } = parseColorSize(line);
+      cur.color = color;
+      cur.size = size;
+      cur.originalColorSize = line;
+      completeIfReady();
+    }
+  }
+  if (cur) completeIfReady();
+  return dedupeItems(items);
+}
+
+function dedupeItems(items) {
+  const seen = new Set();
+  const out = [];
+  for (const item of items) {
+    const key = `${item.article}|${item.ean}|${item.quantity}|${item.color}|${item.size}`;
+    if (!seen.has(key)) { seen.add(key); out.push(item); }
+  }
+  return out;
+}
+
+function groupOrders(orders) {
+  const map = new Map();
+  for (const order of orders) {
+    for (const item of order.items) {
+      const key = `${order.depot}|${order.orderNo}|${item.styleRef}|${item.designation}|${item.color}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          id: key,
+          sourceFile: order.fileName,
+          depot: order.depot,
+          orderNo: order.orderNo,
+          deliveryAddress: order.deliveryAddress,
+          deliveryDate: order.deliveryDate,
+          season: order.season,
+          styleRef: item.styleRef,
+          styleName: item.designation,
+          colorName: item.color,
+          items: [],
+          params: learnedParamsForStyle(item.designation, order.depot, orderParamsFromSettings()),
+          cartons: [],
+          autoLabelColor: order.detectedLabelColor || "",
+          labelColor: order.detectedLabelColor || getSettings().colors[order.depot] || getSettings().colors.OTHER,
+          pkl: "",
+          hangers: /\bMOLLYS\s+WOOL\b/i.test(item.designation || "")
+        });
+      }
+      map.get(key).items.push({ ...item });
+    }
+  }
+  const groups = Array.from(map.values());
+  groups.forEach(g => {
+    g.originalItems = g.items.map(it => ({ ...it }));
+    g._manualEdited = false;
+  });
+  return groups.sort((a, b) => `${a.depot}-${a.styleName}-${a.styleRef}-${a.colorName}`.localeCompare(`${b.depot}-${b.styleName}-${b.styleRef}-${b.colorName}`));
+}
+
+function aggregateItems(items) {
+  const map = new Map();
+  for (const it of items) {
+    const key = `${it.ean}|${it.color}|${it.size}|${it.styleRef}|${it.designation}`;
+    if (!map.has(key)) map.set(key, { ...it, quantity: 0 });
+    map.get(key).quantity += Number(it.quantity || 0);
+  }
+  return Array.from(map.values()).sort((a, b) => {
+    const c = a.color.localeCompare(b.color);
+    if (c) return c;
+    return sizeRank(a.size) - sizeRank(b.size);
+  });
+}
+
+function splitQuantityForCartons(qty, capacity, maxExtraUnits = 0) {
+  qty = Math.max(0, Math.floor(Number(qty || 0)));
+  const cap = Math.max(1, Math.floor(Number(capacity || 1)));
+  const extra = Math.max(0, Math.floor(Number(maxExtraUnits || 0)));
+  if (!qty) return [];
+  const normalBoxes = Math.ceil(qty / cap);
+  if (extra > 0 && qty > cap) {
+    const maxCap = cap + extra;
+    const plusBoxes = Math.ceil(qty / maxCap);
+    if (plusBoxes < normalBoxes) {
+      const base = Math.floor(qty / plusBoxes);
+      const rem = qty % plusBoxes;
+      return Array.from({ length: plusBoxes }, (_, i) => base + (i < rem ? 1 : 0));
+    }
+  }
+  const out = [];
+  while (qty >= cap) { out.push(cap); qty -= cap; }
+  if (qty > 0) out.push(qty);
+  return out;
+}
+
+function packingSizeRank(size) {
+  const s = String(size || "").toUpperCase().replace(/^SIZE\s+/, "").trim();
+  // Box-packing order learned from supplied PLs: center sizes first, then edge sizes.
+  const ranks = { M: 0, L: 1, S: 2, XL: 3, XS: 4, XXL: 5, XXS: 6, XXXL: 7 };
+  if (s in ranks) return ranks[s];
+  const n = Number(s.match(/\d+/)?.[0] || 999);
+  return 100 + n;
+}
+
+function cleanPackingEntries(entries) {
+  return entries.filter(e => Number(e.quantity || 0) > 0);
+}
+
+function cloneLineWithQty(entry, qty) {
+  return { ...entry, quantity: qty };
+}
+
+function takeQuantityFromEntry(entry, qty) {
+  const take = Math.min(Number(entry.quantity || 0), Math.max(0, Math.floor(Number(qty || 0))));
+  entry.quantity -= take;
+  return cloneLineWithQty(entry, take);
+}
+
+function cartonizeSmart(items, settings, makeCartonExternal) {
+  const capacity = Math.max(1, Math.floor(Number(settings.capacity || 1)));
+  const maxExtraUnits = Math.max(0, Math.floor(Number(settings.maxExtraUnits !== undefined ? settings.maxExtraUnits : (settings.allowPlusOne ? 1 : 0))));
+  const maxCap = capacity + maxExtraUnits;
+  const nearFullThreshold = Math.max(1, Math.ceil(capacity * 0.85));
+  const aggregated = aggregateItems(items).sort((a, b) => packingSizeRank(a.size) - packingSizeRank(b.size) || b.quantity - a.quantity);
+  const pool = [];
+  const cartons = [];
+  function makeCarton(lines) {
+    if (!lines.length) return;
+    const clean = lines.map(l => ({ ...l, quantity: Math.floor(Number(l.quantity || 0)) })).filter(l => l.quantity > 0);
+    if (clean.length) {
+      makeCartonExternal(clean);
+      cartons.push(clean);
+    }
+  }
+
+  // First split large quantities into almost-full single-size cartons.
+  for (const it of aggregated) {
+    const chunks = splitQuantityForCartons(Number(it.quantity || 0), capacity, maxExtraUnits);
+    for (const chunk of chunks) {
+      if (chunk >= capacity || (maxExtraUnits > 0 && chunk >= nearFullThreshold && chunks.length > 1)) makeCarton([cloneLineWithQty(it, chunk)]);
+      else pool.push(cloneLineWithQty(it, chunk));
+    }
+  }
+
+  let remaining = cleanPackingEntries(pool).sort((a, b) => packingSizeRank(a.size) - packingSizeRank(b.size) || b.quantity - a.quantity);
+  let totalRemaining = remaining.reduce((s, x) => s + Number(x.quantity || 0), 0);
+  if (!totalRemaining) return;
+
+  // If the rest fits in one carton, keep all sizes together.
+  if (totalRemaining <= maxCap) {
+    makeCarton(remaining);
+    return;
+  }
+
+  // Pull very full remainder cartons out before mixing small leftovers.
+  const deferred = [];
+  for (const e of remaining) {
+    if (Number(e.quantity || 0) >= nearFullThreshold) makeCarton([e]);
+    else deferred.push(e);
+  }
+  remaining = cleanPackingEntries(deferred).sort((a, b) => packingSizeRank(a.size) - packingSizeRank(b.size) || b.quantity - a.quantity);
+
+  // Balanced, size-aware cartons:
+  // - keep full / near-full sizes alone
+  // - fill with whole size quantities first
+  // - split only when the gap is meaningful, to avoid tiny/empty last cartons
+  while (remaining.length) {
+    remaining = cleanPackingEntries(remaining).sort((a, b) => packingSizeRank(a.size) - packingSizeRank(b.size) || b.quantity - a.quantity);
+    if (!remaining.length) break;
+    const lines = [];
+    const first = remaining[0];
+    lines.push(takeQuantityFromEntry(first, Math.min(first.quantity, maxCap)));
+    let used = lines.reduce((s, l) => s + l.quantity, 0);
+    let space = maxCap - used;
+
+    while (space > 0) {
+      remaining = cleanPackingEntries(remaining).sort((a, b) => packingSizeRank(a.size) - packingSizeRank(b.size) || b.quantity - a.quantity);
+      if (!remaining.length) break;
+
+      // Prefer splitting the next logical size only for a meaningful gap.
+      const nextPriority = remaining[0];
+      if (nextPriority && nextPriority.quantity > space && space > capacity * 0.40) {
+        lines.push(takeQuantityFromEntry(nextPriority, space));
+        space = 0;
+        break;
+      }
+
+      // Otherwise take the largest whole remainder that fits.
+      let bestIdx = -1;
+      let bestQty = -1;
+      for (let i = 0; i < remaining.length; i++) {
+        const q = Number(remaining[i].quantity || 0);
+        if (q <= space && q > bestQty) { bestQty = q; bestIdx = i; }
+      }
+      if (bestIdx >= 0) {
+        lines.push(takeQuantityFromEntry(remaining[bestIdx], bestQty));
+        used += bestQty;
+        space -= bestQty;
+      } else {
+        // Last resort: split the next priority size when no whole line fits.
+        const e = remaining[0];
+        lines.push(takeQuantityFromEntry(e, space));
+        space = 0;
+      }
+    }
+    makeCarton(lines);
+  }
+}
+
+function cartonize(items, settings) {
+  const capacity = Math.max(1, Number(settings.capacity || 1));
+  const maxExtraUnits = Math.max(0, Math.floor(Number(settings.maxExtraUnits !== undefined ? settings.maxExtraUnits : (settings.allowPlusOne ? 1 : 0))));
+  const aggregated = aggregateItems(items);
+  const cartons = [];
+  const leftovers = [];
+  function makeCarton(lines) {
+    const qty = lines.reduce((sum, l) => sum + l.quantity, 0);
+    const net = round3(qty * Number(settings.pieceKg || 0));
+    const carton = {
+      no: cartons.length + 1,
+      lines,
+      totalQty: qty,
+      isMixed: lines.length > 1,
+      net,
+      gross: round3(net + Number(settings.emptyKg || 0)),
+      volume: calcVolume(settings)
+    };
+    cartons.push(carton);
+  }
+
+  if (settings.mixMode === "smart") {
+    cartonizeSmart(items, settings, makeCarton);
+    return cartons;
+  }
+
+  for (const it of aggregated) {
+    let qty = Number(it.quantity || 0);
+    const normalBoxes = Math.ceil(qty / capacity);
+    const chunks = splitQuantityForCartons(qty, capacity, maxExtraUnits);
+    const optimizedPlusOne = maxExtraUnits > 0 && chunks.length < normalBoxes;
+    for (const chunk of chunks) {
+      if (optimizedPlusOne || chunk >= capacity) makeCarton([{ ...it, quantity: chunk }]);
+      else leftovers.push({ ...it, quantity: chunk });
+    }
+  }
+
+  if (settings.mixMode === "never") {
+    leftovers.forEach(x => makeCarton([x]));
+    return cartons;
+  }
+
+  const remaining = [...leftovers];
+  if (settings.mixMode === "exact") {
+    const byColor = new Map();
+    remaining.forEach((r, idx) => {
+      const k = r.color || "";
+      if (!byColor.has(k)) byColor.set(k, []);
+      byColor.get(k).push({ ...r, _idx: idx });
+    });
+    const used = new Set();
+    for (const group of byColor.values()) {
+      for (let i = 0; i < group.length; i++) {
+        if (used.has(group[i]._idx)) continue;
+        for (let j = i + 1; j < group.length; j++) {
+          if (used.has(group[j]._idx)) continue;
+          if (group[i].quantity + group[j].quantity === capacity || (maxExtraUnits > 0 && group[i].quantity + group[j].quantity >= capacity && group[i].quantity + group[j].quantity <= capacity + maxExtraUnits)) {
+            makeCarton([stripIdx(group[i]), stripIdx(group[j])]);
+            used.add(group[i]._idx); used.add(group[j]._idx);
+            break;
+          }
+        }
+      }
+    }
+    remaining.forEach((r, idx) => { if (!used.has(idx)) makeCarton([r]); });
+    return cartons;
+  }
+
+  // Greedy fill, keeping colors together where possible.
+  remaining.sort((a, b) => a.color.localeCompare(b.color) || b.quantity - a.quantity);
+  const used = new Array(remaining.length).fill(false);
+  for (let i = 0; i < remaining.length; i++) {
+    if (used[i]) continue;
+    let space = capacity + maxExtraUnits;
+    const lines = [];
+    const color = remaining[i].color;
+    for (let j = i; j < remaining.length; j++) {
+      if (used[j] || remaining[j].color !== color) continue;
+      if (remaining[j].quantity <= space) {
+        lines.push(remaining[j]);
+        space -= remaining[j].quantity;
+        used[j] = true;
+      }
+      if (space === 0) break;
+    }
+    makeCarton(lines);
+  }
+  return cartons;
+}
+
+function stripIdx(x) { const y = { ...x }; delete y._idx; return y; }
+function round2(n) { return Math.round((Number(n) + Number.EPSILON) * 100) / 100; }
+function round3(n) { return Math.round((Number(n) + Number.EPSILON) * 1000) / 1000; }
+
+async function analyzeFiles() {
+  if (!state.files.length) return;
+  const token = ++state.analysisToken;
+  resetLog();
+  state.orders = [];
+  state.groups = [];
+  renderModelParamsPanel();
+  setStatus("Анализиране на PDF файлове...", "warn");
+  els.parseButton.disabled = true;
+  els.downloadButton.disabled = true;
+  try {
+    for (const file of state.files) {
+      if (token !== state.analysisToken) return;
+      log(`Reading ${file.name}`);
+      const text = await extractPdfText(file);
+      const header = parseHeader(text, file.name);
+      const detectedLabelColor = await detectPdfLabelColor(file);
+      if (detectedLabelColor) log(`PDF label color indicator: ${detectedLabelColor}`);
+      const items = parseItems(text);
+      const expectedTotal = parsePdfTotalPce(text);
+      const parsedTotal = items.reduce((s, it) => s + Number(it.quantity || 0), 0);
+      if (!items.length) log(`WARNING: No order lines found in ${file.name}`);
+      else {
+        log(`Found ${items.length} order lines in ${file.name} (${header.depot}, PO ${header.orderNo}) — parsed ${parsedTotal} pcs${expectedTotal ? ` / PDF Total ${expectedTotal} pcs` : ""}`);
+        if (expectedTotal && parsedTotal !== expectedTotal) log(`WARNING: Parsed quantity ${parsedTotal} does not match PDF Total PCE ${expectedTotal}. Check source PDF and generated groups.`);
+        const styleTotals = {};
+        items.forEach(it => { styleTotals[it.designation] = (styleTotals[it.designation] || 0) + Number(it.quantity || 0); });
+        log(`Style totals: ${Object.entries(styleTotals).map(([k, v]) => `${k}=${v}`).join("; ")}`);
+      }
+      state.orders.push({ ...header, items, rawText: text, detectedLabelColor, expectedTotal, parsedTotal });
+    }
+    if (token !== state.analysisToken) return;
+    state.groups = groupOrders(state.orders);
+    state.selectedModelKey = firstModelKey(state.groups) || "";
+    state.selectedGroupIndex = state.groups.length ? 0 : -1;
+    const settings = getSettings();
+    let seq = settings.pklStart;
+    for (const g of state.groups) {
+      g.params = { ...orderParamsFromSettings(settings), ...(g.params || {}) };
+      g.cartons = isHangersGroup(g) ? hangerCartonize(g.items, paramsForGroup(g, settings)) : cartonize(g.items, paramsForGroup(g, settings));
+      g.pkl = pklNumber(settings.date, seq++);
+    }
+    renderPreview();
+    renderModelParamsPanel();
+    setStatus(`Анализирани ${state.files.length} PDF файл(а), ${state.groups.length} packing list групи.`, "good");
+    els.downloadButton.disabled = state.groups.length === 0;
+  } catch (err) {
+    console.error(err);
+    log(`ERROR: ${err.message || err}`);
+    setStatus("Неуспешен анализ на един или повече PDF файлове. Виж лога.", "bad");
+  } finally {
+    els.parseButton.disabled = state.files.length === 0;
+  }
+}
+
+function cloneCartonLine(line) {
+  return {
+    ...line,
+    quantity: Math.max(0, Math.floor(Number(line.quantity || 0))),
+    packages: Math.max(1, Math.floor(Number(line.packages || 1)))
+  };
+}
+
+function cloneCarton(carton) {
+  return {
+    no: Number(carton.no || 0),
+    lines: (carton.lines || []).map(cloneCartonLine),
+    totalQty: Math.max(0, Math.floor(Number(carton.totalQty || 0))),
+    isMixed: !!carton.isMixed,
+    net: round3(carton.net || 0),
+    gross: round3(carton.gross || 0),
+    volume: round3(carton.volume || 0),
+    manualNet: !!carton.manualNet,
+    manualGross: !!carton.manualGross,
+    manualVolume: !!carton.manualVolume,
+    manualMixed: carton.manualMixed === undefined ? null : !!carton.manualMixed,
+    hanger: !!carton.hanger
+  };
+}
+
+function ensureManualCartons(group) {
+  if (!group) return [];
+  if (!group._cartonsManual || !Array.isArray(group.manualCartons)) {
+    group.manualCartons = (group.cartons || []).map(cloneCarton);
+    group._cartonsManual = true;
+  }
+  return group.manualCartons;
+}
+
+function templateLineForGroup(group) {
+  const source = aggregateItems(group.items || [])[0] || (group.originalItems || [])[0] || {};
+  return {
+    ...source,
+    ean: source.ean || "",
+    color: source.color || group.colorName || "",
+    size: source.size || "",
+    styleRef: source.styleRef || group.styleRef || "",
+    designation: source.designation || group.styleName || "",
+    quantity: 0,
+    packages: 1
+  };
+}
+
+function normalizeManualCartonsForGroup(group, settings = getSettings()) {
+  const params = paramsForGroup(group, settings);
+  const source = group.manualCartons || group.cartons || [];
+  if (isHangersGroup(group)) {
+    const existing = source[0] || null;
+    const hangerItems = itemsFromCartons(source);
+    return hangerCartonize(hangerItems.length ? hangerItems : (group.items || []), params, existing);
+  }
+  const buckets = new Map();
+  for (const carton of source) {
+    const rawNo = Math.max(1, Math.floor(Number(carton.no || 1)));
+    if (!buckets.has(rawNo)) buckets.set(rawNo, { ...cloneCarton(carton), no: rawNo, lines: [] });
+    const bucket = buckets.get(rawNo);
+    if (carton.manualNet) { bucket.manualNet = true; bucket.net = round3(carton.net || 0); }
+    if (carton.manualGross) { bucket.manualGross = true; bucket.gross = round3(carton.gross || 0); }
+    if (carton.manualVolume) { bucket.manualVolume = true; bucket.volume = round3(carton.volume || 0); }
+    if (carton.manualMixed !== null && carton.manualMixed !== undefined) bucket.manualMixed = !!carton.manualMixed;
+    for (const rawLine of (carton.lines || [])) {
+      const line = cloneCartonLine(rawLine);
+      if (Number(line.quantity || 0) > 0 || buckets.size === 1) bucket.lines.push(line);
+    }
+  }
+  const ordered = Array.from(buckets.entries()).sort((a, b) => a[0] - b[0]).map(([, c]) => c).filter(c => (c.lines || []).length);
+  let seq = 1;
+  for (const carton of ordered) {
+    carton.no = seq++;
+    carton.lines = (carton.lines || []).map(cloneCartonLine).filter(l => Number(l.quantity || 0) > 0 || ordered.length === 1);
+    carton.totalQty = carton.lines.reduce((s, l) => s + Number(l.quantity || 0), 0);
+    const autoNet = round3(carton.totalQty * Number(params.pieceKg || 0));
+    carton.net = carton.manualNet ? round3(carton.net || 0) : autoNet;
+    carton.gross = carton.manualGross ? round3(carton.gross || 0) : round3(carton.net + Number(params.emptyKg || 0));
+    carton.volume = carton.manualVolume ? round3(carton.volume || 0) : calcVolume(params);
+    carton.isMixed = carton.manualMixed === null || carton.manualMixed === undefined ? carton.lines.length > 1 : !!carton.manualMixed;
+  }
+  return ordered.filter(c => c.totalQty > 0 || (c.lines || []).length);
+}
+
+function itemsFromCartons(cartons) {
+  return (cartons || []).flatMap(c => (c.lines || []).map(l => ({ ...l })));
+}
+
+function effectiveItemsForGroup(group) {
+  if (group?._cartonsManual) return itemsFromCartons(group.cartons || group.manualCartons || []);
+  return group?.items || [];
+}
+
+function groupTotalPieces(group) {
+  if (group?._cartonsManual) return (group.cartons || []).reduce((s, c) => s + Number(c.totalQty || 0), 0);
+  return (group?.items || []).reduce((s, i) => s + Number(i.quantity || 0), 0);
+}
+
+function recalcGroups() {
+  if (!state.groups.length) return;
+  const settings = getSettings();
+  let seq = settings.pklStart;
+  for (const g of state.groups) {
+    if (!g._customColor) g.labelColor = g.autoLabelColor || settings.colors[g.depot] || settings.colors.OTHER;
+    if (!g.params) g.params = orderParamsFromSettings(settings);
+    if (isHangersGroup(g)) {
+      const existing = (g.manualCartons && g.manualCartons[0]) || (g.cartons && g.cartons[0]) || null;
+      const hangerItems = g._cartonsManual ? itemsFromCartons(g.manualCartons || g.cartons || []) : g.items;
+      g.cartons = hangerCartonize(hangerItems, paramsForGroup(g, settings), existing);
+      if (g._cartonsManual || g._manualEdited) g.manualCartons = g.cartons.map(cloneCarton);
+    } else if (g._cartonsManual) {
+      g.cartons = normalizeManualCartonsForGroup(g, settings);
+      g.manualCartons = g.cartons.map(cloneCarton);
+    } else {
+      g.cartons = cartonize(g.items, paramsForGroup(g, settings));
+    }
+    g.pkl = pklNumber(settings.date, seq++);
+  }
+}
+
+function refreshCartonsFromSettings() {
+  recalcGroups();
+  renderPreview();
+  renderModelParamsPanel();
+  renderPackingListPreview();
+}
+
+function modelKeyFromGroup(group) {
+  return normalizeSpaces(group?.styleName || "").toUpperCase();
+}
+
+function firstModelKey(groups = state.groups) {
+  const models = getModelSummaries(groups);
+  return models.length ? models[0].key : "";
+}
+
+function getModelSummaries(groups = state.groups) {
+  const map = new Map();
+  for (const g of groups) {
+    const key = modelKeyFromGroup(g);
+    if (!key) continue;
+    if (!map.has(key)) {
+      map.set(key, { key, styleName: g.styleName, groups: [], pieces: 0, colors: new Set(), refs: new Set(), cartons: 0 });
+    }
+    const model = map.get(key);
+    model.groups.push(g);
+    model.pieces += groupTotalPieces(g);
+    model.cartons += (g.cartons || []).length;
+    if (g.colorName) model.colors.add(g.colorName);
+    if (g.styleRef) model.refs.add(g.styleRef);
+  }
+  return Array.from(map.values()).sort((a, b) => a.styleName.localeCompare(b.styleName));
+}
+
+function groupsForModel(key) {
+  return state.groups.filter(g => modelKeyFromGroup(g) === key);
+}
+
+function getParamsForModel(key) {
+  const g = groupsForModel(key).find(x => x.params);
+  return { ...orderParamsFromSettings(), ...(g?.params || {}) };
+}
+
+function setParamsForModel(key, params) {
+  groupsForModel(key).forEach(g => { g.params = { ...params }; });
+}
+
+function ensureSelectedModel() {
+  const models = getModelSummaries();
+  if (!models.length) { state.selectedModelKey = ""; state.selectedGroupIndex = -1; return null; }
+  if (!state.selectedModelKey || !models.some(m => m.key === state.selectedModelKey)) {
+    state.selectedModelKey = models[0].key;
+  }
+  const selected = models.find(m => m.key === state.selectedModelKey) || models[0];
+  const modelGroups = groupsForModel(selected.key);
+  if (!modelGroups.some(g => state.groups.indexOf(g) === state.selectedGroupIndex)) {
+    state.selectedGroupIndex = modelGroups.length ? state.groups.indexOf(modelGroups[0]) : -1;
+  }
+  return selected;
+}
+
+function refreshOneModel(key) {
+  const settings = getSettings();
+  groupsForModel(key).forEach(g => {
+    const hangerItems = g._cartonsManual ? itemsFromCartons(g.manualCartons || g.cartons || []) : g.items;
+    g.cartons = isHangersGroup(g) ? hangerCartonize(hangerItems, paramsForGroup(g, settings), (g.manualCartons && g.manualCartons[0]) || (g.cartons && g.cartons[0]) || null) : cartonize(g.items, paramsForGroup(g, settings));
+  });
+  recalcGroups();
+}
+
+function applyOrderParamsToAllGroups() {
+  if (!state.groups.length) return;
+  const params = orderParamsFromSettings();
+  state.groups.forEach(g => { g.params = { ...params }; });
+  recalcGroups();
+  renderPreview();
+  renderModelParamsPanel();
+  setStatus("Глобалните параметри са приложени към всички модели и цветове.", "good");
+}
+
+function updateModelParam(field, value) {
+  const selected = ensureSelectedModel();
+  if (!selected) return;
+  const p = getParamsForModel(selected.key);
+  if (field === "allowPlusOne") {
+    p[field] = !!value;
+    if (!p[field]) p.maxExtraUnits = 0;
+    else if (!Number(p.maxExtraUnits)) p.maxExtraUnits = 1;
+  } else if (field === "maxExtraUnits") {
+    p[field] = Math.max(0, Math.floor(Number(value || 0)));
+    p.allowPlusOne = p[field] > 0;
+  } else p[field] = Math.max(field === "capacity" ? 1 : 0, Number(value || 0));
+  setParamsForModel(selected.key, p);
+  refreshOneModel(selected.key);
+  renderPreview();
+  renderModelParamsPanel();
+}
+
+function renderModelParamsPanel() {
+  if (!els.modelParams) return;
+  if (!state.groups.length) {
+    els.modelParams.innerHTML = state.mode === "manualPl" ? "Качи готов packing list, за да видиш моделите и labels." : "Анализирай PDF файлове, за да зададеш параметри по модел.";
+    renderPackingListPreview();
+    return;
+  }
+  const models = getModelSummaries();
+  const selected = ensureSelectedModel();
+  if (!selected) {
+    els.modelParams.innerHTML = state.mode === "manualPl" ? "Качи готов packing list, за да видиш моделите и labels." : "Анализирай PDF файлове, за да зададеш параметри по модел.";
+    renderPackingListPreview();
+    return;
+  }
+  const p = getParamsForModel(selected.key);
+  const selectedGroups = groupsForModel(selected.key).sort((a, b) => (a.colorName || "").localeCompare(b.colorName || ""));
+  const refText = Array.from(selected.refs).join(", ");
+  const html = [];
+  html.push(`<div class="btns"><button id="applyParamsAll" class="secondary" type="button">Приложи глобалните параметри към всички модели</button><button id="downloadSelectedModel" type="button">${state.mode === "manualPl" ? "Изтегли labels за модела ZIP" : "Изтегли избрания модел ZIP"}</button></div>`);
+  html.push(`<label class="setting"><span>Модел</span><select id="styleModelSelect">`);
+  models.forEach(m => {
+    const label = `${m.styleName} — ${m.pieces} бр. — ${m.colors.size} цвят${m.colors.size === 1 ? "" : "а"}`;
+    html.push(`<option value="${escapeHtml(m.key)}" ${m.key === selected.key ? "selected" : ""}>${escapeHtml(label)}</option>`);
+  });
+  html.push(`</select></label>`);
+  html.push(`<div class="params-muted" style="margin-bottom:10px;">Редакцията на <strong>${escapeHtml(selected.styleName)}</strong> се прилага за всички цветове и packing lists на този модел. Style refs: ${escapeHtml(refText || "-")}</div>`);
+  html.push(`<div class="model-param-grid">`);
+  html.push(`<label class="setting"><span>Макс. бройки в кашон</span><input type="number" min="1" step="1" value="${p.capacity}" data-model-field="capacity"></label>`);
+  html.push(`<label class="checkbox-setting model-check"><input type="checkbox" ${p.allowPlusOne ? "checked" : ""} data-model-field="allowPlusOne"> Разреши +</label>`);
+  html.push(`<label class="setting"><span>Допълнителни бройки</span><input type="number" min="0" step="1" value="${Number(p.maxExtraUnits || (p.allowPlusOne ? 1 : 0))}" data-model-field="maxExtraUnits"></label>`);
+  html.push(`<label class="setting"><span>Кашон L cm</span><input type="number" min="0" step="0.1" value="${p.boxL}" data-model-field="boxL"></label>`);
+  html.push(`<label class="setting"><span>Кашон W cm</span><input type="number" min="0" step="0.1" value="${p.boxW}" data-model-field="boxW"></label>`);
+  html.push(`<label class="setting"><span>Кашон H cm</span><input type="number" min="0" step="0.1" value="${p.boxH}" data-model-field="boxH"></label>`);
+  html.push(`<label class="setting"><span>Празен кашон kg</span><input type="number" min="0" step="0.01" value="${p.emptyKg}" data-model-field="emptyKg"></label>`);
+  html.push(`<label class="setting"><span>1 бр. kg</span><input type="number" min="0" step="0.001" value="${p.pieceKg}" data-model-field="pieceKg"></label>`);
+  html.push(`<label class="setting"><span>Обем m³</span><input type="text" value="${calcVolume(p).toFixed(3)}" readonly></label>`);
+  html.push(`</div>`);
+  html.push(`<h4 style="margin:12px 0 6px;font-size:13px;">Цветове за избрания модел</h4>`);
+  html.push(`<div class="table-wrap" style="max-height:260px;"><table class="params-table"><thead><tr>
+    <th>Hangers</th><th>Цвят</th><th>Style ref</th><th class="num">Бройки</th><th class="num">Кашони</th><th>PKL No.</th><th>Сваляне</th>
+  </tr></thead><tbody>`);
+  selectedGroups.forEach(g => {
+    const groupIndex = state.groups.indexOf(g);
+    const pieces = groupTotalPieces(g);
+    const selectedClass = groupIndex === state.selectedGroupIndex ? " selected-color-row" : "";
+    html.push(`<tr class="clickable-color-row${selectedClass}" data-select-group="${groupIndex}" title="Кликни, за да видиш live preview">
+      <td><label class="checkbox-setting" style="justify-content:center;"><input type="checkbox" ${g.hangers ? "checked" : ""} data-hangers-index="${groupIndex}"> Hangers</label></td>
+      <td><strong>${escapeHtml(g.colorName || "")}</strong></td>
+      <td>${escapeHtml(g.styleRef || "")}</td>
+      <td class="num">${pieces}</td>
+      <td class="num">${g.cartons.length}</td>
+      <td>${escapeHtml(g.pkl || "")}</td>
+      <td><div class="action-row">${state.mode === "manualPl" ? `<button class="secondary tiny" type="button" data-select-group="${groupIndex}">Preview</button><button class="secondary tiny" type="button" data-download-group="${groupIndex}" data-kind="labels">Labels</button><button class="tiny" type="button" data-download-group="${groupIndex}" data-kind="zip">ZIP Labels</button>` : `<button class="secondary tiny" type="button" data-select-group="${groupIndex}">Preview</button><button class="secondary tiny" type="button" data-download-group="${groupIndex}" data-kind="pl">PL</button><button class="secondary tiny" type="button" data-download-group="${groupIndex}" data-kind="labels">Labels</button><button class="tiny" type="button" data-download-group="${groupIndex}" data-kind="zip">ZIP</button>`}</div></td>
+    </tr>`);
+  });
+  html.push(`</tbody></table></div>`);
+  els.modelParams.innerHTML = html.join("");
+  const apply = document.getElementById("applyParamsAll");
+  if (apply) apply.addEventListener("click", applyOrderParamsToAllGroups);
+  const downloadModelBtn = document.getElementById("downloadSelectedModel");
+  if (downloadModelBtn) downloadModelBtn.addEventListener("click", () => downloadModelZip(selected.key));
+  const select = document.getElementById("styleModelSelect");
+  if (select) select.addEventListener("change", ev => {
+    state.selectedModelKey = ev.target.value;
+    const modelGroups = groupsForModel(state.selectedModelKey);
+    state.selectedGroupIndex = modelGroups.length ? state.groups.indexOf(modelGroups[0]) : -1;
+    renderModelParamsPanel();
+    renderPackingListPreview();
+  });
+  els.modelParams.querySelectorAll("[data-select-group]").forEach(node => {
+    node.addEventListener("click", ev => {
+      if (ev.currentTarget.tagName !== "BUTTON" && ev.target.closest("button")) return;
+      const idx = Number(ev.currentTarget.dataset.selectGroup);
+      if (!Number.isFinite(idx) || !state.groups[idx]) return;
+      state.selectedGroupIndex = idx;
+      state.selectedModelKey = modelKeyFromGroup(state.groups[idx]);
+      renderModelParamsPanel();
+      renderPackingListPreview();
+    });
+  });
+  els.modelParams.querySelectorAll("button[data-download-group]").forEach(btn => {
+    btn.addEventListener("click", ev => downloadGroupOutput(Number(ev.currentTarget.dataset.downloadGroup), ev.currentTarget.dataset.kind));
+  });
+  els.modelParams.querySelectorAll("input[data-model-field]").forEach(input => {
+    input.addEventListener("change", ev => {
+      const field = ev.target.dataset.modelField;
+      const value = ev.target.type === "checkbox" ? ev.target.checked : ev.target.value;
+      updateModelParam(field, value);
+    });
+  });
+  els.modelParams.querySelectorAll("input[data-hangers-index]").forEach(input => {
+    input.addEventListener("click", ev => ev.stopPropagation());
+    input.addEventListener("change", ev => toggleGroupHangers(Number(ev.target.dataset.hangersIndex), ev.target.checked));
+  });
+  renderPackingListPreview();
+}
+
+function toggleGroupHangers(groupIndex, checked) {
+  const group = state.groups[groupIndex];
+  if (!group) return;
+  group.hangers = !!checked;
+  group._cartonsManual = false;
+  group.manualCartons = null;
+  recalcGroups();
+  state.selectedGroupIndex = groupIndex;
+  state.selectedModelKey = modelKeyFromGroup(group);
+  renderModelParamsPanel();
+  renderPreview();
+  setStatus(checked ? "Hangers mode е включен: един hanger packing list / label за избрания цвят." : "Hangers mode е изключен: кашоните са преизчислени стандартно.", "good");
+}
+
+
+function itemEditKey(it) {
+  return encodeURIComponent([it.ean || "", it.color || "", it.size || "", it.styleRef || "", it.designation || ""].join("§"));
+}
+
+function parseItemEditKey(key) {
+  const parts = decodeURIComponent(String(key || "")).split("§");
+  return { ean: parts[0] || "", color: parts[1] || "", size: parts[2] || "", styleRef: parts[3] || "", designation: parts[4] || "" };
+}
+
+function sameEditableItem(it, ref) {
+  return String(it.ean || "") === ref.ean &&
+         String(it.color || "") === ref.color &&
+         String(it.size || "") === ref.size &&
+         String(it.styleRef || "") === ref.styleRef &&
+         String(it.designation || "") === ref.designation;
+}
+
+function updateGroupSizeQuantity(groupIndex, key, qty) {
+  const group = state.groups[groupIndex];
+  if (!group) return;
+  const ref = parseItemEditKey(key);
+  const newQty = Math.max(0, Math.floor(Number(qty || 0)));
+  let found = false;
+  let firstSet = false;
+  for (const it of group.items) {
+    if (sameEditableItem(it, ref)) {
+      found = true;
+      if (!firstSet) { it.quantity = newQty; firstSet = true; }
+      else it.quantity = 0;
+    }
+  }
+  if (!found && newQty > 0 && Array.isArray(group.originalItems)) {
+    const src = group.originalItems.find(it => sameEditableItem(it, ref));
+    if (src) group.items.push({ ...src, quantity: newQty });
+  }
+  group.items = group.items.filter(it => Number(it.quantity || 0) > 0);
+  group._manualEdited = true;
+  group._cartonsManual = false;
+  group.manualCartons = null;
+  recalcGroups();
+  state.selectedGroupIndex = groupIndex;
+  state.selectedModelKey = modelKeyFromGroup(group);
+  renderModelParamsPanel();
+  renderPreview();
+  setStatus("Количествата са обновени и кашоните са преизчислени.", "good");
+}
+
+function resetGroupQuantities(groupIndex) {
+  const group = state.groups[groupIndex];
+  if (!group || !Array.isArray(group.originalItems)) return;
+  group.items = group.originalItems.map(it => ({ ...it }));
+  group._manualEdited = false;
+  group._cartonsManual = false;
+  group.manualCartons = null;
+  recalcGroups();
+  state.selectedGroupIndex = groupIndex;
+  state.selectedModelKey = modelKeyFromGroup(group);
+  renderModelParamsPanel();
+  renderPreview();
+  setStatus("Количествата са върнати към PDF поръчката и кашоните са преизчислени.", "good");
+}
+
+function sizeSummaryText(items) {
+  const aggregated = aggregateItems(items);
+  return aggregated.map(i => `${i.size}: ${i.quantity}`).join(" · ");
+}
+
+
+function formatPreviewNumber(n, decimals = 3) {
+  const num = Number(n || 0);
+  return Number.isFinite(num) ? num.toFixed(decimals) : "0.000";
+}
+
+function labelMaxPrintHeightCmFromBoxHeight(h) {
+  const height = Number(h || 0);
+  if (!height || height <= 0) return 0;
+  if (height <= 10.5) return 10;
+  if (height < 30) return Math.max(6, round2(height - 1));
+  return 0;
+}
+
+function labelScaleDescriptionFromHeight(h) {
+  const height = Number(h || 0);
+  if (!height || height <= 0) return "Auto by volume / standard A4";
+  const maxH = labelMaxPrintHeightCmFromBoxHeight(height);
+  return maxH ? `Label max print height: ${maxH} cm` : "Standard full A4 label";
+}
+
+function updatePreviewGroupParam(input) {
+  const group = state.groups[Number(input.dataset.groupIndex)];
+  if (!group) return;
+  const field = input.dataset.previewParam;
+  const current = paramsForGroup(group);
+  const p = { ...current };
+  p[field] = Math.max(0, Number(input.value || 0));
+  group.params = { ...(group.params || {}), ...p };
+
+  if (isHangersGroup(group)) {
+    const hangerItems = group._cartonsManual ? itemsFromCartons(group.manualCartons || group.cartons || []) : group.items;
+    group.cartons = hangerCartonize(hangerItems, paramsForGroup(group), (group.manualCartons && group.manualCartons[0]) || (group.cartons && group.cartons[0]) || null);
+    group.manualCartons = group.cartons.map(cloneCarton);
+  } else if (group._cartonsManual) {
+    group.manualCartons = (group.manualCartons || group.cartons || []).map(cloneCarton);
+    group.cartons = normalizeManualCartonsForGroup(group);
+    group.manualCartons = group.cartons.map(cloneCarton);
+  } else {
+    group.cartons = cartonize(group.items, paramsForGroup(group));
+  }
+  state.selectedGroupIndex = state.groups.indexOf(group);
+  state.selectedModelKey = modelKeyFromGroup(group);
+  renderModelParamsPanel();
+  renderPreview();
+  setStatus("Параметрите за label scale са обновени.", "good");
+}
+
+function applyPreviewVolumeToCartons(groupIndex) {
+  const group = state.groups[Number(groupIndex)];
+  if (!group) return;
+  const params = paramsForGroup(group);
+  const newVolume = calcVolume(params);
+  const manual = ensureManualCartons(group);
+  manual.forEach(carton => {
+    carton.volume = newVolume;
+    carton.manualVolume = true;
+  });
+  group.manualCartons = manual;
+  commitManualCartons(group, false);
+  setStatus(`VOLUME е обновен по размера на кашона: ${newVolume.toFixed(3)} m³.`, "good");
+}
+
+function commitManualCartons(group, keepStatus = true) {
+  if (!group) return;
+  group._cartonsManual = true;
+  group._manualEdited = true;
+  const settings = getSettings();
+  group.cartons = normalizeManualCartonsForGroup(group, settings);
+  group.manualCartons = group.cartons.map(cloneCarton);
+  recalcGroups();
+  state.selectedGroupIndex = state.groups.indexOf(group);
+  state.selectedModelKey = modelKeyFromGroup(group);
+  renderModelParamsPanel();
+  renderPreview();
+  if (keepStatus) setStatus("Ръчната редакция на packing list-а е приложена.", "good");
+}
+
+function updateManualPackingCell(input) {
+  const group = state.groups[Number(input.dataset.groupIndex)];
+  if (!group) return;
+  const cartonIndex = Number(input.dataset.cartonIndex);
+  const lineIndex = Number(input.dataset.lineIndex);
+  const field = input.dataset.packField;
+  const manual = ensureManualCartons(group);
+  let carton = manual[cartonIndex];
+  if (!carton) return;
+  let line = carton.lines[lineIndex];
+  if (!line && field !== "mixed") return;
+  if (field === "from" || field === "to") {
+    const targetNo = Math.max(1, Math.floor(Number(input.value || carton.no || 1)));
+    if (targetNo !== carton.no && line) {
+      carton.lines.splice(lineIndex, 1);
+      let target = manual.find(c => Number(c.no) === targetNo);
+      if (!target) {
+        target = { ...cloneCarton(carton), no: targetNo, lines: [], manualNet: false, manualGross: false, manualVolume: false, manualMixed: null };
+        manual.push(target);
+      }
+      target.lines.push(line);
+    }
+  } else if (field === "ean") {
+    line.ean = normalizeSpaces(input.value);
+  } else if (field === "packages") {
+    line.packages = Math.max(1, Math.floor(Number(input.value || 1)));
+  } else if (field === "quantity") {
+    line.quantity = Math.max(0, Math.floor(Number(input.value || 0)));
+    carton.manualNet = false;
+    carton.manualGross = false;
+  } else if (field === "net") {
+    carton.net = round3(input.value || 0);
+    carton.manualNet = true;
+    if (!carton.manualGross) carton.gross = isHangersGroup(group) ? round3(carton.net || 0) : round3(carton.net + Number(paramsForGroup(group).emptyKg || 0));
+  } else if (field === "gross") {
+    carton.gross = round3(input.value || 0);
+    carton.manualGross = true;
+  } else if (field === "volume") {
+    carton.volume = round3(input.value || 0);
+    carton.manualVolume = true;
+  } else if (field === "colorSize") {
+    const parsed = parseColorSize(input.value || "");
+    line.color = parsed.color || group.colorName || "";
+    line.size = parsed.size || "";
+  } else if (field === "mixed") {
+    carton.manualMixed = !!input.checked;
+  }
+  group.manualCartons = manual.filter(c => (c.lines || []).length);
+  commitManualCartons(group, true);
+}
+
+function addManualCarton(groupIndex) {
+  const group = state.groups[groupIndex];
+  if (!group) return;
+  if (isHangersGroup(group)) { setStatus("Hangers mode използва един общ hanger/carton. Добави ред към него, не нов кашон.", "warn"); return; }
+  const manual = ensureManualCartons(group);
+  const maxNo = manual.reduce((m, c) => Math.max(m, Number(c.no || 0)), 0);
+  const params = paramsForGroup(group);
+  const line = templateLineForGroup(group);
+  line.quantity = Math.max(1, Math.min(1, Number(params.capacity || 1)));
+  manual.push({ no: maxNo + 1, lines: [line], totalQty: line.quantity, isMixed: false, net: 0, gross: 0, volume: 0, manualNet: false, manualGross: false, manualVolume: false, manualMixed: null });
+  group.manualCartons = manual;
+  commitManualCartons(group, true);
+}
+
+function addManualLine(groupIndex, cartonIndex) {
+  const group = state.groups[groupIndex];
+  if (!group) return;
+  const manual = ensureManualCartons(group);
+  if (isHangersGroup(group) && !manual.length) manual.push({ no: 1, lines: [], totalQty: 0, isMixed: false, net: 0, gross: 0, volume: calcVolume(paramsForGroup(group)), manualNet: false, manualGross: false, manualVolume: false, manualMixed: false, hanger: true });
+  const carton = manual[isHangersGroup(group) ? 0 : cartonIndex];
+  if (!carton) return;
+  const line = templateLineForGroup(group);
+  line.quantity = 1;
+  carton.lines.push(line);
+  carton.manualMixed = isHangersGroup(group) ? false : true;
+  carton.manualNet = false;
+  carton.manualGross = false;
+  group.manualCartons = manual;
+  commitManualCartons(group, true);
+}
+
+function deleteManualLine(groupIndex, cartonIndex, lineIndex) {
+  const group = state.groups[groupIndex];
+  if (!group) return;
+  const manual = ensureManualCartons(group);
+  const carton = manual[isHangersGroup(group) ? 0 : cartonIndex];
+  if (!carton) return;
+  carton.lines.splice(lineIndex, 1);
+  group.manualCartons = manual.filter(c => (c.lines || []).length);
+  commitManualCartons(group, true);
+}
+
+function resetManualPacking(groupIndex) {
+  const group = state.groups[groupIndex];
+  if (!group) return;
+  group._cartonsManual = false;
+  group.manualCartons = null;
+  group._manualEdited = false;
+  recalcGroups();
+  state.selectedGroupIndex = groupIndex;
+  state.selectedModelKey = modelKeyFromGroup(group);
+  renderModelParamsPanel();
+  renderPreview();
+  setStatus("Packing list-ът е преизчислен автоматично от текущите количества и параметри.", "good");
+}
+
+function renderPackingListPreview() {
+  if (!els.packingListPreview) return;
+  if (!state.groups.length) {
+    els.packingListPreview.innerHTML = `<div class="empty">Кликни цвят от избрания модел, за да видиш packing list preview.</div>`;
+    return;
+  }
+  let group = state.groups[state.selectedGroupIndex];
+  if (!group) {
+    const selected = ensureSelectedModel();
+    const modelGroups = selected ? groupsForModel(selected.key) : [];
+    group = modelGroups[0] || state.groups[0];
+    state.selectedGroupIndex = group ? state.groups.indexOf(group) : -1;
+  }
+  if (!group) {
+    els.packingListPreview.innerHTML = `<div class="empty">Няма избран packing list.</div>`;
+    return;
+  }
+  const settings = getSettings();
+  const groupIndex = state.groups.indexOf(group);
+  const aggregated = aggregateItems(effectiveItemsForGroup(group));
+  const sizeSummary = aggregated.map(i => `<span class="size-chip">${escapeHtml(i.size)}: ${Number(i.quantity || 0)}</span>`).join("");
+  const sizeEditRows = aggregateItems(group.items).map(i => `
+    <label class="size-edit-item">
+      <span>${escapeHtml(`${i.color || group.colorName || ""}/${i.size || ""}`)} · ${escapeHtml(i.ean || "")}</span>
+      <input type="number" min="0" step="1" value="${Number(i.quantity || 0)}" data-size-edit="${itemEditKey(i)}" data-group-index="${groupIndex}">
+    </label>`).join("");
+  const totalQty = group.cartons.reduce((s, c) => s + Number(c.totalQty || 0), 0);
+  const totalNet = group.cartons.reduce((s, c) => s + Number(c.net || 0), 0);
+  const totalGross = group.cartons.reduce((s, c) => s + Number(c.gross || 0), 0);
+  const totalVolume = group.cartons.reduce((s, c) => s + Number(c.volume || 0), 0);
+  const rows = [];
+  group.cartons.forEach((carton, cartonIndex) => {
+    carton.lines.forEach((line, lineIndex) => {
+      const colorSize = `${line.color || group.colorName || ""}/${line.size || ""}`;
+      const rowClass = (!isHangersGroup(group) && carton.isMixed) ? "mixed" : (group._cartonsManual ? "manual" : "");
+      rows.push(`<tr class="${rowClass}" data-carton-index="${cartonIndex}" data-line-index="${lineIndex}">
+        <td><input class="cell-input" type="number" min="1" step="1" value="${carton.no}" data-pack-field="from" data-group-index="${groupIndex}" data-carton-index="${cartonIndex}" data-line-index="${lineIndex}"></td>
+        <td><input class="cell-input" type="number" min="1" step="1" value="${carton.no}" data-pack-field="to" data-group-index="${groupIndex}" data-carton-index="${cartonIndex}" data-line-index="${lineIndex}"></td>
+        <td><input class="cell-input ref" type="text" value="${escapeHtml(line.ean || "")}" data-pack-field="ean" data-group-index="${groupIndex}" data-carton-index="${cartonIndex}" data-line-index="${lineIndex}"></td>
+        <td><input class="cell-input" type="number" min="1" step="1" value="${Number(line.packages || 1)}" data-pack-field="packages" data-group-index="${groupIndex}" data-carton-index="${cartonIndex}" data-line-index="${lineIndex}"></td>
+        <td><input class="cell-input" type="number" min="0" step="1" value="${Number(line.quantity || 0)}" data-pack-field="quantity" data-group-index="${groupIndex}" data-carton-index="${cartonIndex}" data-line-index="${lineIndex}"></td>
+        <td><input class="cell-input" type="number" min="0" step="0.001" value="${formatPreviewNumber(carton.net)}" data-pack-field="net" data-group-index="${groupIndex}" data-carton-index="${cartonIndex}" data-line-index="${lineIndex}"></td>
+        <td><input class="cell-input" type="number" min="0" step="0.001" value="${formatPreviewNumber(carton.gross)}" data-pack-field="gross" data-group-index="${groupIndex}" data-carton-index="${cartonIndex}" data-line-index="${lineIndex}"></td>
+        <td><input class="cell-input" type="number" min="0" step="0.001" value="${formatPreviewNumber(carton.volume)}" data-pack-field="volume" data-group-index="${groupIndex}" data-carton-index="${cartonIndex}" data-line-index="${lineIndex}"></td>
+        <td><input class="cell-input colorsize" type="text" value="${escapeHtml(colorSize)}" data-pack-field="colorSize" data-group-index="${groupIndex}" data-carton-index="${cartonIndex}" data-line-index="${lineIndex}"></td>
+        <td class="mixed-check"><label class="small"><input type="checkbox" ${(!isHangersGroup(group) && carton.isMixed) ? "checked" : ""} ${isHangersGroup(group) ? "disabled" : ""} data-pack-field="mixed" data-group-index="${groupIndex}" data-carton-index="${cartonIndex}" data-line-index="${lineIndex}"> mixed</label></td>
+        <td class="actions"><button class="secondary tiny" type="button" data-add-line="${cartonIndex}" data-group-index="${groupIndex}">+ ред</button> <button class="secondary tiny" type="button" data-delete-line="${lineIndex}" data-carton-index="${cartonIndex}" data-group-index="${groupIndex}">×</button></td>
+      </tr>`);
+    });
+  });
+  if (!rows.length) rows.push(`<tr><td colspan="11" class="small">Няма кашони за показване.</td></tr>`);
+  const mixedNote = (!isHangersGroup(group) && group.cartons.some(c => c.isMixed)) ? `<div class="pl-preview-note">Жълтите редове са mixed cartons — един кашон съдържа повече от един размер или е маркиран като mixed.</div>` : "";
+  const manualNote = isHangersGroup(group) ? `<span class="pill" style="background:#dcfce7;color:#166534;">Hangers: един общ hanger/carton</span>` : (group._cartonsManual ? `<span class="pill" style="background:#e0f2fe;color:#075985;">Manual packing</span>` : (group._manualEdited ? `<span class="pill" style="background:#fff7e6;color:#8a5400;">Manual quantity edit</span>` : `<span class="pill">PDF quantities</span>`));
+  const previewParams = paramsForGroup(group);
+  const previewScaleControls = state.mode === "manualPl" ? `
+    <details class="collapsible" open style="margin:10px 0;">
+      <summary>Размер на кашона / label scale за този PL</summary>
+      <div style="padding:0 12px 12px;">
+        <div class="model-param-grid">
+          <label class="setting"><span>Кашон L cm</span><input type="number" min="0" step="0.1" value="${previewParams.boxL}" data-preview-param="boxL" data-group-index="${groupIndex}"></label>
+          <label class="setting"><span>Кашон W cm</span><input type="number" min="0" step="0.1" value="${previewParams.boxW}" data-preview-param="boxW" data-group-index="${groupIndex}"></label>
+          <label class="setting"><span>Кашон H cm</span><input type="number" min="0" step="0.1" value="${previewParams.boxH}" data-preview-param="boxH" data-group-index="${groupIndex}"></label>
+          <label class="setting"><span>Label scale</span><input type="text" readonly value="${escapeHtml(labelScaleDescriptionFromHeight(previewParams.boxH))}"></label>
+        </div>
+        <div class="preview-tools">
+          <button class="secondary tiny" type="button" data-apply-preview-volume="${groupIndex}">Обнови VOLUME по L×W×H</button>
+          <span class="preview-edit-note">Използва се за labels от готов PL. H≤10 → 10 cm label; H&lt;30 → H-1 cm; H≥30 → standard A4. VOLUME се променя само ако натиснеш бутона.</span>
+        </div>
+      </div>
+    </details>` : "";
+  els.packingListPreview.innerHTML = `
+    <div class="pl-preview-head">
+      <div><strong>Дата</strong>${escapeHtml(formatDateDisplay(settings.date))}</div>
+      <div><strong>Depot</strong>${escapeHtml(group.depot)}</div>
+      <div><strong>PO Number</strong>${escapeHtml(group.orderNo)}</div>
+      <div><strong>PKL No.</strong>${escapeHtml(group.pkl || "")}</div>
+      <div><strong>Модел</strong>${escapeHtml(group.styleName)}</div>
+      <div><strong>Style ref</strong>${escapeHtml(group.styleRef)}</div>
+      <div><strong>Цвят</strong>${escapeHtml(group.colorName || "")}</div>
+      <div><strong>Кашони / бройки</strong>${group.cartons.length} / ${totalQty}</div>
+    </div>
+    ${previewScaleControls}
+    <div class="size-summary-panel">
+      <div class="size-summary-line"><strong>Размери:</strong> ${sizeSummary || `<span class="small">няма количества</span>`}</div>
+      <details class="collapsible" style="margin:8px 0 0;">
+        <summary>Редакция на количествата по размер — преизчислява кашоните автоматично</summary>
+        <div style="padding:0 12px 12px;">
+          <div class="size-edit-grid">${sizeEditRows || `<div class="small">Няма размери за редакция.</div>`}</div>
+          <div class="preview-tools">
+            <button class="secondary tiny" type="button" data-reset-group="${groupIndex}">Върни количествата от PDF</button>
+            <span class="preview-edit-note">Тази секция променя общите бройки по размер и генерира кашоните наново. Директните ръчни промени по кашоните ще бъдат занулени.</span>
+          </div>
+        </div>
+      </details>
+    </div>
+    <div class="pl-preview-toolbar">
+      ${manualNote}
+      ${isHangersGroup(group) ? "" : `<button class="secondary tiny" type="button" data-add-carton="${groupIndex}">+ Добави кашон</button>`}
+      <button class="secondary tiny" type="button" data-reset-manual-packing="${groupIndex}">Преизчисли автоматично</button>
+      <span class="preview-edit-note">${isHangersGroup(group) ? "Hangers: всички размери са в един общ hanger/carton. NET/GROSS/VOLUME са общи стойности и се повтарят на редовете, както в hanger PL." : "Редактирай директно клетките. Quantity променя бройките в кашона; NET/GROSS/VOLUME могат да се override-нат ръчно; FROM/TO мести реда към друг кашон; + ред прави mixed carton."}</span>
+    </div>
+    ${mixedNote}
+    <table class="pl-preview-table">
+      <thead><tr><th>FROM#</th><th>TO#</th><th>REFERENCE</th><th>#PACKAGES</th><th>QUANTITY (PC)</th><th>NET WT.(KG)</th><th>GROSS WT.(KG)</th><th>VOLUME(m³)</th><th>COLOR./SIZE</th><th>MIXED</th><th>EDIT</th></tr></thead>
+      <tbody>
+        ${rows.join("")}
+        <tr class="total"><td></td><td></td><td style="text-align:right;">TOTAL:</td><td class="under">${group.cartons.length}</td><td class="under">${totalQty}</td><td class="under">${formatPreviewNumber(totalNet)}</td><td class="under">${formatPreviewNumber(totalGross)}</td><td class="under">${formatPreviewNumber(totalVolume)}</td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>`;
+  els.packingListPreview.querySelectorAll("input[data-size-edit]").forEach(input => {
+    input.addEventListener("change", ev => updateGroupSizeQuantity(Number(ev.target.dataset.groupIndex), ev.target.dataset.sizeEdit, ev.target.value));
+    input.addEventListener("keydown", ev => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        updateGroupSizeQuantity(Number(ev.target.dataset.groupIndex), ev.target.dataset.sizeEdit, ev.target.value);
+      }
+    });
+  });
+  els.packingListPreview.querySelectorAll("input[data-pack-field]").forEach(input => {
+    input.addEventListener("change", ev => updateManualPackingCell(ev.target));
+    input.addEventListener("keydown", ev => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        updateManualPackingCell(ev.target);
+      }
+    });
+  });
+  els.packingListPreview.querySelectorAll("input[data-preview-param]").forEach(input => {
+    input.addEventListener("change", ev => updatePreviewGroupParam(ev.target));
+    input.addEventListener("keydown", ev => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        updatePreviewGroupParam(ev.target);
+      }
+    });
+  });
+  els.packingListPreview.querySelectorAll("button[data-apply-preview-volume]").forEach(btn => btn.addEventListener("click", ev => applyPreviewVolumeToCartons(Number(ev.currentTarget.dataset.applyPreviewVolume))));
+  els.packingListPreview.querySelectorAll("button[data-add-carton]").forEach(btn => btn.addEventListener("click", ev => addManualCarton(Number(ev.currentTarget.dataset.addCarton))));
+  els.packingListPreview.querySelectorAll("button[data-add-line]").forEach(btn => btn.addEventListener("click", ev => addManualLine(Number(ev.currentTarget.dataset.groupIndex), Number(ev.currentTarget.dataset.addLine))));
+  els.packingListPreview.querySelectorAll("button[data-delete-line]").forEach(btn => btn.addEventListener("click", ev => deleteManualLine(Number(ev.currentTarget.dataset.groupIndex), Number(ev.currentTarget.dataset.cartonIndex), Number(ev.currentTarget.dataset.deleteLine))));
+  const resetBtn = els.packingListPreview.querySelector("button[data-reset-group]");
+  if (resetBtn) resetBtn.addEventListener("click", ev => resetGroupQuantities(Number(ev.currentTarget.dataset.resetGroup)));
+  const resetManualBtn = els.packingListPreview.querySelector("button[data-reset-manual-packing]");
+  if (resetManualBtn) resetManualBtn.addEventListener("click", ev => resetManualPacking(Number(ev.currentTarget.dataset.resetManualPacking)));
+}
+
+function renderPreview() {
+  const totalItems = state.orders.reduce((s, o) => s + o.items.length, 0);
+  const totalPieces = state.groups.reduce((s, g) => s + groupTotalPieces(g), 0);
+  const totalCartons = state.groups.reduce((s, g) => s + g.cartons.length, 0);
+  els.summary.textContent = `${state.orders.length} PDF поръчка/и, ${totalItems} реда, ${state.groups.length} packing list групи, ${totalPieces} бр., ${totalCartons} label-а.`;
+  if (!state.groups.length) {
+    els.preview.innerHTML = `<div class="empty">Няма намерени packing list групи.</div>`;
+    renderPackingListPreview();
+    return;
+  }
+  const html = [`<table><thead><tr>
+    <th>Hangers</th><th>Depot</th><th>PO</th><th>Модел</th><th>Style ref</th><th>Цвят</th><th>Размери</th><th class="num">Бройки</th><th class="num">Кашони</th><th>PKL No.</th><th>Label цвят</th>
+    </tr></thead><tbody>`];
+  state.groups.forEach((g, idx) => {
+    const pieces = groupTotalPieces(g);
+    const colorSizes = aggregateItems(effectiveItemsForGroup(g)).map(i => `${i.size}: ${i.quantity}`).join("; ");
+    html.push(`<tr>
+      <td><label class="checkbox-setting" style="justify-content:center;"><input type="checkbox" ${g.hangers ? "checked" : ""} data-hangers-index="${idx}"> Hangers</label></td>
+      <td><span class="pill">${escapeHtml(g.depot)}</span></td>
+      <td>${escapeHtml(g.orderNo)}</td>
+      <td><strong>${escapeHtml(g.styleName)}</strong><div class="small">${escapeHtml(g.sourceFile)}</div></td>
+      <td>${escapeHtml(g.styleRef)}</td>
+      <td>${escapeHtml(g.colorName || "")}</td>
+      <td>${escapeHtml(colorSizes)}</td>
+      <td class="num">${pieces}</td>
+      <td class="num">${g.cartons.length}</td>
+      <td>${escapeHtml(g.pkl)}</td>
+      <td><div class="group-color"><input type="color" value="${g.labelColor}" data-color-index="${idx}"><span class="small">${g.autoLabelColor ? "PDF" : "manual"}</span></div></td>
+    </tr>`);
+  });
+  html.push("</tbody></table>");
+  els.preview.innerHTML = html.join("");
+  els.preview.querySelectorAll("input[data-color-index]").forEach(input => {
+    input.addEventListener("change", ev => {
+      const i = Number(ev.target.dataset.colorIndex);
+      state.groups[i].labelColor = ev.target.value;
+      state.groups[i]._customColor = true;
+      renderPackingListPreview();
+    });
+  });
+  els.preview.querySelectorAll("input[data-hangers-index]").forEach(input => {
+    input.addEventListener("change", ev => toggleGroupHangers(Number(ev.target.dataset.hangersIndex), ev.target.checked));
+  });
+  renderPackingListPreview();
+}
+
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function thinBorder(color = "FF000000") {
+  return { top: { style: "thin", color: { argb: color } }, left: { style: "thin", color: { argb: color } }, bottom: { style: "thin", color: { argb: color } }, right: { style: "thin", color: { argb: color } } };
+}
+function fill(color) { return { type: "pattern", pattern: "solid", fgColor: { argb: color.replace("#", "FF").toUpperCase() } }; }
+function font(size = 11, bold = false) { return { name: "Arial", size, bold, color: { argb: "FF000000" } }; }
+function align(horizontal = "center", vertical = "middle", wrapText = true) { return { horizontal, vertical, wrapText }; }
+
+async function buildPackingListWorkbook(group, settings) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Packing List Generator";
+  const ws = wb.addWorksheet(safeSheetName(`${group.styleName} ${group.colorName || ""}`), {
+    views: [{ showGridLines: false }],
+    pageSetup: { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.25, right: 0.25, top: 0.35, bottom: 0.35, header: 0.1, footer: 0.1 } }
+  });
+  ws.columns = [
+    { width: 8 }, { width: 8 }, { width: 24 }, { width: 12 }, { width: 15 }, { width: 15 }, { width: 16 }, { width: 13 }, { width: 20 }
+  ];
+  ws.mergeCells("A1:D1");
+  ws.getCell("A1").value = "Pelintex Bulgaria LTD";
+  ws.getCell("A1").font = font(14, true);
+  ws.mergeCells("E1:I1");
+  ws.getCell("E1").value = "7000 Ruse, Hristo Botev 5";
+  ws.getCell("E1").font = font(14, true);
+  ws.getCell("E1").alignment = align("right");
+  ws.mergeCells("A3:I3");
+  ws.getCell("A3").value = "PACKING LIST";
+  ws.getCell("A3").font = font(14, true);
+  ws.getCell("A3").alignment = align("center");
+
+  ws.getCell("A5").value = "DATE :";
+  ws.getCell("B5").value = formatDateDisplay(settings.date);
+  ws.getCell("A6").value = "DEPOT :";
+  ws.getCell("B6").value = group.depot;
+  ws.getCell("A7").value = `PO NUMBER : ${group.orderNo}`;
+  ws.getCell("A8").value = `MODELE :   ${group.styleName}`;
+  ws.getCell("A9").value = `STYLE REF :  ${group.styleRef}`;
+  if (group.colorName) ws.getCell("A10").value = `COLOR :  ${group.colorName}`;
+  ["A5", "A6", "A7", "A8", "A9", "A10"].forEach(addr => ws.getCell(addr).font = font(10, true));
+  ["B5", "B6"].forEach(addr => ws.getCell(addr).font = font(10, true));
+  ["A7:D7", "A8:D8", "A9:D9", "A10:D10"].forEach(range => ws.mergeCells(range));
+  ["A7", "A8", "A9", "A10"].forEach(addr => {
+    ws.getCell(addr).alignment = { horizontal: "left", vertical: "middle", wrapText: false };
+  });
+  [7, 8, 9, 10].forEach(r => { ws.getRow(r).height = 18; });
+
+  const headerRow = 12;
+  const headers = ["FROM#", "TO#", "REFERENCE", "#PACKAGES", "QUANTITY (PC)", "NET WT.(KG)", "GROSS WT.(KG)", "VOLUME(m³)", "COLOR./SIZE"];
+  ws.getRow(headerRow).height = 22;
+  headers.forEach((header, idx) => {
+    const cell = ws.getCell(headerRow, idx + 1);
+    cell.value = header;
+    cell.font = font(10, true);
+    cell.alignment = align("center");
+    cell.border = thinBorder();
+  });
+
+  let row = headerRow + 1;
+  for (const carton of group.cartons) {
+    for (let i = 0; i < carton.lines.length; i++) {
+      const line = carton.lines[i];
+      const rowValues = [carton.no, carton.no, line.ean, Number(line.packages || 1), line.quantity, carton.net, carton.gross, carton.volume, `${line.color}/${line.size}`];
+      rowValues.forEach((value, idx) => { ws.getCell(row, idx + 1).value = value; });
+      ws.getRow(row).height = 20;
+      for (let c = 1; c <= 9; c++) {
+        const cell = ws.getCell(row, c);
+        cell.border = thinBorder();
+        cell.font = font(10, true);
+        cell.alignment = align("center", "middle", c === 3 ? false : true);
+        if (carton.isMixed && !isHangersGroup(group)) cell.fill = fill("#ffff00");
+      }
+      ws.getCell(row, 3).numFmt = "@";
+      ws.getCell(row, 6).numFmt = "0.000";
+      ws.getCell(row, 7).numFmt = "0.000";
+      ws.getCell(row, 8).numFmt = "0.000";
+      row++;
+    }
+  }
+  const totalRow = row;
+  ws.getCell(totalRow, 3).value = "TOTAL:";
+  ws.getCell(totalRow, 4).value = group.cartons.length;
+  ws.getCell(totalRow, 5).value = group.cartons.reduce((s, c) => s + c.totalQty, 0);
+  ws.getCell(totalRow, 6).value = round3(group.cartons.reduce((s, c) => s + c.net, 0));
+  ws.getCell(totalRow, 7).value = round3(group.cartons.reduce((s, c) => s + c.gross, 0));
+  ws.getCell(totalRow, 8).value = round3(group.cartons.reduce((s, c) => s + c.volume, 0));
+  for (let c = 1; c <= 9; c++) {
+    const cell = ws.getCell(totalRow, c);
+    cell.font = font(10, true);
+    cell.border = {};
+    cell.alignment = align(c === 3 ? "right" : "center");
+  }
+  for (let c = 4; c <= 8; c++) {
+    ws.getCell(totalRow, c).border = { bottom: { style: "double", color: { argb: "FF000000" } } };
+  }
+  ws.getCell(totalRow, 6).numFmt = "0.000";
+  ws.getCell(totalRow, 7).numFmt = "0.000";
+  ws.getCell(totalRow, 8).numFmt = "0.000";
+
+  const maxRefLen = Math.max(24, ...group.cartons.flatMap(c => c.lines.map(l => String(l.ean || "").length + 8)));
+  ws.getColumn(3).width = Math.min(44, maxRefLen);
+  ws.getColumn(1).hidden = false;
+  ws.getColumn(2).hidden = false;
+  ws.getColumn(3).hidden = false;
+  ws.eachRow(rowObj => rowObj.eachCell(cell => { cell.protection = { locked: false }; }));
+  return wb.xlsx.writeBuffer();
+}
+
+function destinationHeaderLines(group) {
+  if (group.depot === "QUS") {
+    return ["OMLOG INC. - Distribution Center", "C/O ARTEAST,", "1000 Rand Blvd. Bldg 3 Phillipsburg", "NJ 08865", "", "QUS ORDERS"];
+  }
+  if (group.depot === "QEU" || group.depot === "QLK") {
+    return ["LOGISTIQUE NC", "C/O ZV France, ZAC de la Butte aux Bergers", "17 Avenue du Noyer à la Malice", "95380 LOUVRES", "France", `${group.depot} ORDERS`];
+  }
+  const addr = (group.deliveryAddress || "").split("\n").filter(Boolean).slice(0, 5);
+  while (addr.length < 5) addr.push("");
+  return [...addr, `${group.depot} ORDERS`];
+}
+
+function cartonQuantityText(carton) {
+  if (carton.lines.length === 1) return String(carton.totalQty);
+  return `${carton.lines.map(l => l.quantity).join("+")}=${carton.totalQty}`;
+}
+function cartonColorText(carton) {
+  return Array.from(new Set(carton.lines.map(l => l.color))).join(", ");
+}
+function cartonSizeText(carton) {
+  return carton.lines.map(l => l.size).join(", ");
+}
+
+function inferCompactLabelHeightCm(group, carton) {
+  const params = paramsForGroup(group);
+  const direct = labelMaxPrintHeightCmFromBoxHeight(params.boxH);
+  if (direct) return direct;
+  const vol = Number(carton?.volume || 0);
+  const baseL = Number(params.boxL || 60);
+  const baseW = Number(params.boxW || 40);
+  if (vol > 0 && baseL > 0 && baseW > 0) {
+    const inferredH = (vol * 1000000) / (baseL * baseW);
+    return labelMaxPrintHeightCmFromBoxHeight(inferredH);
+  }
+  return 0;
+}
+
+function labelLayoutForCarton(group, carton) {
+  const compactHeightCm = inferCompactLabelHeightCm(group, carton);
+  if (compactHeightCm) {
+    const totalPt = compactHeightCm * 28.3464567;
+    const isSmall10 = compactHeightCm <= 10.5;
+    const isMedium15 = compactHeightCm <= 15.5;
+    const isMedium20 = compactHeightCm <= 20.5;
+    const topHeight = Math.max(58, Math.min(isSmall10 ? 64 : 128, totalPt * 0.24));
+    const rowHeight = Math.max(14, (totalPt - topHeight) / 9);
+    return {
+      mode: isSmall10 ? "boxHeight10" : "boxHeightCompact",
+      maxHeightCm: compactHeightCm,
+      columns: isSmall10 ? [{ width: 30 }, { width: 40 }] : isMedium15 ? [{ width: 34 }, { width: 44 }] : [{ width: 40 }, { width: 50 }],
+      row1: topHeight,
+      rowOther: rowHeight,
+      fontTop: isSmall10 ? 10 : isMedium15 ? 12 : isMedium20 ? 16 : 18,
+      fontBody: isSmall10 ? 11 : isMedium15 ? 14 : isMedium20 ? 17 : 20,
+      fontKeyLong: isSmall10 ? 9 : isMedium15 ? 11 : isMedium20 ? 14 : 16,
+      pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: false, scale: 100, margins: { left: 0.1, right: 0.1, top: 0.1, bottom: 0.1, header: 0, footer: 0 } }
+    };
+  }
+  return {
+    mode: "standard",
+    columns: [{ width: 46 }, { width: 54 }],
+    row1: 220,
+    rowOther: 58,
+    fontTop: 20,
+    fontBody: 22,
+    fontKeyLong: 18,
+    pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 1, margins: { left: 0.1, right: 0.1, top: 0.1, bottom: 0.1, header: 0, footer: 0 } }
+  };
+}
+
+async function buildLabelWorkbook(group) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Packing List Generator";
+  const color = group.labelColor || "#ffffff";
+  const headerLines = destinationHeaderLines(group);
+  group.cartons.forEach((carton, idx) => {
+    const layout = labelLayoutForCarton(group, carton);
+    const ws = wb.addWorksheet(`BOX LABEL (${idx + 1})`, {
+      views: [{ showGridLines: false }],
+      pageSetup: layout.pageSetup
+    });
+    ws.columns = layout.columns;
+    ws.getRow(1).height = layout.row1;
+    for (let r = 2; r <= 10; r++) ws.getRow(r).height = layout.rowOther;
+    for (let r = 1; r <= 10; r++) {
+      for (let c = 1; c <= 2; c++) {
+        const cell = ws.getCell(r, c);
+        cell.fill = fill(color);
+        cell.border = thinBorder();
+        cell.font = font(r === 1 ? layout.fontTop : layout.fontBody, c === 1 || r === 1);
+        cell.alignment = r === 1 ? align("center", "middle", true) : align(c === 1 ? "left" : "center", "middle", true);
+      }
+    }
+    ws.mergeCells("A1:B1");
+    const topCell = ws.getCell("A1");
+    topCell.value = headerLines.filter(line => line !== undefined && line !== null).join("\n");
+    topCell.font = font(layout.fontTop, true);
+    topCell.alignment = align("center", "middle", true);
+    topCell.fill = fill(color);
+    topCell.border = thinBorder();
+    const rows = [
+      ["STYLE", group.styleName],
+      ["REFERENCE", group.styleRef],
+      ["PO NUMBER", group.orderNo],
+      ["PKL N°", group.pkl],
+      ["PARCEL N° / TOTAL NUMBER OF PARCELS", `${carton.no} / ${group.cartons.length}`],
+      ["QUANTITY", cartonQuantityText(carton)],
+      ["COLOR", cartonColorText(carton)],
+      ["SIZE", cartonSizeText(carton)],
+      ["NET / GROSS WEIGHT", `${Number(carton.net || 0).toFixed(3)} / ${Number(carton.gross || 0).toFixed(3)} KG`]
+    ];
+    rows.forEach((pair, i) => {
+      const r = i + 2;
+      ws.getCell(r, 1).value = pair[0];
+      ws.getCell(r, 2).value = pair[1];
+      ws.getCell(r, 1).font = font(pair[0].length > 25 ? layout.fontKeyLong : layout.fontBody, true);
+      ws.getCell(r, 2).font = font(layout.fontBody, false);
+      ws.getCell(r, 1).alignment = align("left", "middle", true);
+      ws.getCell(r, 2).alignment = align("center", "middle", true);
+    });
+  });
+  return wb.xlsx.writeBuffer();
+}
+
+function packingListFileName(group, settings) {
+  const colorPart = group.colorName ? ` ${group.colorName}` : "";
+  const base = settings.filenameMode === "withRef"
+    ? `${group.styleName}${colorPart} ${group.styleRef} PL ${group.orderNo}-${group.depot}.xlsx`
+    : `${group.styleName}${colorPart} PL ${group.orderNo}-${group.depot}.xlsx`;
+  return sanitizeFileName(base);
+}
+function labelFileName(group, settings) {
+  const colorPart = group.colorName ? ` ${group.colorName}` : "";
+  const base = settings.filenameMode === "withRef"
+    ? `${group.styleName}${colorPart} ${group.styleRef} LABELS ${group.orderNo}-${group.depot}.xlsx`
+    : `${group.styleName}${colorPart} LABELS ${group.orderNo}-${group.depot}.xlsx`;
+  return sanitizeFileName(base);
+}
+function hideDownloadLink() {
+  if (state.lastDownloadUrl) {
+    try { URL.revokeObjectURL(state.lastDownloadUrl); } catch (_) {}
+    state.lastDownloadUrl = null;
+  }
+  if (els.downloadLink) {
+    els.downloadLink.hidden = true;
+    els.downloadLink.textContent = "";
+  }
+}
+
+function showManualDownloadLink(blob, fileName, plCount, labelCount) {
+  hideDownloadLink();
+  const url = URL.createObjectURL(blob);
+  state.lastDownloadUrl = url;
+  const auto = document.createElement("a");
+  auto.href = url;
+  auto.download = fileName;
+  auto.style.display = "none";
+  document.body.appendChild(auto);
+  auto.click();
+  auto.remove();
+  if (els.downloadLink) {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    link.textContent = "кликни тук за ZIP";
+    els.downloadLink.textContent = `ZIP готов: ${plCount} packing list workbook(s) и ${labelCount} label workbook(s). Ако не се свали автоматично, `;
+    els.downloadLink.appendChild(link);
+    els.downloadLink.appendChild(document.createTextNode("."));
+    els.downloadLink.hidden = false;
+  }
+  setTimeout(() => {
+    if (state.lastDownloadUrl === url) hideDownloadLink();
+  }, 10 * 60 * 1000);
+}
+
+function saveBlobDirect(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60 * 1000);
+}
+
+async function addGroupFilesToZip(zip, group, settings, used, includePl = true, includeLabels = true) {
+  const uniqueName = name => {
+    const count = used.get(name) || 0;
+    used.set(name, count + 1);
+    if (!count) return name;
+    return name.replace(/\.xlsx$/i, ` (${count + 1}).xlsx`);
+  };
+  if (includePl) {
+    const pl = await buildPackingListWorkbook(group, settings);
+    zip.file(`packing-lists/${uniqueName(packingListFileName(group, settings))}`, pl);
+  }
+  if (includeLabels) {
+    const labels = await buildLabelWorkbook(group, settings);
+    zip.file(`labels/${uniqueName(labelFileName(group, settings))}`, labels);
+  }
+}
+
+async function downloadModelZip(modelKey) {
+  if (!state.groups.length) return;
+  setStatus("Генериране на ZIP за избрания модел...", "warn");
+  recalcGroups();
+  const settings = getSettings();
+  const groups = groupsForModel(modelKey);
+  if (!groups.length) return;
+  const zip = new JSZip();
+  const used = new Map();
+  try {
+    for (const group of groups) await addGroupFilesToZip(zip, group, settings, used, state.mode !== "manualPl", true);
+    const blob = await zip.generateAsync({ type: "blob" });
+    const modelName = sanitizeFileName(groups[0].styleName || "model");
+    saveBlobDirect(blob, `${modelName}-${settings.date.replaceAll("-", "")}.zip`);
+    setStatus(`Готов ZIP за ${groups[0].styleName}: ${groups.length} packing list групи.`, "good");
+  } catch (err) {
+    console.error(err);
+    log(`ERROR while building model ZIP: ${err.message || err}`);
+    setStatus("Неуспешно генериране на ZIP за модела. Виж лога.", "bad");
+  }
+}
+
+async function downloadGroupOutput(groupIndex, kind) {
+  const group = state.groups[groupIndex];
+  if (!group) return;
+  setStatus("Генериране на избрания файл...", "warn");
+  recalcGroups();
+  const settings = getSettings();
+  try {
+    if (kind === "pl") {
+      const pl = await buildPackingListWorkbook(group, settings);
+      saveBlobDirect(new Blob([pl], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), packingListFileName(group, settings));
+      setStatus(`PL готов: ${group.styleName} / ${group.colorName}`, "good");
+    } else if (kind === "labels") {
+      const labels = await buildLabelWorkbook(group, settings);
+      saveBlobDirect(new Blob([labels], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), labelFileName(group, settings));
+      setStatus(`Labels готови: ${group.styleName} / ${group.colorName}`, "good");
+    } else {
+      const zip = new JSZip();
+      await addGroupFilesToZip(zip, group, settings, new Map(), state.mode !== "manualPl", true);
+      const blob = await zip.generateAsync({ type: "blob" });
+      saveBlobDirect(blob, sanitizeFileName(`${group.styleName} ${group.colorName || ""} ${group.depot}.zip`));
+      setStatus(`ZIP готов: ${group.styleName} / ${group.colorName}`, "good");
+    }
+  } catch (err) {
+    console.error(err);
+    log(`ERROR while building selected output: ${err.message || err}`);
+    setStatus("Неуспешно генериране на избрания файл. Виж лога.", "bad");
+  }
+}
+
+async function downloadZip() {
+  if (!state.groups.length) return;
+  hideDownloadLink();
+  setStatus("Генериране на Excel файлове...", "warn");
+  els.downloadButton.disabled = true;
+  const settings = getSettings();
+  recalcGroups();
+  const zip = new JSZip();
+  const used = new Map();
+  const uniqueName = name => {
+    const count = used.get(name) || 0;
+    used.set(name, count + 1);
+    if (!count) return name;
+    return name.replace(/\.xlsx$/i, ` (${count + 1}).xlsx`);
+  };
+  let plCount = 0;
+  let labelCount = 0;
+  try {
+    for (const group of state.groups) {
+      log(`Creating ${group.styleName} / ${group.colorName || ""} / ${group.depot}: ${group.cartons.length} carton label sheet(s)`);
+      if (state.mode !== "manualPl") {
+        const pl = await buildPackingListWorkbook(group, settings);
+        zip.file(`packing-lists/${uniqueName(packingListFileName(group, settings))}`, pl);
+        plCount++;
+      }
+      const labels = await buildLabelWorkbook(group, settings);
+      zip.file(`labels/${uniqueName(labelFileName(group, settings))}`, labels);
+      labelCount++;
+    }
+    const blob = await zip.generateAsync({ type: "blob" });
+    const datePart = settings.date.replaceAll("-", "");
+    const fileName = state.mode === "manualPl" ? `labels-from-packing-lists-${datePart}.zip` : `packing-lists-and-labels-${datePart}.zip`;
+    showManualDownloadLink(blob, fileName, plCount, labelCount);
+    setStatus(`ZIP готов: ${plCount} packing list workbook(s) и ${labelCount} label workbook(s).`, "good");
+  } catch (err) {
+    console.error(err);
+    log(`ERROR while building XLSX: ${err.message || err}`);
+    setStatus("Неуспешно генериране на ZIP. Виж лога.", "bad");
+  } finally {
+    els.downloadButton.disabled = state.groups.length === 0;
+  }
+}
+
+
+function setMode(mode) {
+  state.mode = mode === "manualPl" ? "manualPl" : "orders";
+  const manual = state.mode === "manualPl";
+  els.orderModeTab?.classList.toggle("active", !manual);
+  els.manualModeTab?.classList.toggle("active", manual);
+  if (els.orderModePanel) els.orderModePanel.hidden = manual;
+  if (els.manualModePanel) els.manualModePanel.hidden = !manual;
+  setStatus(manual ? "Режим: готов packing list → labels." : "Режим: PDF поръчка → packing lists + labels.");
+}
+
+function clearWorkState(options = {}) {
+  state.files = [];
+  state.manualFiles = [];
+  state.orders = [];
+  state.groups = [];
+  state.selectedModelKey = "";
+  state.selectedGroupIndex = -1;
+  state.analysisToken++;
+  if (!options.keepInputs) {
+    if (els.fileInput) els.fileInput.value = "";
+    if (els.manualFileInput) els.manualFileInput.value = "";
+  }
+  els.parseButton.disabled = true;
+  els.downloadButton.disabled = true;
+  if (els.manualAnalyzeButton) els.manualAnalyzeButton.disabled = true;
+  if (els.manualDownloadLabelsButton) els.manualDownloadLabelsButton.disabled = true;
+  if (els.manualFileList) els.manualFileList.innerHTML = "";
+  els.summary.textContent = "Няма анализирани файлове.";
+  els.preview.innerHTML = `<div class="empty">Тук ще се покажат разпознатите packing lists.</div>`;
+  renderModelParamsPanel();
+  renderPackingListPreview();
+  hideDownloadLink();
+  resetLog();
+}
+
+function addManualFiles(fileList) {
+  const files = Array.from(fileList || []).filter(f => /\.(xlsx|xls|pdf)$/i.test(f.name) || /spreadsheet|excel|pdf/i.test(f.type || ""));
+  if (!files.length) { setStatus("Няма избрани packing list файлове.", "warn"); return; }
+  setMode("manualPl");
+  clearWorkState({ keepInputs: true });
+  state.manualFiles = files;
+  if (els.manualFileList) {
+    els.manualFileList.innerHTML = files.map(f => `<div class="manual-file-item">${escapeHtml(f.name)}</div>`).join("");
+  }
+  if (els.manualAnalyzeButton) els.manualAnalyzeButton.disabled = false;
+  if (els.manualDownloadLabelsButton) els.manualDownloadLabelsButton.disabled = true;
+  els.summary.textContent = `${files.length} готов PL файл(а) избрани. Натисни „Прочети PL“.`;
+  els.preview.innerHTML = `<div class="empty">Готово за прочитане на ${files.length} PL файл(а).</div>`;
+  files.forEach(f => log(`Selected manual PL ${f.name}`));
+  setStatus(`${files.length} packing list файл(а) избрани.`, "good");
+}
+
+function cellText(cell) {
+  const v = cell?.value;
+  if (v === null || v === undefined) return "";
+  if (typeof v === "object") {
+    if (v.text !== undefined) return String(v.text);
+    if (v.result !== undefined) return String(v.result);
+    if (Array.isArray(v.richText)) return v.richText.map(x => x.text || "").join("");
+    if (v.hyperlink && v.text) return String(v.text);
+  }
+  return String(v);
+}
+
+function numberFromCellText(v) {
+  const s = String(v ?? "").replace(/\s/g, "").replace(",", ".").replace(/[^0-9.\-]/g, "");
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function parsePlKeyValueFromText(text, key) {
+  const re = new RegExp(`${key}\\s*:?\\s*([^\\n]+)`, "i");
+  return normalizeSpaces(String(text || "").match(re)?.[1] || "");
+}
+
+function splitManualColorSize(raw) {
+  const s = normalizeSpaces(raw).replace(/\s+\//g, "/").replace(/\/\s+/g, "/");
+  const idx = s.lastIndexOf("/");
+  if (idx < 0) return { color: s, size: "" };
+  return { color: normalizeSpaces(s.slice(0, idx)), size: normalizeSpaces(s.slice(idx + 1)).replace(/^SIZE\s+/i, "") };
+}
+
+function makeManualGroup(parsed, sourceFile, index = 0) {
+  const settings = getSettings();
+  const rows = parsed.rows || [];
+  const cartonMap = new Map();
+  for (const r of rows) {
+    const no = Math.max(1, Math.floor(Number(r.from || r.to || 0))) || (cartonMap.size + 1);
+    if (!cartonMap.has(no)) cartonMap.set(no, { no, lines: [], totalQty: 0, net: 0, gross: 0, volume: 0, isMixed: false, manualNet: true, manualGross: true, manualVolume: true, manualMixed: null });
+    const carton = cartonMap.get(no);
+    carton.lines.push({
+      ean: String(r.ean || "").trim(),
+      color: r.color || splitManualColorSize(r.colorSize).color,
+      size: r.size || splitManualColorSize(r.colorSize).size,
+      quantity: Math.max(0, Math.floor(Number(r.quantity || 0))),
+      packages: Math.max(1, Math.floor(Number(r.packages || 1))),
+      styleRef: parsed.styleRef || "",
+      designation: parsed.styleName || ""
+    });
+    if (!carton.net && r.net) carton.net = round3(r.net);
+    if (!carton.gross && r.gross) carton.gross = round3(r.gross);
+    if (!carton.volume && r.volume) carton.volume = round3(r.volume);
+  }
+  const cartons = Array.from(cartonMap.values()).sort((a,b)=>a.no-b.no).map(c => {
+    c.totalQty = c.lines.reduce((s,l)=>s+Number(l.quantity||0),0);
+    c.isMixed = c.lines.length > 1;
+    c.manualMixed = c.isMixed;
+    c.lines = c.lines.filter(l => Number(l.quantity || 0) > 0);
+    return c;
+  }).filter(c => c.lines.length && c.totalQty > 0);
+  const flat = cartons.flatMap(c => c.lines.map(l => ({ ...l, article: parsed.styleRef || "", styleRef: parsed.styleRef || "", designation: parsed.styleName || "", originalColorSize: `${l.color}/${l.size}` })));
+  const uniqueColors = Array.from(new Set(flat.map(x => x.color).filter(Boolean)));
+  const depot = (parsed.depot || sourceFile.match(/\b(QEU|QUS|QLK|QPR)\b/i)?.[1] || "OTHER").toUpperCase();
+  const looksLikeHangers = cartons.length === 1 && cartons[0] && cartons[0].lines.length > 1 && Math.abs(Number(cartons[0].net || 0) - Number(cartons[0].gross || 0)) < 0.001;
+  if (looksLikeHangers && cartons[0]) { cartons[0].hanger = true; cartons[0].isMixed = false; cartons[0].manualMixed = false; }
+  return {
+    id: `manual|${sourceFile}|${index}`,
+    sourceFile,
+    manualSource: true,
+    depot,
+    orderNo: parsed.orderNo || sourceFile.match(/\b100\d{7}\b/)?.[0] || "UNKNOWN",
+    deliveryAddress: "",
+    deliveryDate: parsed.date || "",
+    season: "",
+    styleRef: parsed.styleRef || "",
+    styleName: parsed.styleName || sanitizeFileName(sourceFile).replace(/\.(xlsx|xls|pdf)$/i, ""),
+    colorName: uniqueColors.length === 1 ? uniqueColors[0] : uniqueColors.join(", "),
+    items: flat,
+    originalItems: flat.map(x => ({ ...x })),
+    params: learnedParamsForStyle(parsed.styleName || "", depot, orderParamsFromSettings(settings)),
+    cartons,
+    manualCartons: cartons.map(cloneCarton),
+    _cartonsManual: true,
+    _manualEdited: false,
+    hangers: looksLikeHangers,
+    originalManualCartons: cartons.map(cloneCarton),
+    autoLabelColor: "",
+    labelColor: settings.colors[depot] || settings.colors.OTHER,
+    pkl: ""
+  };
+}
+
+function parseManualPackingListText(text, sourceFile) {
+  const lines = String(text || "").replace(/\r/g, "\n").split("\n").map(normalizeSpaces).filter(Boolean);
+  const joined = lines.join("\n");
+  const parsed = {
+    date: parsePlKeyValueFromText(joined, "DATE"),
+    depot: parsePlKeyValueFromText(joined, "DEPOT").toUpperCase(),
+    orderNo: parsePlKeyValueFromText(joined, "PO NUMBER") || (sourceFile.match(/\b100\d{7}\b/)?.[0] || ""),
+    styleName: parsePlKeyValueFromText(joined, "MODELE") || parsePlKeyValueFromText(joined, "MODEL"),
+    styleRef: parsePlKeyValueFromText(joined, "STYLE REF"),
+    rows: []
+  };
+  const rowRe = /^(\d+)\s+(\d+)\s+(\d{8,14})\s+(\d+)\s+(\d+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+(.+?\/.+)$/i;
+  for (const line of lines) {
+    if (/^TOTAL\s*:/i.test(line)) break;
+    const m = line.match(rowRe);
+    if (!m) continue;
+    const cs = splitManualColorSize(m[9]);
+    parsed.rows.push({
+      from: Number(m[1]),
+      to: Number(m[2]),
+      ean: m[3],
+      packages: Number(m[4]),
+      quantity: Number(m[5]),
+      net: numberFromCellText(m[6]),
+      gross: numberFromCellText(m[7]),
+      volume: numberFromCellText(m[8]),
+      colorSize: normalizeSpaces(m[9]),
+      color: cs.color,
+      size: cs.size
+    });
+  }
+  return parsed;
+}
+
+async function parseManualPdfPackingList(file) {
+  const text = await extractPdfText(file);
+  return parseManualPackingListText(text, file.name);
+}
+
+function findHeaderColumnMap(ws, headerRowNumber) {
+  const map = {};
+  const row = ws.getRow(headerRowNumber);
+  row.eachCell({ includeEmpty: false }, (cell, col) => {
+    const h = normalizeSpaces(cellText(cell)).toUpperCase();
+    if (/^FROM#?$/.test(h)) map.from = col;
+    else if (/^TO#?$/.test(h)) map.to = col;
+    else if (/REFERENCE/.test(h)) map.ean = col;
+    else if (/#?PACKAGES/.test(h)) map.packages = col;
+    else if (/QUANTITY/.test(h)) map.quantity = col;
+    else if (/NET/.test(h)) map.net = col;
+    else if (/GROSS/.test(h)) map.gross = col;
+    else if (/VOLUME/.test(h)) map.volume = col;
+    else if (/COLOR.*SIZE/.test(h)) map.colorSize = col;
+  });
+  return map;
+}
+
+function parseManualPackingListWorksheet(ws, fileName) {
+  const rowTexts = [];
+  let headerRow = 0;
+  ws.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    const values = [];
+    row.eachCell({ includeEmpty: false }, cell => values.push(cellText(cell)));
+    const text = normalizeSpaces(values.join(" "));
+    rowTexts[rowNumber] = text;
+    if (!headerRow && /FROM#?/i.test(text) && /REFERENCE/i.test(text) && /COLOR.*SIZE/i.test(text)) headerRow = rowNumber;
+  });
+  const joined = rowTexts.filter(Boolean).join("\n");
+  const getPair = key => {
+    for (let r = 1; r <= ws.rowCount; r++) {
+      const row = ws.getRow(r);
+      for (let c = 1; c <= Math.max(10, ws.columnCount); c++) {
+        const t = normalizeSpaces(cellText(row.getCell(c)));
+        if (!t) continue;
+        const same = new RegExp(`^${key}\\s*:?\\s*(.*)$`, "i").exec(t);
+        if (same) {
+          if (same[1]) return normalizeSpaces(same[1]);
+          const next = normalizeSpaces(cellText(row.getCell(c + 1)));
+          if (next) return next;
+        }
+      }
+    }
+    return parsePlKeyValueFromText(joined, key);
+  };
+  const parsed = {
+    date: getPair("DATE"),
+    depot: getPair("DEPOT").toUpperCase(),
+    orderNo: getPair("PO NUMBER") || fileName.match(/\b100\d{7}\b/)?.[0] || "",
+    styleName: getPair("MODELE") || getPair("MODEL"),
+    styleRef: getPair("STYLE REF"),
+    rows: []
+  };
+  if (!headerRow) return parsed;
+  const col = findHeaderColumnMap(ws, headerRow);
+  for (let r = headerRow + 1; r <= ws.rowCount; r++) {
+    const row = ws.getRow(r);
+    const rowText = normalizeSpaces(rowTexts[r] || "");
+    if (/^TOTAL\s*:/i.test(rowText) || /\bTOTAL\s*:/i.test(rowText)) break;
+    const from = numberFromCellText(cellText(row.getCell(col.from || 1)));
+    const ean = normalizeSpaces(cellText(row.getCell(col.ean || 3))).replace(/\.0$/, "");
+    const colorSize = normalizeSpaces(cellText(row.getCell(col.colorSize || 9)));
+    const qty = numberFromCellText(cellText(row.getCell(col.quantity || 5)));
+    if (!from && !ean && !qty && !colorSize) continue;
+    if (!ean || !colorSize || !(qty > 0)) continue;
+    const cs = splitManualColorSize(colorSize);
+    parsed.rows.push({
+      from,
+      to: numberFromCellText(cellText(row.getCell(col.to || 2))) || from,
+      ean,
+      packages: numberFromCellText(cellText(row.getCell(col.packages || 4))) || 1,
+      quantity: qty,
+      net: numberFromCellText(cellText(row.getCell(col.net || 6))),
+      gross: numberFromCellText(cellText(row.getCell(col.gross || 7))),
+      volume: numberFromCellText(cellText(row.getCell(col.volume || 8))),
+      colorSize,
+      color: cs.color,
+      size: cs.size
+    });
+  }
+  return parsed;
+}
+
+async function parseManualExcelPackingList(file) {
+  const buf = await fileToArrayBuffer(file);
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buf);
+  const groups = [];
+  wb.worksheets.forEach((ws, idx) => {
+    const parsed = parseManualPackingListWorksheet(ws, file.name);
+    if (parsed.rows.length) groups.push(makeManualGroup(parsed, file.name, idx));
+  });
+  return groups;
+}
+
+async function parseManualPackingListFile(file) {
+  if (/\.pdf$/i.test(file.name) || file.type === "application/pdf") {
+    const parsed = await parseManualPdfPackingList(file);
+    return parsed.rows.length ? [makeManualGroup(parsed, file.name, 0)] : [];
+  }
+  if (/\.xlsx$/i.test(file.name) || /spreadsheet/i.test(file.type || "")) return await parseManualExcelPackingList(file);
+  if (/\.xls$/i.test(file.name)) throw new Error(`${file.name}: стар .xls формат не се чете надеждно в браузър. Запази файла като .xlsx.`);
+  return [];
+}
+
+async function analyzeManualPackingLists() {
+  if (!state.manualFiles.length) return;
+  const token = ++state.analysisToken;
+  resetLog();
+  state.mode = "manualPl";
+  state.orders = [];
+  state.groups = [];
+  renderModelParamsPanel();
+  renderPackingListPreview();
+  setStatus("Четене на готови packing lists...", "warn");
+  if (els.manualAnalyzeButton) els.manualAnalyzeButton.disabled = true;
+  if (els.manualDownloadLabelsButton) els.manualDownloadLabelsButton.disabled = true;
+  try {
+    for (const file of state.manualFiles) {
+      if (token !== state.analysisToken) return;
+      log(`Reading manual PL ${file.name}`);
+      const groups = await parseManualPackingListFile(file);
+      if (!groups.length) log(`WARNING: Не са намерени PL редове в ${file.name}`);
+      for (const g of groups) {
+        state.groups.push(g);
+        log(`Loaded ${g.styleName} / ${g.colorName || ""} / ${g.depot}: ${g.cartons.length} cartons, ${groupTotalPieces(g)} pcs`);
+      }
+    }
+    const settings = getSettings();
+    let seq = settings.pklStart;
+    state.groups.forEach(g => { g.pkl = pklNumber(settings.date, seq++); });
+    state.groups.sort((a,b)=>`${a.depot}-${a.styleName}-${a.colorName}-${a.orderNo}`.localeCompare(`${b.depot}-${b.styleName}-${b.colorName}-${b.orderNo}`));
+    state.selectedModelKey = firstModelKey(state.groups) || "";
+    state.selectedGroupIndex = state.groups.length ? 0 : -1;
+    renderPreview();
+    renderModelParamsPanel();
+    setStatus(`Прочетени ${state.groups.length} готови packing list групи. Можеш да редактираш preview-то и да изтеглиш labels.`, "good");
+    if (els.manualDownloadLabelsButton) els.manualDownloadLabelsButton.disabled = state.groups.length === 0;
+  } catch (err) {
+    console.error(err);
+    log(`ERROR: ${err.message || err}`);
+    setStatus("Неуспешно четене на готов PL. Виж лога.", "bad");
+  } finally {
+    if (els.manualAnalyzeButton) els.manualAnalyzeButton.disabled = state.manualFiles.length === 0;
+  }
+}
+
+async function downloadManualLabelsZip() {
+  if (!state.groups.length) return;
+  hideDownloadLink();
+  recalcGroups();
+  setStatus("Генериране на labels ZIP...", "warn");
+  if (els.manualDownloadLabelsButton) els.manualDownloadLabelsButton.disabled = true;
+  const settings = getSettings();
+  const zip = new JSZip();
+  const used = new Map();
+  let labelCount = 0;
+  try {
+    for (const group of state.groups) {
+      const uniqueName = name => {
+        const count = used.get(name) || 0;
+        used.set(name, count + 1);
+        if (!count) return name;
+        return name.replace(/\.xlsx$/i, ` (${count + 1}).xlsx`);
+      };
+      const labels = await buildLabelWorkbook(group, settings);
+      zip.file(`labels/${uniqueName(labelFileName(group, settings))}`, labels);
+      labelCount++;
+      log(`Labels ready for ${group.styleName} / ${group.colorName || ""}: ${group.cartons.length} sheet(s)`);
+    }
+    const blob = await zip.generateAsync({ type: "blob" });
+    const fileName = `labels-from-packing-lists-${settings.date.replaceAll("-", "")}.zip`;
+    showManualDownloadLink(blob, fileName, 0, labelCount);
+    setStatus(`Labels ZIP готов: ${labelCount} workbook(s).`, "good");
+  } catch (err) {
+    console.error(err);
+    log(`ERROR while building labels ZIP: ${err.message || err}`);
+    setStatus("Неуспешно генериране на labels ZIP. Виж лога.", "bad");
+  } finally {
+    if (els.manualDownloadLabelsButton) els.manualDownloadLabelsButton.disabled = state.groups.length === 0;
+  }
+}
+
+els.dropzone.addEventListener("click", () => els.fileInput.click());
+els.fileInput.addEventListener("change", ev => addFiles(ev.target.files));
+["dragenter", "dragover"].forEach(evt => els.dropzone.addEventListener(evt, ev => { ev.preventDefault(); els.dropzone.classList.add("drag"); }));
+["dragleave", "drop"].forEach(evt => els.dropzone.addEventListener(evt, ev => { ev.preventDefault(); els.dropzone.classList.remove("drag"); }));
+els.dropzone.addEventListener("drop", ev => addFiles(ev.dataTransfer.files));
+els.orderModeTab?.addEventListener("click", () => setMode("orders"));
+els.manualModeTab?.addEventListener("click", () => setMode("manualPl"));
+if (els.manualDropzone) {
+  els.manualDropzone.addEventListener("click", () => els.manualFileInput.click());
+  els.manualFileInput.addEventListener("change", ev => addManualFiles(ev.target.files));
+  ["dragenter", "dragover"].forEach(evt => els.manualDropzone.addEventListener(evt, ev => { ev.preventDefault(); els.manualDropzone.classList.add("drag"); }));
+  ["dragleave", "drop"].forEach(evt => els.manualDropzone.addEventListener(evt, ev => { ev.preventDefault(); els.manualDropzone.classList.remove("drag"); }));
+  els.manualDropzone.addEventListener("drop", ev => addManualFiles(ev.dataTransfer.files));
+}
+els.parseButton.addEventListener("click", analyzeFiles);
+els.downloadButton.addEventListener("click", downloadZip);
+els.manualAnalyzeButton?.addEventListener("click", analyzeManualPackingLists);
+els.manualDownloadLabelsButton?.addEventListener("click", downloadManualLabelsZip);
+els.clearButton.addEventListener("click", () => { clearWorkState(); setMode("orders"); setStatus("Изчаква PDF файлове."); });
+els.manualClearButton?.addEventListener("click", () => { clearWorkState(); setMode("manualPl"); setStatus("Изчаква готови packing lists."); });
+[els.dateInput, els.pklStart, els.mixMode, els.filenameMode].forEach(el => el.addEventListener("change", refreshCartonsFromSettings));
+[els.capacity, els.allowPlusOne, els.maxExtraUnits, els.boxL, els.boxW, els.boxH, els.emptyKg, els.pieceKg].forEach(el => el.addEventListener("change", () => {
+  if (state.groups.length) renderModelParamsPanel();
+}));
+Object.keys(defaults).forEach(code => document.getElementById(`color_${code}`).addEventListener("change", refreshCartonsFromSettings));
+
+function addFiles(fileList) {
+  setMode("orders");
+  const pdfs = Array.from(fileList || []).filter(f => /\.pdf$/i.test(f.name) || f.type === "application/pdf");
+  if (!pdfs.length) { setStatus("Няма избрани PDF файлове.", "warn"); return; }
+  state.files = pdfs;
+  state.manualFiles = [];
+  state.orders = [];
+  state.groups = [];
+  state.selectedModelKey = "";
+  state.selectedGroupIndex = -1;
+  state.analysisToken++;
+  hideDownloadLink();
+  els.parseButton.disabled = false;
+  els.downloadButton.disabled = true;
+  if (els.manualAnalyzeButton) els.manualAnalyzeButton.disabled = true;
+  if (els.manualDownloadLabelsButton) els.manualDownloadLabelsButton.disabled = true;
+  if (els.manualFileList) els.manualFileList.innerHTML = "";
+  els.summary.textContent = `${pdfs.length} PDF файл(а) избрани. Натисни Анализирай PDF.`;
+  els.preview.innerHTML = `<div class="empty">Готово за анализ на ${pdfs.length} PDF файл(а).</div>`;
+  renderModelParamsPanel();
+  renderPackingListPreview();
+  resetLog();
+  pdfs.forEach(f => log(`Selected ${f.name}`));
+  setStatus(`${pdfs.length} PDF файл(а) избрани.`, "good");
+}
+</script>
+</body>
+</html>

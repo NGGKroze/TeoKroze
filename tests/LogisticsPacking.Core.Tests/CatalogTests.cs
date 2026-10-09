@@ -1,0 +1,127 @@
+using LogisticsPacking.Core;
+using Xunit;
+
+namespace LogisticsPacking.Core.Tests;
+
+public sealed class TempDir : IDisposable
+{
+    public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "lps-" + Guid.NewGuid().ToString("N"));
+    public TempDir() => Directory.CreateDirectory(Path);
+    public void Dispose() { try { Directory.Delete(Path, true); } catch (Exception) { } }
+
+    public string Module(string root, string id, string manifestJson, string entry = "index.html")
+    {
+        var dir = System.IO.Path.Combine(Path, root, id);
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(System.IO.Path.Combine(dir, "module.json"), manifestJson);
+        if (entry != "") File.WriteAllText(System.IO.Path.Combine(dir, entry), "<html></html>");
+        return dir;
+    }
+}
+
+public class CatalogTests
+{
+    [Fact]
+    public void LoadsAndOrdersModules()
+    {
+        using var t = new TempDir();
+        t.Module("bundled", "b", """{"id":"b","name":"Beta","order":20}""");
+        t.Module("bundled", "a", """{"id":"a","name":"Alpha","order":10}""");
+        var c = ModuleCatalog.Load(Path.Combine(t.Path, "bundled"), null);
+        Assert.Equal(new[] { "a", "b" }, c.Modules.Select(m => m.Id));
+        Assert.Empty(c.Problems);
+    }
+
+    [Fact]
+    public void UserModuleOverridesBundled()
+    {
+        using var t = new TempDir();
+        t.Module("bundled", "a", """{"id":"a","name":"Старо","version":"1.0.0"}""");
+        t.Module("user", "a", """{"id":"a","name":"Ново","version":"1.1.0"}""");
+        var c = ModuleCatalog.Load(Path.Combine(t.Path, "bundled"), Path.Combine(t.Path, "user"));
+        var m = Assert.Single(c.Modules);
+        Assert.Equal("Ново", m.Manifest.Name);
+        Assert.Equal(ModuleSource.User, m.Source);
+    }
+
+    [Fact]
+    public void BrokenModuleDoesNotAffectOthers()
+    {
+        using var t = new TempDir();
+        t.Module("bundled", "ok", """{"id":"ok","name":"OK"}""");
+        t.Module("bundled", "badjson", "{ not json");
+        t.Module("bundled", "noentry", """{"id":"noentry","name":"X"}""", entry: "");
+        t.Module("bundled", "badtype", """{"id":"badtype","name":"X","type":"exe"}""");
+        t.Module("bundled", "traversal", """{"id":"traversal","name":"X","entry":"../x.html"}""");
+        var c = ModuleCatalog.Load(Path.Combine(t.Path, "bundled"), null);
+        Assert.Equal("ok", Assert.Single(c.Modules).Id);
+        Assert.Equal(4, c.Problems.Count);
+    }
+
+    [Fact]
+    public void DisabledAndUnderscoreFoldersAreHidden()
+    {
+        using var t = new TempDir();
+        t.Module("bundled", "off", """{"id":"off","name":"Off","enabled":false}""");
+        t.Module("bundled", "_shared", """{"id":"shared","name":"S"}""");
+        Assert.Empty(ModuleCatalog.Load(Path.Combine(t.Path, "bundled"), null).Modules);
+    }
+
+    [Fact]
+    public void VariantsAreParsed()
+    {
+        var m = ModuleManifest.Parse("""{"id":"x","name":"X","variants":[{"id":"v","name":"V","onLoad":"1+1"}]}""");
+        Assert.True(m.HasVariants);
+        Assert.Equal("1+1", m.Variants[0].OnLoad);
+    }
+
+    [Fact]
+    public void UniquePathAddsCounter()
+    {
+        using var t = new TempDir();
+        File.WriteAllText(Path.Combine(t.Path, "a.xlsx"), "");
+        Assert.EndsWith("a (2).xlsx", AppSettings.UniquePath(t.Path, "a.xlsx"));
+        Assert.EndsWith("a_b.xlsx", AppSettings.UniquePath(t.Path, "a/b.xlsx"));
+    }
+
+    /// <summary>Истинските модули в репото трябва да са валидни.</summary>
+    [Fact]
+    public void RepositoryModulesAreValid()
+    {
+        var dir = AppContext.BaseDirectory;
+        while (dir != null && !Directory.Exists(Path.Combine(dir, "modules"))) dir = Path.GetDirectoryName(dir);
+        Assert.NotNull(dir);
+        var c = ModuleCatalog.Load(Path.Combine(dir!, "modules"), null);
+        Assert.Empty(c.Problems);
+        Assert.True(c.Modules.Count >= 19, $"Очаквани >=19 модула, намерени {c.Modules.Count}");
+        Assert.Equal(c.Modules.Count, c.Modules.Select(m => m.Id).Distinct().Count());
+        Assert.Equal(3, c.Find("loreal")!.Manifest.Variants.Count);
+        foreach (var m in c.Modules.Where(m => m.Manifest.IsPython))
+            Assert.True(File.Exists(Path.Combine(m.Directory, m.Manifest.Python!.Script)));
+    }
+}
+
+public class TileLayoutTests
+{
+    [Theory]
+    [InlineData(19, 1200, 640)]
+    [InlineData(19, 1000, 560)]
+    [InlineData(19, 1920, 900)]
+    [InlineData(3, 1200, 640)]
+    [InlineData(1, 800, 500)]
+    [InlineData(25, 900, 520)]
+    public void TilesAlwaysFitTheArea(int count, double w, double h)
+    {
+        var r = TileLayout.Compute(count, w, h);
+        Assert.True(r.Cols * r.Rows >= count);
+        Assert.True(r.Cols * r.TileWidth + (r.Cols - 1) * 16 <= w + 0.01, "ширина");
+        Assert.True(r.Rows * r.TileHeight + (r.Rows - 1) * 16 <= h + 0.01, "височина");
+        Assert.True(r.TileWidth > 60 && r.TileHeight > 40);
+    }
+
+    [Fact]
+    public void FewerTilesGetBigger()
+    {
+        Assert.True(TileLayout.Compute(2, 1200, 640).TileHeight > TileLayout.Compute(19, 1200, 640).TileHeight);
+    }
+}

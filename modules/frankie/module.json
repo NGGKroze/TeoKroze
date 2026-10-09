@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "id": "frankie",
+  "name": "The Frankie Shop",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 80,
+  "summary": "TFS packing list към box labels",
+  "requires": [
+    "Един или повече packing list файлове в Excel или CSV"
+  ],
+  "note": "Поддържа multiple upload за няколко workbook/CSV файла в една сесия.",
+  "formats": [
+    "XLS",
+    "XLSX",
+    "XLSM",
+    "CSV"
+  ]
+}

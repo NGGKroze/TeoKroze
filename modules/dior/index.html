@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dior Packing List + Labels Generator v20</title>
+
+  <!-- xlsx-js-style: SheetJS-compatible XLSX reader/writer with style support -->
+  <script src="vendor/cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <!-- pdf.js for reading OA / COMMESSA PDF text in the browser -->
+  <script src="vendor/cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Labels are printed with the browser Print dialog for better pagination / Save as PDF output -->
+  <!-- v20: v19 column widths kept; fixed PDF drop by removing broken newline regex syntax in label address compaction. -->
+
+  <style>
+    :root {
+      --blue: #0056b3;
+      --light-blue: #eef5ff;
+      --line: #111;
+      --muted: #666;
+      --ok: #17803d;
+      --warn: #b35300;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 18px;
+      background: #f0f0f0;
+      color: #111;
+    }
+
+    #controls {
+      background: #fff;
+      padding: 18px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      margin-bottom: 20px;
+    }
+
+    h1, h2, h3 { margin: 0 0 10px; }
+    h1 { font-size: 23px; text-align: center; }
+    h2 { font-size: 18px; }
+    h3 { font-size: 15px; }
+
+    #drop-zone {
+      border: 2px dashed var(--blue);
+      padding: 32px;
+      border-radius: 8px;
+      background: var(--light-blue);
+      cursor: pointer;
+      margin: 14px 0;
+      font-weight: bold;
+      text-align: center;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    #drop-zone.dragover {
+      background: #d0e3ff;
+      border-color: #003c82;
+    }
+
+    .small-note { font-size: 12px; color: var(--muted); line-height: 1.35; }
+    .status { margin: 8px 0 0; font-size: 13px; color: var(--muted); white-space: pre-line; }
+    .status.ok { color: var(--ok); }
+    .status.warn { color: var(--warn); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .grid.two { grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 12px; font-weight: bold; color: #333; }
+    .field input, .field select, .field textarea {
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      padding: 8px;
+      font: inherit;
+      background: #fff;
+      min-width: 0;
+    }
+
+    .field textarea { min-height: 76px; resize: vertical; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+      align-items: center;
+    }
+
+    button {
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      padding: 11px 18px;
+      font-size: 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button.secondary { background: #333; }
+    button.ghost { background: #fff; color: #111; border: 1px solid #bbb; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .panel {
+      display: none;
+      margin-top: 16px;
+      border-top: 1px solid #ddd;
+      padding-top: 16px;
+    }
+
+    table.preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 12px;
+      background: #fff;
+    }
+
+    table.preview-table th, table.preview-table td {
+      border: 1px solid #ccc;
+      padding: 5px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    table.preview-table th { background: #f6f6f6; }
+    .left { text-align: left !important; }
+
+    #pages-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .page {
+      width: 296mm;
+      height: 209mm;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.12);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      box-sizing: border-box;
+      padding: 7mm;
+      gap: 5mm;
+      page-break-after: always;
+      break-after: page;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      overflow: hidden;
+    }
+
+    .label-wrapper {
+      border: 3px solid #000;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      font-size: 13px;
+      height: 100%;
+      background: white;
+      overflow: hidden;
+    }
+
+    .section { border-bottom: 2px solid #000; padding: 6px 8px; }
+    .pap-row { font-weight: bold; font-size: 24px; text-align: center; padding: 8px 0; }
+    .address-row { display: flex; padding: 0; }
+    .addr-col { flex: 1; padding: 4px 8px; line-height: 1.35; font-size: 12px; white-space: pre-line; }
+    .addr-col:first-child { border-right: 2px solid #000; }
+
+    .po-row {
+      display: flex;
+      padding: 0;
+      background-color: #FFD966 !important;
+      font-weight: bold;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .po-col { flex: 1; padding: 4px 8px; font-size: 13px; }
+    .po-col:first-child { border-right: 2px solid #000; }
+
+    .table-section {
+      padding: 0 !important;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      border-bottom: none !important;
+      margin: 0 !important;
+      overflow: hidden;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      height: 100%;
+      table-layout: fixed;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+
+    .items-table th {
+      background-color: #f8f8f8;
+      border-bottom: 2px solid #000;
+      border-right: 1px solid #000;
+      padding: 5px 4px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 11px;
+    }
+    .items-table th:last-child { border-right: none; }
+
+    .items-table tbody tr:not(.footer-row-tr) td {
+      border-bottom: 1px solid #000;
+      border-right: 1px solid #000;
+      padding: 4px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 11px;
+    }
+    .items-table tbody tr:not(.footer-row-tr) td:last-child { border-right: none; }
+
+    .footer-row-tr td { border: none !important; font-weight: bold; font-size: 12px; }
+    .total-row-tr td { padding: 4px 4px !important; }
+
+    .carton-row-tr td, .weight-row-tr td {
+      border-top: 1px solid #000 !important;
+      border-bottom: 1px solid #000 !important;
+      padding: 4px 4px !important;
+    }
+    .carton-row-tr td.carton-value, .carton-row-tr td.carton-of, .weight-row-tr td.weight-net-value {
+      border-right: 1px solid #000 !important;
+    }
+
+    @media (max-width: 900px) {
+      .grid, .grid.two { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      html, body {
+        width: 297mm;
+        min-height: 210mm;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+      }
+      #controls { display: none !important; }
+      #pages-container {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
+      }
+      .page {
+        width: 297mm !important;
+        height: 210mm !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 7mm !important;
+        gap: 4mm !important;
+        page-break-after: always;
+        break-after: page;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      .page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+      .label-wrapper {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      @page { size: A4 landscape; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <h1>🏷️ Dior Packing List + Labels Generator v20</h1>
+    <div id="drop-zone">
+      Drag & drop OA PDF + COMMESSA PDF files here<br><br>
+      or drop an already generated Packing List .xlsx to make labels only<br><br>
+      <span class="small-note">PDFs are read locally in your browser. Nothing is uploaded.</span>
+    </div>
+    <input type="file" id="file-input" accept=".pdf,.xlsx" multiple style="display:none;">
+    <div id="status" class="status">Waiting for files...</div>
+
+    <div id="pdf-panel" class="panel">
+      <h2>Detected order data</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="job-select">Order / file set</label>
+          <select id="job-select"></select>
+        </div>
+        <div class="field">
+          <label for="pl-number">Packing list №</label>
+          <input id="pl-number" type="text" placeholder="e.g. 20260601-01">
+        </div>
+        <div class="field">
+          <label for="invoice-number">Invoice number / date</label>
+          <input id="invoice-number" type="text" placeholder="e.g. 6246 / 16.12.2025">
+        </div>
+        <div class="field">
+          <label for="pap-label">PAP label top</label>
+          <select id="pap-label">
+            <option value="PAP H">PAP H</option>
+            <option value="PAP F">PAP F</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label for="max-per-carton">Max pcs per carton</label>
+          <input id="max-per-carton" type="number" min="1" step="1" value="25">
+        </div>
+        <div class="field">
+          <label for="net-kg-piece">Net kg / piece</label>
+          <input id="net-kg-piece" type="number" min="0" step="0.001" value="0.210">
+        </div>
+        <div class="field">
+          <label for="carton-tare-kg">Carton tare kg</label>
+          <input id="carton-tare-kg" type="number" min="0" step="0.01" value="0.75">
+        </div>
+        <div class="field">
+          <label for="carton-type">Cartons</label>
+          <input id="carton-type" type="text" value="60/40/15" placeholder="e.g. 60/40/15">
+        </div>
+      </div>
+
+      <div class="grid two">
+        <div class="field">
+          <label for="destination-address">PARCEL FOR address (auto-filled from OA where possible)</label>
+          <textarea id="destination-address"></textarea>
+        </div>
+        <div class="field">
+          <label for="supplier-address">Supplier address</label>
+          <textarea id="supplier-address">PELINTEX BULGARIA
+5 HRISTO BOTEV,
+7000 RUSE, BULGARIA</textarea>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="rebuild-btn" class="ghost">🔄 Rebuild preview</button>
+        <button id="download-xlsx-btn">📥 Download Packing List XLSX</button>
+        <button id="download-labels-xlsx-btn">📥 Download Labels XLSX</button>
+        <button id="download-pdf-btn" class="secondary">🖨️ Print Labels / Save as PDF</button>
+      </div>
+
+      <div id="detected-summary" class="status"></div>
+      <h3>Packing list preview</h3>
+      <div id="packing-preview"></div>
+    </div>
+  </div>
+
+  <div id="pages-container"></div>
+
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const statusEl = document.getElementById('status');
+    const pdfPanel = document.getElementById('pdf-panel');
+    const pagesContainer = document.getElementById('pages-container');
+    const jobSelect = document.getElementById('job-select');
+    const plNumberInput = document.getElementById('pl-number');
+    const invoiceInput = document.getElementById('invoice-number');
+    const papLabelInput = document.getElementById('pap-label');
+    const maxPerCartonInput = document.getElementById('max-per-carton');
+    const netKgPieceInput = document.getElementById('net-kg-piece');
+    const cartonTareInput = document.getElementById('carton-tare-kg');
+    const cartonTypeInput = document.getElementById('carton-type');
+    const destinationInput = document.getElementById('destination-address');
+    const supplierInput = document.getElementById('supplier-address');
+    const packingPreview = document.getElementById('packing-preview');
+    const summaryEl = document.getElementById('detected-summary');
+    const rebuildBtn = document.getElementById('rebuild-btn');
+    const downloadXlsxBtn = document.getElementById('download-xlsx-btn');
+    const downloadLabelsXlsxBtn = document.getElementById('download-labels-xlsx-btn');
+    const downloadPdfBtn = document.getElementById('download-pdf-btn');
+
+    let parsedDocs = [];
+    let jobs = [];
+    let activeJob = null;
+    let activePackingRows = [];
+    let activeSizeColumns = [];
+    let activeLabelsData = [];
+    let activeLabelMeta = null;
+
+    const FRANCE_PAPF_ADDRESS = 'B. C. D.\nRue des Onze arpents\n41000 BLOIS\nFRANCE';
+    const FRANCE_GXO_ADDRESS = 'GXO Cellule Maison\n20 Rue Robert NAU\n41000 BLOIS\nFRANCE';
+    const ITALY_FALLBACK_ADDRESS = 'ITALY DELIVERY ADDRESS\n(edit this field before printing if OA did not contain the address)';
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) await processFiles(Array.from(e.dataTransfer.files));
+    });
+    fileInput.addEventListener('change', async (e) => {
+      if (e.target.files.length) await processFiles(Array.from(e.target.files));
+      fileInput.value = '';
+    });
+
+    rebuildBtn.addEventListener('click', rebuildFromControls);
+    downloadXlsxBtn.addEventListener('click', downloadPackingListXlsx);
+    downloadLabelsXlsxBtn.addEventListener('click', downloadLabelsXlsx);
+    downloadPdfBtn.addEventListener('click', printLabels);
+    jobSelect.addEventListener('change', () => {
+      activeJob = jobs[parseInt(jobSelect.value, 10)];
+      populateControlsFromJob(activeJob);
+      rebuildFromControls();
+    });
+    [plNumberInput, invoiceInput, papLabelInput, maxPerCartonInput, netKgPieceInput, cartonTareInput, cartonTypeInput, destinationInput, supplierInput].forEach(el => {
+      el.addEventListener('change', rebuildFromControls);
+    });
+
+    function setStatus(message, type = '') {
+      statusEl.textContent = message;
+      statusEl.className = 'status ' + type;
+    }
+
+    async function processFiles(files) {
+      resetAll();
+      setStatus('Reading files...');
+      const messages = [];
+
+      for (const file of files) {
+        try {
+          const name = file.name || '';
+          if (/\.pdf$/i.test(name)) {
+            const text = await extractPdfText(file);
+            const doc = analyzePdf(name, text);
+            parsedDocs.push(doc);
+            messages.push(`✓ ${name}: ${doc.type}`);
+          } else if (/\.xlsx$/i.test(name)) {
+            await processPackingListXlsx(file);
+            messages.push(`✓ ${name}: labels generated from existing packing list`);
+          } else {
+            messages.push(`Skipped ${name}: unsupported file type`);
+          }
+        } catch (err) {
+          console.error(err);
+          messages.push(`⚠ ${file.name}: ${err.message || err}`);
+        }
+      }
+
+      const pdfDocs = parsedDocs.filter(d => d.type !== 'UNKNOWN');
+      if (pdfDocs.length) {
+        jobs = makeJobs(pdfDocs);
+        setupJobSelector();
+        activeJob = jobs[0];
+        populateControlsFromJob(activeJob);
+        rebuildFromControls();
+        pdfPanel.style.display = 'block';
+        setStatus(messages.join('\n'), 'ok');
+      } else if (activeLabelsData.length) {
+        pdfPanel.style.display = 'none';
+        setStatus(messages.join('\n'), 'ok');
+      } else {
+        setStatus(messages.join('\n') || 'No readable OA / COMMESSA PDF or Packing List XLSX found.', 'warn');
+      }
+    }
+
+    function resetAll() {
+      parsedDocs = [];
+      jobs = [];
+      activeJob = null;
+      activePackingRows = [];
+      activeSizeColumns = [];
+      activeLabelsData = [];
+      activeLabelMeta = null;
+      pagesContainer.innerHTML = '';
+      packingPreview.innerHTML = '';
+      summaryEl.textContent = '';
+      pdfPanel.style.display = 'none';
+    }
+
+    async function extractPdfText(file) {
+      if (!window.pdfjsLib) throw new Error('PDF.js could not load. Check internet/CDN access.');
+      const buffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+      let fullText = '';
+
+      for (let pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
+        const page = await pdf.getPage(pageNo);
+        const content = await page.getTextContent({ normalizeWhitespace: true });
+        const lines = groupTextItemsIntoLines(content.items || []);
+        fullText += lines.join('\n') + '\n';
+      }
+      return normalizeText(fullText);
+    }
+
+    function groupTextItemsIntoLines(items) {
+      const rows = [];
+      for (const item of items) {
+        const str = (item.str || '').trim();
+        if (!str) continue;
+        const x = item.transform[4];
+        const y = item.transform[5];
+        let row = rows.find(r => Math.abs(r.y - y) < 3);
+        if (!row) {
+          row = { y, parts: [] };
+          rows.push(row);
+        }
+        row.parts.push({ x, str });
+      }
+      rows.sort((a, b) => b.y - a.y);
+      return rows.map(row => {
+        row.parts.sort((a, b) => a.x - b.x);
+        let out = '';
+        let lastX = null;
+        for (const part of row.parts) {
+          if (lastX !== null && part.x - lastX > 18) out += ' ';
+          if (out && !out.endsWith(' ')) out += ' ';
+          out += part.str;
+          lastX = part.x + part.str.length * 5;
+        }
+        return out.replace(/\s+/g, ' ').trim();
+      }).filter(Boolean);
+    }
+
+    function normalizeText(text) {
+      return String(text || '')
+        .replace(/\u00a0/g, ' ')
+        .replace(/[’‘]/g, "'")
+        .replace(/[“”]/g, '"')
+        .replace(/\r/g, '\n')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    function analyzePdf(name, text) {
+      const upper = text.toUpperCase();
+      if (/COMMESSA\s*N/i.test(text)) return parseCommessa(name, text);
+      if (/ORDRE\s+D[' ]?ACHAT\s*N/i.test(text) || /ORDRE\s+D.ACHAT\s*N/i.test(text)) return parseOA(name, text);
+      return { type: 'UNKNOWN', name, text };
+    }
+
+    function parseCommessa(name, text) {
+      const commessaNo = firstMatch(text, /COMMESSA\s*N[°º]?\s*(\d+)/i);
+      const oaNo = firstMatch(text, /N[°º]?\s*OA\s*:\s*(\d+)/i);
+      const customer = /Dior\s+Homme/i.test(text) ? 'Dior Homme' : (/Dior\s+Uniforme\s+Femme/i.test(text) ? 'Dior Uniforme Femme' : '');
+      const pap = /Dior\s+Homme|\bPAPH\b/i.test(text) ? 'PAP H' : (/Dior\s+Uniforme\s+Femme|\bPAPF\b/i.test(text) ? 'PAP F' : 'PAP F');
+      const style = firstMatch(text, /\bPAP[HF]\b\s+\S+\s+\S+\s+\S+\s+([A-Z0-9]+(?:\s+X\d{4})?)/i) || firstMatch(text, /\n\s*([0-9A-Z]{6,})\s+(?:EXT|\-|COLORIS)/i);
+      const color = parseCommessaColor(text);
+      const description = parseCommessaDescription(text);
+      const sizeQty = parseCommessaSizes(text);
+      return { type: 'COMMESSA', name, text, commessaNo, oaNo, customer, pap, style, color, description, sizeQty };
+    }
+
+    function parseCommessaColor(text) {
+      const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+      for (let i = 0; i < lines.length; i++) {
+        if (/COLORIS/i.test(lines[i])) {
+          for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+            if (/^\d{3,4}\s+/.test(lines[j])) return lines[j].replace(/\s+/g, ' ').trim();
+          }
+        }
+      }
+      return firstMatch(text, /COLORIS[\s\S]{0,120}?\n\s*(\d{3,4}\s+[^\n]+)/i) || '';
+    }
+
+    function parseCommessaDescription(text) {
+      const lines = String(text || '').split('\n').map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
+
+      // The COMMESSA contains both a material/plan line (example: "21UM790 - MAILLE UNIFORME")
+      // and the real garment description (example: "PULL ML UNIFORME"). Use the garment name only.
+      for (const line of lines) {
+        const d = extractGarmentDescription(line);
+        if (d) return d;
+      }
+
+      for (const line of lines) {
+        const m = line.match(/Ligne\s+de\s+production\s*:\s*\S*\s+(.+?)(?:\s+Compo\s+OK|$)/i);
+        const d = normalizeGarmentDescription(m ? m[1] : '');
+        if (d) return d;
+      }
+      return '';
+    }
+
+    function extractGarmentDescription(line) {
+      const src = String(line || '').replace(/\s+/g, ' ').trim();
+      if (!src) return '';
+      const m = src.match(/\b((?:PULL|T[- ]?SHIRT|TSHIRT|PANTALON|ROBE|VESTE|CHEMISE|JUPE|POLO|SWEAT|GILET|MANTEAU|SHORT)\b[ A-Z0-9.,'()\/-]*(?:UNIFORME|B\s*CD|CD|[A-Z])?)/i);
+      return normalizeGarmentDescription(m ? m[1] : '');
+    }
+
+    function normalizeGarmentDescription(text) {
+      let d = cleanDescription(text);
+      if (!d) return '';
+      // Remove captured material prefixes like "21UM790 - MAILLE UNIFORME" and keep the article name after it.
+      d = d.replace(/^\S+\s*-\s*(?:MAILLE|JERSEY|TISSU|MATI[EÈ]RE)\s+[A-Z0-9 .,'()\/-]*?(?=\b(?:PULL|T[- ]?SHIRT|TSHIRT|PANTALON|ROBE|VESTE|CHEMISE|JUPE|POLO|SWEAT|GILET|MANTEAU|SHORT)\b)/i, '').trim();
+      const garment = d.match(/\b((?:PULL|T[- ]?SHIRT|TSHIRT|PANTALON|ROBE|VESTE|CHEMISE|JUPE|POLO|SWEAT|GILET|MANTEAU|SHORT)\b[ A-Z0-9.,'()\/-]*)/i);
+      if (garment) d = cleanDescription(garment[1]);
+      // Do not accept pure material/plan names as DESCRIPTION.
+      if (/^(?:\S+\s*-\s*)?(?:MAILLE|JERSEY|TISSU|MATI[EÈ]RE)\b/i.test(d)) return '';
+      return d;
+    }
+
+    function parseCommessaSizes(text) {
+      const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+      let sizeLine = '';
+      let qtyLine = '';
+      for (const line of lines) {
+        if (/TAILLES\.\.\./i.test(line)) sizeLine = line;
+        if (/Quantit[eé]\s*:/i.test(line)) qtyLine = line;
+      }
+      if (!sizeLine || !qtyLine) return [];
+      const sizes = (sizeLine.split(/TAILLES\.\.\./i)[1] || '')
+        .replace(/TOTAL\s*:.*/i, '')
+        .trim()
+        .split(/\s+/)
+        .filter(isSizeToken);
+      const qtys = (qtyLine.split(/Quantit[eé]\s*:/i)[1] || '')
+        .replace(/\bUN\b.*/i, '')
+        .trim()
+        .split(/\s+/)
+        .map(parseEuroNumber)
+        .filter(n => Number.isFinite(n));
+      const out = [];
+      for (let i = 0; i < Math.min(sizes.length, qtys.length); i++) {
+        out.push({ size: sizes[i], qty: qtys[i] });
+      }
+      return out;
+    }
+
+    function parseOA(name, text) {
+      const orderNo = firstMatch(text, /ORDRE\s+D[' ]?ACHAT\s*N[°º]?\s*(\d+)/i) || firstMatch(text, /ORDRE\s+D.ACHAT\s*N[°º]?\s*(\d+)/i);
+      const header = text.match(/(\d{2}\/\d{2}\/\d{2})\s+\d+\(\d+\)\s+(\d+)\s+(\d{2}[A-Z])\s+([^\n]+)/i);
+      const poDate = header ? header[1] : firstMatch(text, /(\d{2}\/\d{2}\/\d{2})/);
+      const nProg = header ? header[2] : '';
+      const season = header ? `${header[3]} ${header[4]}`.trim() : '';
+      const deliveryDate = firstMatch(text, /\bUN\s+(\d{2}\/\d{2}\/\d{2})\b/i) || '';
+      const address = parseDeliveryAddress(text);
+      const items = parseOAItems(text);
+      const groups = groupItems(items, text);
+      const style = groups[0]?.style || firstMatch(text, /Mod[eè]le\s*:\s*([A-Z0-9]+)/i) || '';
+      const description = groups[0]?.description || parseOADescription(text, style) || '';
+      const color = groups[0]?.color || firstMatch(text, /Total\s+Coloris\s+(\d{3,4}\s+[^\n]+?)\s+\d/i) || '';
+      const totalQty = groups.reduce((sum, g) => sum + sumValues(g.sizes), 0);
+      return { type: 'OA', name, text, orderNo, nProg, poDate, season, deliveryDate, address, items, groups, style, description, color, totalQty };
+    }
+
+    function parseOAItems(text) {
+      const lines = text.split('\n').map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
+      const styles = [];
+      for (const line of lines) {
+        const model = line.match(/Mod[eè]le\s*:\s*([0-9A-Z]{6,})/i);
+        if (model && !styles.includes(model[1])) styles.push(model[1]);
+      }
+      for (const line of lines) {
+        const m = line.match(/^([0-9A-Z]{6,})\s+/);
+        if (m && /\bUN\b/.test(line) && !styles.includes(m[1])) styles.push(m[1]);
+      }
+
+      const items = [];
+      const sizePattern = '(?:XXXL|XXL|XL|XS|S|M|L|\d{1,3})';
+      for (const style of styles) {
+        const re = new RegExp('^' + escapeRegExp(style) + '\\s+(.+?)\\s+(' + sizePattern + ')\\s+(.+?)\\s+([0-9]+(?:[,.][0-9]+)?)\\s+UN\\b', 'i');
+        for (const line of lines) {
+          if (!line.startsWith(style) || !/\bUN\b/i.test(line)) continue;
+          const m = line.match(re);
+          if (!m) continue;
+          const color = m[1].trim();
+          const size = m[2].trim();
+          const ref = m[3].trim();
+          const qty = parseEuroNumber(m[4]);
+          if (!isSizeToken(size) || !Number.isFinite(qty) || qty <= 0) continue;
+          items.push({ style, color, size, ref, qty });
+        }
+      }
+      return items;
+    }
+
+    function groupItems(items, text) {
+      const map = new Map();
+      for (const item of items) {
+        // DESCRIPTION in the packing list is the model/article description from the OA header line.
+        // Example in the OA: "Modèle : 1U4S05AM790  PULL ML UNIFORME".
+        // The Reference Fournisseur row after the size can be PELINTEX..., but that is not the description.
+        const description = parseOADescription(text, item.style) || cleanReferenceDescription(item.ref) || '';
+        const key = [item.style, item.color, description].join('||');
+        if (!map.has(key)) {
+          map.set(key, { style: item.style, color: item.color, description, sizes: {}, sizeOrder: [] });
+        }
+        const g = map.get(key);
+        if (!g.sizeOrder.includes(item.size)) g.sizeOrder.push(item.size);
+        g.sizes[item.size] = (g.sizes[item.size] || 0) + item.qty;
+      }
+      return Array.from(map.values());
+    }
+
+    function parseOADescription(text, style) {
+      if (!style) return '';
+      const esc = escapeRegExp(style);
+      const lines = String(text || '').split('\n').map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
+
+      // Best source: the OA model/header row. The description is placed after "Modèle : <style>".
+      // Example: "Modèle : 1U4S05AM790  PULL ML UNIFORME".
+      for (const line of lines) {
+        const reLine = new RegExp('Mod[eè]le\\s*:\\s*' + esc + '\\b\\s*(.+)$', 'i');
+        const m = line.match(reLine);
+        if (!m) continue;
+        let d = m[1]
+          .replace(/\b\d{6,}\b.*$/i, '')                 // strip article code and following amounts when present
+          .replace(/\b\d+[,.]\d{2}\s+UN\b.*$/i, '')      // strip qty/unit/date/totals
+          .replace(/\b\d{2}\/\d{2}\/\d{2}\b.*$/i, '')
+          .replace(/^[-.\s]+/, '')
+          .replace(/[-.\s]+$/, '')
+          .trim();
+        d = normalizeGarmentDescription(d) || cleanDescription(d);
+        if (d && !/^(?:\S+\s*-\s*)?(?:MAILLE|JERSEY|TISSU|MATI[EÈ]RE)\b/i.test(d)) return d;
+      }
+
+      // Fallback for text extracted without useful line breaks.
+      const re1 = new RegExp('Mod[eè]le\\s*:\\s*' + esc + '\\s+([A-Z0-9][^\\n]+?)(?:\\s+\\d{6,}|\\s+\\d+[,.]\\d{2}\\s+UN|\\n|$)', 'i');
+      const m1 = String(text || '').match(re1);
+      if (m1) {
+        const raw = m1[1].replace(/^[-.\s]+|[-.\s]+$/g, '').trim();
+        const d = normalizeGarmentDescription(raw) || cleanDescription(raw);
+        if (d && !/^(?:\S+\s*-\s*)?(?:MAILLE|JERSEY|TISSU|MATI[EÈ]RE)\b/i.test(d)) return d;
+      }
+      return '';
+    }
+
+    function cleanReferenceDescription(ref) {
+      return cleanDescription(String(ref || '')
+        .replace(/\s+SKU\s*:\s*\S+.*$/i, '')
+        .trim());
+    }
+
+    function stripSupplierFromReference(ref) {
+      return cleanDescription(String(ref || '')
+        .replace(/\s+PELINTEX(?:\s+\(.*?\))?$/i, '')
+        .replace(/^PELINTEX(?:\s+\(.*?\))?$/i, '')
+        .trim());
+    }
+
+    function cleanDescription(text) {
+      const d = String(text || '')
+        .replace(/\s+/g, ' ')
+        .replace(/^(?:-|\.)\s*$/, '')
+        .replace(/\bCompo\s+OK\b/ig, '')
+        .trim();
+      if (!d || d === '-' || d === '.') return '';
+      if (/^\d{3,4}\s+/.test(d)) return '';
+      return d;
+    }
+
+    function parseDeliveryAddress(text) {
+      if (/B\.\s*C\.\s*D\./i.test(text) || /Rue\s+des\s+Onze\s+arpents/i.test(text)) return FRANCE_PAPF_ADDRESS;
+      if (/GXO\s+Cellule\s+Maison/i.test(text) || /20\s+Rue\s+Robert\s+NAU/i.test(text)) return FRANCE_GXO_ADDRESS;
+
+      const m = text.match(/Adresse\s+de\s+Livraison([\s\S]{0,900}?)(?:Acheteur|Adresse\s+de\s+Facturation)/i);
+      if (!m) return '';
+      const bad = /Fournisseur|PELINTEX|HRISTO|RUSE|BULGARIA|Contact|Acheteur|Groupe|Production|SERVICE/i;
+      const lines = m[1].split('\n')
+        .map(x => x.trim())
+        .filter(Boolean)
+        .map(x => x.replace(/\s{2,}.*/, '').trim())
+        .filter(x => x && !bad.test(x));
+      return unique(lines).slice(0, 5).join('\n');
+    }
+
+    function makeJobs(docs) {
+      const oas = docs.filter(d => d.type === 'OA');
+      const commessas = docs.filter(d => d.type === 'COMMESSA');
+      const output = [];
+
+      if (oas.length) {
+        for (const oa of oas) {
+          const comm = findMatchingCommessa(oa, commessas);
+          output.push(mergeJob(oa, comm));
+        }
+      } else {
+        for (const comm of commessas) output.push(mergeJob(null, comm));
+      }
+      return output.length ? output : [mergeJob(oas[0] || null, commessas[0] || null)];
+    }
+
+    function findMatchingCommessa(oa, commessas) {
+      if (!commessas.length) return null;
+      return commessas.find(c => c.oaNo && oa.orderNo && c.oaNo === oa.orderNo)
+        || commessas.find(c => c.commessaNo && oa.nProg && c.commessaNo === oa.nProg)
+        || commessas.find(c => oa.name.includes(c.commessaNo || '___') || c.name.includes(oa.orderNo || '___'))
+        || (commessas.length === 1 ? commessas[0] : commessas[0]);
+    }
+
+    function mergeJob(oa, comm) {
+      const pap = comm?.pap || (/PAPH/i.test(oa?.season || '') ? 'PAP H' : 'PAP F');
+      let address = oa?.address || defaultAddressForPap(pap);
+      const groups = oa?.groups?.length ? oa.groups : groupsFromCommessa(comm);
+      const orderNo = oa?.orderNo || comm?.oaNo || '';
+      const commessaNo = comm?.commessaNo || oa?.nProg || '';
+      return {
+        oa,
+        comm,
+        orderNo,
+        commessaNo,
+        pap,
+        address,
+        supplierAddress: 'PELINTEX BULGARIA\n5 HRISTO BOTEV,\n7000 RUSE, BULGARIA',
+        poDate: oa?.poDate || '',
+        deliveryDate: oa?.deliveryDate || '',
+        season: oa?.season || '',
+        groups,
+        customer: comm?.customer || '',
+        sourceNames: [oa?.name, comm?.name].filter(Boolean).join(' + ')
+      };
+    }
+
+    function groupsFromCommessa(comm) {
+      if (!comm) return [];
+      const sizes = {};
+      const sizeOrder = [];
+      for (const sq of comm.sizeQty || []) {
+        sizes[sq.size] = sq.qty;
+        sizeOrder.push(sq.size);
+      }
+      return [{
+        style: comm.style || '',
+        color: comm.color || '',
+        description: comm.description || '',
+        sizes,
+        sizeOrder
+      }];
+    }
+
+    function defaultAddressForPap(pap) {
+      if (pap === 'PAP H') return ITALY_FALLBACK_ADDRESS;
+      return FRANCE_PAPF_ADDRESS;
+    }
+
+    function setupJobSelector() {
+      jobSelect.innerHTML = '';
+      jobs.forEach((job, idx) => {
+        const opt = document.createElement('option');
+        opt.value = String(idx);
+        opt.textContent = `${job.orderNo || 'no PO'} / Commessa ${job.commessaNo || '-'} / ${job.pap}`;
+        jobSelect.appendChild(opt);
+      });
+      jobSelect.disabled = jobs.length <= 1;
+    }
+
+    function populateControlsFromJob(job) {
+      const now = new Date();
+      const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+      plNumberInput.value = plNumberInput.value || `${ymd}-${job.orderNo || job.commessaNo || '01'}`;
+      invoiceInput.value = invoiceInput.value || `          / ${formatDateDots(new Date())}`;
+      papLabelInput.value = job.pap || 'PAP F';
+      destinationInput.value = job.address || defaultAddressForPap(job.pap || 'PAP F');
+      supplierInput.value = job.supplierAddress || supplierInput.value;
+    }
+
+    function formatDateDots(date) {
+      const d = date instanceof Date ? date : new Date(date);
+      if (Number.isNaN(d.getTime())) return '';
+      return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+    }
+
+    function rebuildFromControls() {
+      if (!activeJob) return;
+      activeJob.pap = papLabelInput.value;
+      activeJob.address = destinationInput.value.trim();
+      activeJob.supplierAddress = supplierInput.value.trim();
+      const maxPerCarton = Math.max(1, parseInt(maxPerCartonInput.value, 10) || 25);
+      const netKg = Math.max(0, parseFloat(netKgPieceInput.value) || 0);
+      const tareKg = Math.max(0, parseFloat(cartonTareInput.value) || 0);
+
+      const built = buildPackingRows(activeJob.groups, maxPerCarton, netKg, tareKg);
+      activePackingRows = built.rows;
+      activeSizeColumns = built.sizeColumns;
+      activeLabelsData = packingRowsToLabels(activePackingRows, activeSizeColumns);
+
+      const meta = getControlsMeta();
+      activeLabelMeta = meta;
+      renderPackingPreview(activePackingRows, activeSizeColumns);
+      renderLabels(activeLabelsData, meta);
+      updateSummary();
+    }
+
+    function getControlsMeta() {
+      return {
+        plNumber: plNumberInput.value.trim(),
+        invoiceNumber: invoiceInput.value.trim(),
+        pap: papLabelInput.value,
+        destinationAddress: destinationInput.value.trim(),
+        supplierAddress: supplierInput.value.trim(),
+        cartonType: cartonTypeInput.value.trim(),
+        deliveryDate: activeJob?.deliveryDate || '',
+        orderNo: activeJob?.orderNo || '',
+        commessaNo: activeJob?.commessaNo || ''
+      };
+    }
+
+    function updateSummary() {
+      if (!activeJob) return;
+      const totalQty = activePackingRows.reduce((sum, row) => sum + row.totalQty, 0);
+      const totalCartons = activePackingRows.reduce((sum, row) => sum + row.ttlCtns, 0);
+      const totalNet = activePackingRows.reduce((sum, row) => sum + row.ttlNetWt, 0);
+      const totalGross = activePackingRows.reduce((sum, row) => sum + row.ttlGrossWt, 0);
+      summaryEl.textContent = [
+        `Files: ${activeJob.sourceNames || '-'}`,
+        `PO: ${activeJob.orderNo || '-'}    Commessa: ${activeJob.commessaNo || '-'}    Type: ${activeJob.pap}`,
+        `Generated: ${totalCartons} cartons, ${totalQty} pcs, ${totalNet.toFixed(2)} kg net, ${totalGross.toFixed(2)} kg gross`
+      ].join('\n');
+    }
+
+    function buildPackingRows(groups, maxPerCarton, netKgPiece, cartonTareKg) {
+      const sizeColumns = collectSizeColumns(groups);
+      const rows = [];
+      let nextCarton = 1;
+      for (const group of groups) {
+        const cartons = allocateCartons(group, sizeColumns, maxPerCarton);
+        const compressed = compressCartons(cartons, group, sizeColumns, nextCarton, netKgPiece, cartonTareKg);
+        rows.push(...compressed.rows);
+        nextCarton = compressed.nextCarton;
+      }
+      return { rows, sizeColumns };
+    }
+
+    function collectSizeColumns(groups) {
+      const out = [];
+      for (const group of groups || []) {
+        for (const s of group.sizeOrder || Object.keys(group.sizes || {})) {
+          if (!out.includes(s)) out.push(s);
+        }
+      }
+      return out.sort(compareSizesKeepingCommonOrder);
+    }
+
+    function allocateCartons(group, sizeColumns, maxPerCarton) {
+      const cartons = [];
+      let current = emptySizeMap(sizeColumns);
+      let currentTotal = 0;
+      const order = (group.sizeOrder && group.sizeOrder.length ? group.sizeOrder : sizeColumns).slice().sort(compareSizesKeepingCommonOrder);
+
+      for (const size of order) {
+        let remaining = Math.round(group.sizes[size] || 0);
+        while (remaining > 0) {
+          const room = maxPerCarton - currentTotal;
+          const take = Math.min(room, remaining);
+          current[size] = (current[size] || 0) + take;
+          currentTotal += take;
+          remaining -= take;
+          if (currentTotal >= maxPerCarton) {
+            cartons.push({ sizes: current, total: currentTotal });
+            current = emptySizeMap(sizeColumns);
+            currentTotal = 0;
+          }
+        }
+      }
+      if (currentTotal > 0) cartons.push({ sizes: current, total: currentTotal });
+      return cartons;
+    }
+
+    function compressCartons(cartons, group, sizeColumns, startCarton, netKgPiece, cartonTareKg) {
+      const rows = [];
+      let i = 0;
+      let cartonNo = startCarton;
+      while (i < cartons.length) {
+        const key = sizeKey(cartons[i].sizes, sizeColumns);
+        let count = 1;
+        while (i + count < cartons.length && sizeKey(cartons[i + count].sizes, sizeColumns) === key) count++;
+        const qtyCtn = cartons[i].total;
+        const netWt = round2(qtyCtn * netKgPiece);
+        const grossWt = round2(netWt + cartonTareKg);
+        rows.push({
+          ctnStart: cartonNo,
+          ctnEnd: cartonNo + count - 1,
+          style: group.style || '',
+          description: group.description || '',
+          color: group.color || '',
+          sizes: { ...cartons[i].sizes },
+          qtyCtn,
+          ttlCtns: count,
+          netWt,
+          grossWt,
+          ttlNetWt: round2(netWt * count),
+          ttlGrossWt: round2(grossWt * count),
+          totalQty: qtyCtn * count
+        });
+        cartonNo += count;
+        i += count;
+      }
+      return { rows, nextCarton: cartonNo };
+    }
+
+    function packingRowsToLabels(rows, sizeColumns) {
+      const labels = [];
+      const totalPackages = rows.reduce((sum, row) => sum + row.ttlCtns, 0);
+      for (const row of rows) {
+        for (let ctn = row.ctnStart; ctn <= row.ctnEnd; ctn++) {
+          labels.push({
+            cartonNum: ctn,
+            totalPackages,
+            codeArticle: row.style,
+            description: row.description,
+            color: row.color,
+            sizes: sizeColumns.map(size => ({ size, qty: row.sizes[size] || '' })).filter(x => x.qty !== '' && x.qty !== 0),
+            totalQty: row.qtyCtn,
+            netWt: row.netWt,
+            grossWt: row.grossWt
+          });
+        }
+      }
+      return labels;
+    }
+
+    async function processPackingListXlsx(file) {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      const parsed = parsePackingListRows(rawRows);
+      activeLabelsData = parsed.labelsData;
+      activeSizeColumns = parsed.sizeColumns;
+      activeLabelMeta = {
+        pap: parsed.pap || 'PAP F',
+        destinationAddress: parsed.destination || FRANCE_GXO_ADDRESS,
+        supplierAddress: supplierInput.value.trim(),
+        orderNo: parsed.orderNo,
+        commessaNo: parsed.commessaNo
+      };
+      renderLabels(activeLabelsData, activeLabelMeta);
+    }
+
+    function parsePackingListRows(rawRows) {
+      let po = '', commessa = '', totalPackages = 0, headerIndex = -1;
+      let sizeColumns = [];
+      const labelsData = [];
+      let destination = '';
+      let pap = '';
+
+      for (let i = 0; i < rawRows.length; i++) {
+        const row = rawRows[i].map(c => c !== null && c !== undefined ? String(c).trim() : '');
+        const rowStr = row.join(' ');
+        if (/department\s+PAP-H/i.test(rowStr)) pap = 'PAP H';
+        if (/department\s+PAP-F/i.test(rowStr)) pap = 'PAP F';
+        if (/Order\s+No/i.test(rowStr)) {
+          const joined = row.join(' ');
+          const m = joined.match(/(\d+)\s*\/\s*Commessa\s*(\d+)/i);
+          if (m) { po = m[1]; commessa = m[2]; }
+        }
+        if (/Destination/i.test(rowStr)) {
+          destination = row.filter(Boolean).slice(1).join(' ').replace(/^Destination:\s*/i, '').trim();
+        }
+        if (/Total\s+Packages/i.test(rowStr)) {
+          for (const cell of row) {
+            const val = parseInt(cell, 10);
+            if (!isNaN(val) && val > 0) { totalPackages = val; break; }
+          }
+        }
+        if (row[0] === 'CTN NO.') {
+          headerIndex = i;
+          sizeColumns = [];
+          for (let j = 6; j < row.length; j++) {
+            if (/QTY\s*CTN|TTL\s*CTNS/i.test(row[j])) break;
+            if (row[j]) sizeColumns.push({ index: j, name: row[j] });
+          }
+          continue;
+        }
+        if (headerIndex !== -1 && i > headerIndex) {
+          if (!row[0] || isNaN(parseInt(row[0], 10))) continue;
+          const startCtn = parseInt(row[0], 10);
+          const endCtn = row[2] && !isNaN(parseInt(row[2], 10)) ? parseInt(row[2], 10) : startCtn;
+          const codeArticle = row[3] || '';
+          const description = row[4] || '';
+          const color = row[5] || '';
+          const qtyCtnCol = 6 + sizeColumns.length;
+          const ttlCtnCol = qtyCtnCol + 1;
+          const netCol = qtyCtnCol + 2;
+          const grossCol = qtyCtnCol + 3;
+          const qtyCtn = parseEuroNumber(row[qtyCtnCol]) || 0;
+          const netWt = parseEuroNumber(row[netCol]) || 0;
+          const grossWt = parseEuroNumber(row[grossCol]) || 0;
+          const rowSizes = [];
+          sizeColumns.forEach(sc => {
+            const qty = parseEuroNumber(row[sc.index]);
+            if (Number.isFinite(qty) && qty > 0) rowSizes.push({ size: sc.name, qty });
+          });
+          for (let ctn = startCtn; ctn <= endCtn; ctn++) {
+            labelsData.push({ cartonNum: ctn, codeArticle, description, color, sizes: rowSizes, totalQty: qtyCtn, netWt, grossWt, totalPackages });
+          }
+          if (!totalPackages) totalPackages += parseInt(row[ttlCtnCol], 10) || 0;
+        }
+      }
+      if (!totalPackages) totalPackages = labelsData.length;
+      labelsData.forEach(x => x.totalPackages = totalPackages);
+      return { labelsData, sizeColumns: sizeColumns.map(x => x.name), orderNo: po, commessaNo: commessa, destination, pap };
+    }
+
+    function renderPackingPreview(rows, sizeColumns) {
+      if (!rows.length) {
+        packingPreview.innerHTML = '<div class="status warn">No packing rows generated. Check that the OA PDF text contains item rows with size quantities.</div>';
+        return;
+      }
+      const headers = ['CTN NO.', 'to', '', 'REF NO.', 'DESCRIPTION', 'COLOR', ...sizeColumns, 'QTY CTN', 'TTL CTNS', 'NET WT', 'GR. WT', 'TTL NET WT', 'TTL GR. WT', 'TTL QTY'];
+      let html = '<table class="preview-table"><thead><tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead><tbody>';
+      for (const row of rows) {
+        const values = [row.ctnStart, 'to', row.ctnEnd, row.style, row.description, row.color, ...sizeColumns.map(s => row.sizes[s] || ''), row.qtyCtn, row.ttlCtns, row.netWt.toFixed(2), row.grossWt.toFixed(2), row.ttlNetWt.toFixed(2), row.ttlGrossWt.toFixed(2), row.totalQty];
+        html += '<tr>' + values.map((v, idx) => `<td class="${idx === 4 || idx === 5 ? 'left' : ''}">${escapeHtml(v)}</td>`).join('') + '</tr>';
+      }
+      html += '</tbody></table>';
+      packingPreview.innerHTML = html;
+    }
+
+    function renderLabels(labelsData, meta) {
+      pagesContainer.innerHTML = '';
+      if (!labelsData.length) return;
+      const pageCount = Math.ceil(labelsData.length / 4);
+      let labelIdx = 0;
+      for (let p = 0; p < pageCount; p++) {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'page';
+        for (let i = 0; i < 4; i++) {
+          if (labelIdx >= labelsData.length) break;
+          const data = labelsData[labelIdx];
+          let tableRowsHtml = '';
+          const displayRows = data.sizes.slice(0, 4);
+          while (displayRows.length < 4) displayRows.push({ size: '', qty: '' });
+          const blankCell = '\u00a0';
+          for (let r = 0; r < 4; r++) {
+            const s = displayRows[r];
+            const dispColor = (r === 0 && data.color) ? escapeHtml(data.color) : blankCell;
+            const dispArticle = (r === 0 && data.codeArticle) ? escapeHtml(data.codeArticle) : blankCell;
+            const dispSize = (s.size !== undefined && s.size !== null && String(s.size) !== '') ? escapeHtml(s.size) : blankCell;
+            const dispQty = (s.qty !== undefined && s.qty !== null && String(s.qty) !== '') ? escapeHtml(s.qty) : blankCell;
+            tableRowsHtml += `<tr><td>${dispColor}</td><td>${dispArticle}</td><td>${dispSize}</td><td>${dispQty}</td></tr>`;
+          }
+
+          const parcelFor = escapeHtml(compactAddressForLabel(meta.destinationAddress, FRANCE_GXO_ADDRESS)).replace(/\n/g, '<br>');
+          const supplier = escapeHtml(compactAddressForLabel(meta.supplierAddress, 'PELINTEX BULGARIA\n5 HRISTO BOTEV,\n7000 RUSE, BULGARIA')).replace(/\n/g, '<br>');
+          const po = escapeHtml(meta.orderNo || '');
+          const commessa = escapeHtml(meta.commessaNo || '');
+          pageDiv.innerHTML += `
+            <div class="label-wrapper">
+              <div class="section pap-row">${escapeHtml(meta.pap || 'PAP F')}</div>
+              <div class="section address-row">
+                <div class="addr-col"><u><b>PARCEL FOR:</b></u><br>${parcelFor}</div>
+                <div class="addr-col"><u><b>SUPPLIER NAME:</b></u><br>${supplier}</div>
+              </div>
+              <div class="section po-row">
+                <div class="po-col">PO: ${po}</div>
+                <div class="po-col">COMMESA: ${commessa}</div>
+              </div>
+              <div class="section table-section">
+                <table class="items-table"><colgroup><col style="width:26%;"><col style="width:29%;"><col style="width:18%;"><col style="width:27%;"></colgroup>
+                  <thead><tr><th>COLOR</th><th>CODE ARTICLE</th><th>SIZE</th><th>TOTAL QTY</th></tr></thead>
+                  <tbody>${tableRowsHtml}
+                    <tr class="footer-row-tr total-row-tr">
+                      <td style="text-align:left; padding-left: 8px;">TOTAL</td>
+                      <td style="text-align:right; padding-right:15px;">${escapeHtml(data.totalQty)}</td>
+                      <td style="text-align:left; padding-left: 8px;">PIECES</td>
+                      <td></td>
+                    </tr>
+                    <tr class="footer-row-tr carton-row-tr">
+                      <td class="carton-label" style="text-align:left; padding-left: 8px;">CARTON NUMBER</td>
+                      <td class="carton-value" style="text-align:right; padding-right:15px;">${escapeHtml(data.cartonNum)}</td>
+                      <td class="carton-of" style="text-align:center;">OF</td>
+                      <td class="carton-total" style="text-align:center;">${escapeHtml(data.totalPackages)}</td>
+                    </tr>
+                    <tr class="footer-row-tr weight-row-tr">
+                      <td class="weight-net-label" style="text-align:left; padding-left: 8px;">NETT WEIGHT KG</td>
+                      <td class="weight-net-value" style="text-align:right; padding-right:15px;">${formatWeight(data.netWt)}</td>
+                      <td class="weight-gross-label" style="text-align:left; padding-left: 8px; white-space:nowrap;">GROSS WEIGHT KG</td>
+                      <td class="weight-gross-value" style="text-align:right; padding-right:8px;">${formatWeight(data.grossWt)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>`;
+          labelIdx++;
+        }
+        pagesContainer.appendChild(pageDiv);
+      }
+    }
+
+    function downloadPackingListXlsx() {
+      if (!activePackingRows.length || !activeJob) {
+        alert('No packing list data generated yet.');
+        return;
+      }
+      const meta = getControlsMeta();
+      const wb = XLSX.utils.book_new();
+      const ws = buildPackingListWorksheet(activePackingRows, activeSizeColumns, meta);
+      XLSX.utils.book_append_sheet(wb, ws, 'Packing List');
+      const fileName = safeFileName(`Packing list ${meta.orderNo || activeJob.orderNo || 'Dior'} Commessa ${meta.commessaNo || activeJob.commessaNo || ''}.xlsx`);
+      XLSX.writeFile(wb, fileName, { bookType: 'xlsx', compression: true });
+    }
+
+    function buildPackingListWorksheet(rows, sizeColumns, meta) {
+      const sizeCount = sizeColumns.length;
+      const qtyCtnCol = 6 + sizeCount;
+      const ttlCtnCol = qtyCtnCol + 1;
+      const netCol = qtyCtnCol + 2;
+      const grossCol = qtyCtnCol + 3;
+      const ttlNetCol = qtyCtnCol + 4;
+      const ttlGrossCol = qtyCtnCol + 5;
+      const ttlQtyCol = qtyCtnCol + 6;
+      const lastCol = ttlQtyCol;
+      const headerRow = 8;
+      const firstDataRow = headerRow + 1;
+      const totalRow = firstDataRow + rows.length;
+
+      const leftValueEnd = Math.max(5, Math.min(9, lastCol - 6));
+      const leftLabelEnd = Math.min(2, leftValueEnd - 1);
+      const leftValueStart = leftLabelEnd + 1;
+      const rightStart = Math.max(leftValueEnd + 1, lastCol - 5);
+      const rightLabelEnd = Math.min(rightStart + 2, lastCol - 3);
+      const rightValueStart = Math.min(rightLabelEnd + 1, lastCol - 2);
+      const rightValueEnd = Math.max(rightValueStart, lastCol - 1);
+      const unitCol = lastCol;
+
+      const aoa = [];
+      for (let r = 0; r < totalRow + 3; r++) aoa[r] = Array(lastCol + 1).fill('');
+
+      const cartonSpec = normalizeCartonSpec(meta.cartonType || '60/40/15');
+      const invoiceText = meta.invoiceNumber || `          / ${formatDateDots(new Date())}`;
+
+      aoa[0][0] = `PACKING LIST № ${meta.plNumber || ''}`;
+
+      aoa[1][0] = `department ${meta.pap === 'PAP H' ? 'PAP-H' : 'PAP-F'} uniform order`;
+      aoa[1][rightStart] = 'N Weight:';
+      aoa[1][rightValueStart] = { f: `${colLetter(ttlNetCol + 1)}${totalRow + 1}`, v: sumRows(rows, 'ttlNetWt'), t: 'n' };
+      aoa[1][unitCol] = 'kg';
+
+      aoa[2][0] = 'Order No.:';
+      aoa[2][leftValueStart] = `${meta.orderNo || ''}/ Commessa ${meta.commessaNo || ''}`.trim();
+      aoa[2][rightStart] = 'G Weight:';
+      aoa[2][rightValueStart] = { f: `${colLetter(ttlGrossCol + 1)}${totalRow + 1}`, v: sumRows(rows, 'ttlGrossWt'), t: 'n' };
+      aoa[2][unitCol] = 'kg';
+
+      aoa[3][0] = 'Destination:';
+      aoa[3][leftValueStart] = (meta.destinationAddress || '').replace(/\n/g, ', ');
+      aoa[3][rightStart] = 'Total Packages:';
+      aoa[3][rightValueStart] = { f: `${colLetter(ttlCtnCol + 1)}${totalRow + 1}`, v: sumRows(rows, 'ttlCtns'), t: 'n' };
+      aoa[3][unitCol] = 'Cartons';
+
+      aoa[4][0] = 'Invoice number:';
+      aoa[4][leftValueStart] = invoiceText;
+
+      aoa[5][0] = 'Total Quantity:';
+      aoa[5][leftValueStart] = { f: `${colLetter(ttlQtyCol + 1)}${totalRow + 1}`, v: sumRows(rows, 'totalQty'), t: 'n' };
+      aoa[5][leftValueStart + 1] = 'Pcs';
+
+      aoa[6][rightStart] = cartonSpec;
+      aoa[7][0] = 'N/M';
+
+      const headers = ['CTN\nNO.', '', '', 'REF NO.', 'DESCRIPTION', 'COLOR', ...sizeColumns, 'QTY\nCTN', 'TTL\nCTNS', 'NET WT', 'GR. WT', 'TTL NET\nWT', 'TTL GR.\nWT', 'TTL QTY'];
+      aoa[headerRow] = headers;
+
+      rows.forEach((row, idx) => {
+        const r = firstDataRow + idx;
+        const excelRow = r + 1;
+        aoa[r][0] = row.ctnStart;
+        aoa[r][1] = 'to';
+        aoa[r][2] = row.ctnEnd;
+        aoa[r][3] = row.style;
+        aoa[r][4] = row.description;
+        aoa[r][5] = row.color;
+        sizeColumns.forEach((s, si) => { aoa[r][6 + si] = row.sizes[s] || ''; });
+        const sizeRange = `${colLetter(7)}${excelRow}:${colLetter(6 + sizeCount)}${excelRow}`;
+        aoa[r][qtyCtnCol] = { f: `IF(SUM(${sizeRange})>0,SUM(${sizeRange}),"")`, v: row.qtyCtn, t: 'n' };
+        aoa[r][ttlCtnCol] = { f: `IF(${colLetter(3)}${excelRow}>0,${colLetter(3)}${excelRow}-${colLetter(1)}${excelRow}+1,"")`, v: row.ttlCtns, t: 'n' };
+        aoa[r][netCol] = { f: `${colLetter(qtyCtnCol + 1)}${excelRow}*${parseFloat(netKgPieceInput.value || '0')}`, v: row.netWt, t: 'n' };
+        aoa[r][grossCol] = { f: `${colLetter(netCol + 1)}${excelRow}+${parseFloat(cartonTareInput.value || '0')}`, v: row.grossWt, t: 'n' };
+        aoa[r][ttlNetCol] = { f: `IF(${colLetter(netCol + 1)}${excelRow}>0,${colLetter(ttlCtnCol + 1)}${excelRow}*${colLetter(netCol + 1)}${excelRow},"")`, v: row.ttlNetWt, t: 'n' };
+        aoa[r][ttlGrossCol] = { f: `IF(${colLetter(grossCol + 1)}${excelRow}>0,${colLetter(ttlCtnCol + 1)}${excelRow}*${colLetter(grossCol + 1)}${excelRow},"")`, v: row.ttlGrossWt, t: 'n' };
+        aoa[r][ttlQtyCol] = { f: `IF(${colLetter(ttlCtnCol + 1)}${excelRow}<>"",${colLetter(ttlCtnCol + 1)}${excelRow}*${colLetter(qtyCtnCol + 1)}${excelRow},"")`, v: row.totalQty, t: 'n' };
+      });
+
+      const tr = totalRow;
+      const firstExcelDataRow = firstDataRow + 1;
+      const lastExcelDataRow = totalRow;
+      aoa[tr][0] = 'TOTAL';
+      for (let c = 6; c < 6 + sizeCount; c++) {
+        const col = colLetter(c + 1);
+        const ttlCtnColLetter = colLetter(ttlCtnCol + 1);
+        aoa[tr][c] = { f: `SUMPRODUCT(${col}${firstExcelDataRow}:${col}${lastExcelDataRow},$${ttlCtnColLetter}$${firstExcelDataRow}:$${ttlCtnColLetter}$${lastExcelDataRow})`, v: rows.reduce((sum, row) => sum + (row.sizes[sizeColumns[c - 6]] || 0) * row.ttlCtns, 0), t: 'n' };
+      }
+      aoa[tr][qtyCtnCol] = 'total';
+      aoa[tr][ttlCtnCol] = { f: `SUM(${colLetter(ttlCtnCol + 1)}${firstExcelDataRow}:${colLetter(ttlCtnCol + 1)}${lastExcelDataRow})`, v: sumRows(rows, 'ttlCtns'), t: 'n' };
+      aoa[tr][ttlNetCol] = { f: `SUMPRODUCT(${colLetter(netCol + 1)}${firstExcelDataRow}:${colLetter(netCol + 1)}${lastExcelDataRow},${colLetter(ttlCtnCol + 1)}${firstExcelDataRow}:${colLetter(ttlCtnCol + 1)}${lastExcelDataRow})`, v: sumRows(rows, 'ttlNetWt'), t: 'n' };
+      aoa[tr][ttlGrossCol] = { f: `SUMPRODUCT(${colLetter(ttlCtnCol + 1)}${firstExcelDataRow}:${colLetter(ttlCtnCol + 1)}${lastExcelDataRow},${colLetter(grossCol + 1)}${firstExcelDataRow}:${colLetter(grossCol + 1)}${lastExcelDataRow})`, v: sumRows(rows, 'ttlGrossWt'), t: 'n' };
+      aoa[tr][ttlQtyCol] = { f: `SUM(${colLetter(ttlQtyCol + 1)}${firstExcelDataRow}:${colLetter(ttlQtyCol + 1)}${lastExcelDataRow})`, v: sumRows(rows, 'totalQty'), t: 'n' };
+      aoa[tr + 2][1] = `1 PL = MAX 40 boxes ${cartonSpec.replace(/^colis\s+/i, '')}`;
+
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const merges = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: lastCol } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: leftValueEnd } },
+        { s: { r: 6, c: rightStart }, e: { r: 6, c: lastCol } },
+        { s: { r: 7, c: 0 }, e: { r: 7, c: Math.min(2, lastCol) } },
+        { s: { r: tr + 2, c: 1 }, e: { r: tr + 2, c: Math.min(10, lastCol) } }
+      ];
+      for (let r = 2; r <= 5; r++) {
+        merges.push({ s: { r, c: 0 }, e: { r, c: leftLabelEnd } });
+      }
+      for (let r = 2; r <= 4; r++) {
+        merges.push({ s: { r, c: leftValueStart }, e: { r, c: leftValueEnd } });
+      }
+      for (let r = 1; r <= 3; r++) {
+        merges.push({ s: { r, c: rightStart }, e: { r, c: rightLabelEnd } });
+        if (rightValueStart < unitCol) merges.push({ s: { r, c: rightValueStart }, e: { r, c: rightValueEnd } });
+      }
+      ws['!merges'] = merges;
+      ws['!cols'] = buildColumnWidths(sizeCount);
+      ws['!rows'] = buildRowHeights(totalRow);
+      ws['!margins'] = { left: 0.25, right: 0.25, top: 0.25, bottom: 0.25, header: 0.1, footer: 0.1 };
+      applyPackingListStyles(ws, totalRow, lastCol, sizeCount, {
+        headerRow,
+        firstDataRow,
+        leftValueEnd,
+        leftLabelEnd,
+        leftValueStart,
+        rightStart,
+        rightLabelEnd,
+        rightValueStart,
+        rightValueEnd,
+        unitCol
+      });
+      ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: totalRow + 2, c: lastCol } });
+      return ws;
+    }
+
+    function applyPackingListStyles(ws, totalRow, lastCol, sizeCount, layout) {
+      const borderThin = { style: 'thin', color: { rgb: '000000' } };
+      const borderMed = { style: 'medium', color: { rgb: '000000' } };
+      const allThin = { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin };
+      const whiteFill = { patternType: 'solid', fgColor: { rgb: 'FFFFFF' }, bgColor: { rgb: 'FFFFFF' } };
+      const headerStyle = { font: { bold: true, sz: 9 }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: allThin, fill: whiteFill };
+      const center = { font: { sz: 10, bold: false }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, fill: whiteFill };
+      const qtyCtnCol = 6 + sizeCount;
+      const ttlCtnCol = qtyCtnCol + 1;
+      const netCol = qtyCtnCol + 2;
+      const grossCol = qtyCtnCol + 3;
+      const ttlNetCol = qtyCtnCol + 4;
+      const ttlGrossCol = qtyCtnCol + 5;
+      const ttlQtyCol = qtyCtnCol + 6;
+      const weightCols = new Set([netCol, grossCol, ttlNetCol, ttlGrossCol]);
+
+      // Fill the full used area white so the sheet looks clean and no default/black fills appear.
+      styleRange(ws, 0, totalRow + 2, 0, lastCol, { fill: whiteFill });
+
+      eachCell(ws, 0, totalRow + 2, 0, lastCol, (cell, r, c) => {
+        cell.s = mergeStyle(cell.s || {}, center);
+        if (typeof cell.v === 'number') {
+          cell.z = weightCols.has(c) ? '0.0' : '0';
+        }
+      });
+
+      // Top area: clean, no borders, bold like the reference screenshot.
+      styleRange(ws, 0, 0, 0, lastCol, { font: { bold: true, sz: 13 }, alignment: { horizontal: 'center', vertical: 'center' } });
+      styleRange(ws, 1, 7, 0, lastCol, { font: { bold: true, sz: 10 }, alignment: { vertical: 'center', wrapText: true } });
+      styleRange(ws, 1, 5, 0, layout.leftValueEnd, { alignment: { horizontal: 'left', vertical: 'center', wrapText: false } });
+      styleRange(ws, 2, 5, 0, layout.leftLabelEnd, { alignment: { horizontal: 'left', vertical: 'center', wrapText: false } });
+      styleRange(ws, 2, 5, layout.leftValueStart, layout.leftValueEnd, { alignment: { horizontal: 'left', vertical: 'center', wrapText: false } });
+      styleRange(ws, 1, 3, layout.rightStart, layout.rightLabelEnd, { alignment: { horizontal: 'left', vertical: 'center', wrapText: true } });
+      styleRange(ws, 1, 3, layout.rightValueStart, layout.rightValueEnd, { alignment: { horizontal: 'right', vertical: 'center', wrapText: true } });
+      styleRange(ws, 1, 3, layout.unitCol, layout.unitCol, { alignment: { horizontal: 'left', vertical: 'center', wrapText: true } });
+      styleRange(ws, 5, 5, layout.leftValueStart, layout.leftValueStart, { alignment: { horizontal: 'right', vertical: 'center', wrapText: false } });
+      styleRange(ws, 5, 5, layout.leftValueStart + 1, layout.leftValueStart + 1, { alignment: { horizontal: 'left', vertical: 'center', wrapText: false } });
+      styleRange(ws, 6, 6, layout.rightStart, lastCol, { alignment: { horizontal: 'left', vertical: 'center', wrapText: false } });
+      styleRange(ws, 7, 7, 0, Math.min(2, lastCol), { alignment: { horizontal: 'left', vertical: 'center', wrapText: false } });
+
+      // Matrix table: borders everywhere, but data values stay normal weight.
+      styleRange(ws, layout.headerRow, layout.headerRow, 0, lastCol, headerStyle);
+      styleRange(ws, layout.firstDataRow, totalRow - 1, 0, lastCol, { font: { bold: false, sz: 10 }, border: allThin, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } });
+      styleRange(ws, layout.firstDataRow, totalRow - 1, 3, 5, { font: { bold: false, sz: 10 }, alignment: { horizontal: 'left', vertical: 'center', wrapText: true } });
+      styleRange(ws, layout.firstDataRow, totalRow - 1, 0, 2, { font: { bold: false, sz: 10 }, alignment: { horizontal: 'center', vertical: 'center', wrapText: false } });
+      styleRange(ws, totalRow, totalRow, 0, lastCol, { font: { bold: true, sz: 10 }, border: { top: borderMed, bottom: borderMed, left: borderThin, right: borderThin }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } });
+      styleRange(ws, totalRow, totalRow, 0, 0, { alignment: { horizontal: 'left', vertical: 'center', wrapText: false } });
+      styleRange(ws, totalRow + 2, totalRow + 2, 1, Math.min(10, lastCol), { font: { bold: true, sz: 10 }, alignment: { horizontal: 'left', vertical: 'center', wrapText: false } });
+    }
+
+    function styleRange(ws, r1, r2, c1, c2, style) {
+      for (let r = r1; r <= r2; r++) {
+        for (let c = c1; c <= c2; c++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+          ws[addr].s = mergeStyle(ws[addr].s || {}, style);
+        }
+      }
+    }
+
+    function eachCell(ws, r1, r2, c1, c2, cb) {
+      for (let r = r1; r <= r2; r++) {
+        for (let c = c1; c <= c2; c++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          if (ws[addr]) cb(ws[addr], r, c);
+        }
+      }
+    }
+
+    function applyBoxBorder(ws, r1, c1, r2, c2, line) {
+      for (let r = r1; r <= r2; r++) {
+        for (let c = c1; c <= c2; c++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+          const existing = (ws[addr].s && ws[addr].s.border) ? ws[addr].s.border : {};
+          const border = { ...existing };
+          if (r === r1) border.top = line;
+          if (r === r2) border.bottom = line;
+          if (c === c1) border.left = line;
+          if (c === c2) border.right = line;
+          ws[addr].s = mergeStyle(ws[addr].s || {}, { border });
+        }
+      }
+    }
+
+    function applyMiddleBorder(ws, r1, r2, leftCol, rightCol, line) {
+      for (let r = r1; r <= r2; r++) {
+        const leftAddr = XLSX.utils.encode_cell({ r, c: leftCol });
+        if (!ws[leftAddr]) ws[leftAddr] = { t: 's', v: '' };
+        const leftBorder = { ...((ws[leftAddr].s && ws[leftAddr].s.border) ? ws[leftAddr].s.border : {}), right: line };
+        ws[leftAddr].s = mergeStyle(ws[leftAddr].s || {}, { border: leftBorder });
+
+        const rightAddr = XLSX.utils.encode_cell({ r, c: rightCol });
+        if (!ws[rightAddr]) ws[rightAddr] = { t: 's', v: '' };
+        const rightBorder = { ...((ws[rightAddr].s && ws[rightAddr].s.border) ? ws[rightAddr].s.border : {}), left: line };
+        ws[rightAddr].s = mergeStyle(ws[rightAddr].s || {}, { border: rightBorder });
+      }
+    }
+
+    function applyCleanFooterBorders(ws, r1, r2, c1, c2, thinLine, middleLine) {
+      for (let r = r1; r <= r2; r++) {
+        for (let c = c1; c <= c2; c++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+          const border = { top: thinLine, bottom: thinLine };
+          if (c === c1) border.left = thinLine;
+          if (c === c2) border.right = thinLine;
+          if (c === c1 + 3) border.right = middleLine;
+          if (c === c1 + 4) border.left = middleLine;
+          ws[addr].s = { ...(ws[addr].s || {}), border };
+        }
+      }
+    }
+
+    function mergeStyle(a = {}, b = {}) {
+      const out = { ...a, ...b };
+      if (a.font || b.font) out.font = { ...(a.font || {}), ...(b.font || {}) };
+      if (a.alignment || b.alignment) out.alignment = { ...(a.alignment || {}), ...(b.alignment || {}) };
+      if (a.border || b.border) out.border = { ...(a.border || {}), ...(b.border || {}) };
+      if (a.numFmt || b.numFmt) out.numFmt = b.numFmt || a.numFmt;
+      if (a.fill || b.fill) {
+        const fill = { ...(a.fill || {}), ...(b.fill || {}) };
+        if (Object.keys(fill).length) out.fill = fill;
+      } else {
+        delete out.fill;
+      }
+      return out;
+    }
+
+    function buildColumnWidths(sizeCount) {
+      const widths = [7.5, 5.0, 7.5, 20, 28, 18];
+      for (let i = 0; i < sizeCount; i++) widths.push(5.0);
+      widths.push(7.8, 8.0, 8.2, 8.2, 10.5, 10.5, 8.5);
+      return widths.map(wch => ({ wch }));
+    }
+
+    function buildRowHeights(totalRow) {
+      const rows = [];
+      for (let i = 0; i <= totalRow + 2; i++) {
+        let hpt = 16;
+        if (i === 0) hpt = 22;
+        if (i === 3) hpt = 20;
+        if (i === 6) hpt = 18;
+        if (i === 8) hpt = 24;
+        if (i > 8 && i < totalRow) hpt = 18;
+        if (i === totalRow) hpt = 18;
+        if (i === totalRow + 2) hpt = 22;
+        rows.push({ hpt });
+      }
+      return rows;
+    }
+
+
+    function downloadLabelsXlsx() {
+      if (!activeLabelsData.length) {
+        alert('No labels generated yet.');
+        return;
+      }
+      const meta = activeLabelMeta || getControlsMeta();
+      const wb = XLSX.utils.book_new();
+
+      // IMPORTANT: one Excel worksheet tab = one printed A4 sheet.
+      // This guarantees exactly 4 labels per sheet:
+      // 1-4 labels => Sheet 1, 5-8 labels => Sheet 2, 9-12 labels => Sheet 3, etc.
+      const pageCount = Math.ceil(activeLabelsData.length / 4);
+      for (let page = 0; page < pageCount; page++) {
+        const pageLabels = activeLabelsData.slice(page * 4, page * 4 + 4);
+        const ws = buildLabelsWorksheet(pageLabels, meta);
+        XLSX.utils.book_append_sheet(wb, ws, `Labels ${page + 1}`);
+      }
+
+      const fileName = safeFileName(`Dior Labels ${meta.orderNo || activeJob?.orderNo || ''} ${meta.commessaNo || activeJob?.commessaNo || ''}.xlsx`) || 'Dior_Labels.xlsx';
+      XLSX.writeFile(wb, fileName, { bookType: 'xlsx', compression: true });
+    }
+
+    function buildLabelsWorksheet(labelsData, meta) {
+      // 6 worksheet columns per label gives the Excel export the same room as the working template,
+      // while still printing 4 labels per A4 landscape sheet/tab.
+      const LABEL_COLS = 6;
+      // Template uses 13 visible label rows. Two blank rows separate the top and bottom labels.
+      const LABEL_ROWS = 13;
+      const SPACER_COLS = 1;
+      const SPACER_ROWS = 2;
+      const PAGE_ROWS = LABEL_ROWS * 2 + SPACER_ROWS;
+      const lastCol = LABEL_COLS * 2 + SPACER_COLS - 1;
+      const totalRows = PAGE_ROWS;
+      const aoa = [];
+      for (let r = 0; r < totalRows; r++) aoa[r] = Array(lastCol + 1).fill('');
+
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const merges = [];
+      ws['!merges'] = merges;
+      ws['!cols'] = buildLabelColumnWidths();
+      ws['!rows'] = buildLabelRowHeights(totalRows, LABEL_ROWS, SPACER_ROWS, PAGE_ROWS);
+      // Match the uploaded label template: A4 landscape, very small margins, 4 labels per sheet.
+      ws['!margins'] = { left: 0, right: 0, top: 0.11811023622047245, bottom: 0.11811023622047245, header: 0, footer: 0 };
+      ws['!pageSetup'] = { paperSize: 9, orientation: 'landscape', scale: 78 };
+      ws['!sheetPr'] = { pageSetUpPr: { fitToPage: false } };
+      ws['!printOptions'] = { gridLines: false };
+
+      const whiteFill = { patternType: 'solid', fgColor: { rgb: 'FFFFFF' }, bgColor: { rgb: 'FFFFFF' } };
+      styleRange(ws, 0, totalRows - 1, 0, lastCol, { fill: whiteFill, font: { name: 'Calibri', sz: 16, bold: true }, alignment: { vertical: 'center', horizontal: 'center', wrapText: false } });
+
+      labelsData.forEach((label, idx) => {
+        const pos = idx % 4;
+        const blockRow = Math.floor(pos / 2);
+        const blockCol = pos % 2;
+        const sr = blockRow * (LABEL_ROWS + SPACER_ROWS);
+        const sc = blockCol * (LABEL_COLS + SPACER_COLS);
+        writeOneLabelXlsx(ws, merges, sr, sc, label, meta);
+      });
+
+      ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: totalRows - 1, c: lastCol } });
+      return ws;
+    }
+
+    function buildLabelColumnWidths() {
+      // Exact 6-column label layout, but with the code-article columns widened.
+      // Excel columns B/C and I/J are the merged CODE ARTICLE cells.
+      // Requested pixel widths: B/I = 105px, C/J = 91px.
+      const labelCols = [
+        { wch: 21.55 }, // A / H - COLOR + parcel side
+        { wpx: 105 },   // B / I - CODE ARTICLE part 1
+        { wpx: 91 },    // C / J - CODE ARTICLE part 2
+        { wch: 12.11 }, // D / K - SIZE
+        { wch: 12.11 }, // E / L - TOTAL QTY part 1
+        { wch: 12.11 }  // F / M - TOTAL QTY part 2
+      ];
+      return [...labelCols, { wch: 1.0 }, ...labelCols];
+    }
+
+    function buildLabelRowHeights(totalRows, labelRows, spacerRows, pageRows) {
+      // Row heights copied from the Excel template.
+      // Top label: rows 1-13, spacer rows 14-15, bottom label: rows 16-28.
+      const templateHeights = [
+        51.6, 15, 75, 16.2, 22.5, 15, 22.5, 22.5, 22.5, 22.5, 26.25, 18.75, 18.75,
+        6.75, 15,
+        51.6, 15, 75, 16.2, 22.5, 15, 22.5, 22.5, 22.5, 22.5, 26.25, 18.75, 18.75
+      ];
+      const rows = [];
+      for (let r = 0; r < totalRows; r++) rows.push({ hpt: templateHeights[r] || 15 });
+      return rows;
+    }
+
+    function writeOneLabelXlsx(ws, merges, sr, sc, data, meta) {
+      // Excel label export now follows the uploaded Dior template structure:
+      // 6 physical columns per label, 13 rows per label, and two spacer rows between top/bottom labels.
+      const borderThin = { style: 'thin', color: { rgb: '000000' } };
+      const borderMed = { style: 'medium', color: { rgb: '000000' } };
+      const allThin = { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin };
+      const horizThin = { top: borderThin, bottom: borderThin };
+      const whiteFill = { patternType: 'solid', fgColor: { rgb: 'FFFFFF' }, bgColor: { rgb: 'FFFFFF' } };
+      const yellowFill = { patternType: 'solid', fgColor: { rgb: 'FFFF00' }, bgColor: { rgb: 'FFFF00' } };
+      const font16 = { name: 'Calibri', sz: 16, bold: true };
+      const fontTitle = { name: 'Calibri', sz: 20, bold: true };
+      const fontSmall = { name: 'Calibri', sz: 8, bold: true };
+      const singleLineCenter = { horizontal: 'center', vertical: 'center', wrapText: false };
+      const singleLineLeft = { horizontal: 'left', vertical: 'center', wrapText: false };
+      const singleLineRight = { horizontal: 'right', vertical: 'center', wrapText: false };
+
+      styleRange(ws, sr, sr + 12, sc, sc + 5, {
+        font: font16,
+        alignment: singleLineCenter,
+        fill: whiteFill
+      });
+
+      // 1) Top PAP row: one single large merged cell with bold outer border.
+      mergeSet(ws, merges, sr, sc, sr, sc + 5, meta.pap || 'PAP F', {
+        font: fontTitle,
+        alignment: singleLineCenter,
+        border: allThin,
+        fill: whiteFill
+      });
+      applyBoxBorder(ws, sr, sc, sr, sc + 5, borderMed);
+
+      // 2) Address titles and address body, aligned with the 6-column template.
+      mergeSet(ws, merges, sr + 1, sc, sr + 1, sc + 2, 'PARCEL FOR:', {
+        font: fontSmall,
+        alignment: { horizontal: 'left', vertical: 'center', wrapText: false },
+        border: allThin,
+        fill: whiteFill
+      });
+      mergeSet(ws, merges, sr + 1, sc + 3, sr + 1, sc + 5, 'SUPPLIER NAME:', {
+        font: fontSmall,
+        alignment: { horizontal: 'left', vertical: 'center', wrapText: false },
+        border: allThin,
+        fill: whiteFill
+      });
+
+      const parcelAddress = compactParcelAddressForLabel(meta.destinationAddress, FRANCE_GXO_ADDRESS);
+      const supplierAddress = compactSupplierAddressForLabel(meta.supplierAddress, 'PELINTEX BULGARIA\n5 HRISTO BOTEV\n7000 RUSE, BULGARIA');
+      mergeSet(ws, merges, sr + 2, sc, sr + 3, sc + 2, parcelAddress, {
+        font: font16,
+        alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+        border: allThin,
+        fill: whiteFill
+      });
+      mergeSet(ws, merges, sr + 2, sc + 3, sr + 3, sc + 5, supplierAddress, {
+        font: font16,
+        alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+        border: allThin,
+        fill: whiteFill
+      });
+
+      // 3) PO / COMMESA row.
+      mergeSet(ws, merges, sr + 4, sc, sr + 4, sc + 2, `PO: ${meta.orderNo || ''}`, {
+        font: font16,
+        alignment: singleLineLeft,
+        border: allThin,
+        fill: yellowFill
+      });
+      mergeSet(ws, merges, sr + 4, sc + 3, sr + 4, sc + 5, `COMMESA: ${meta.commessaNo || ''}`, {
+        font: font16,
+        alignment: singleLineLeft,
+        border: allThin,
+        fill: yellowFill
+      });
+
+      // 4) Matrix table. Physical columns: COLOR | CODE ARTICLE merged B:C | SIZE | TOTAL QTY merged E:F.
+      const headerBorder = { top: borderThin, bottom: borderMed, left: borderThin, right: borderThin };
+      setCell(ws, sr + 5, sc, 'COLOR', { font: fontSmall, alignment: singleLineCenter, border: headerBorder, fill: whiteFill });
+      mergeSet(ws, merges, sr + 5, sc + 1, sr + 5, sc + 2, 'CODE ARTICLE', { font: fontSmall, alignment: singleLineCenter, border: headerBorder, fill: whiteFill });
+      setCell(ws, sr + 5, sc + 3, 'SIZE', { font: fontSmall, alignment: singleLineCenter, border: headerBorder, fill: whiteFill });
+      mergeSet(ws, merges, sr + 5, sc + 4, sr + 5, sc + 5, 'TOTAL QTY', { font: fontSmall, alignment: singleLineCenter, border: headerBorder, fill: whiteFill });
+
+      const displayRows = (data.sizes || []).slice(0, 4);
+      while (displayRows.length < 4) displayRows.push({ size: '', qty: '' });
+      for (let i = 0; i < 4; i++) {
+        const r = sr + 6 + i;
+        const s = displayRows[i] || {};
+        setCell(ws, r, sc, i === 0 ? (data.color || '') : '', { font: font16, alignment: singleLineCenter, border: allThin, fill: whiteFill });
+        mergeSet(ws, merges, r, sc + 1, r, sc + 2, i === 0 ? (data.codeArticle || '') : '', { font: font16, alignment: singleLineCenter, border: allThin, fill: whiteFill });
+        setCell(ws, r, sc + 3, valueOrBlank(s.size), { font: font16, alignment: singleLineCenter, border: allThin, fill: whiteFill });
+        mergeSet(ws, merges, r, sc + 4, r, sc + 5, valueOrBlank(s.qty), { font: font16, alignment: singleLineCenter, border: allThin, fill: whiteFill });
+      }
+
+      // Bold section around all info below PAP up to the end of matrix, plus the middle split A:C / D:F.
+      applyBoxBorder(ws, sr + 1, sc, sr + 9, sc + 5, borderMed);
+      applyMiddleBorder(ws, sr + 1, sr + 9, sc + 2, sc + 3, borderMed);
+
+      // 5) Footer rows copied from the template.
+      // TOTAL row: no internal vertical borders; only the row frame.
+      setCell(ws, sr + 10, sc, 'TOTAL ', {
+        font: font16,
+        alignment: singleLineCenter,
+        border: { top: borderThin, bottom: borderThin, left: borderThin },
+        fill: whiteFill
+      });
+      setCell(ws, sr + 10, sc + 1, '', { font: font16, alignment: singleLineCenter, border: horizThin, fill: whiteFill });
+      setCell(ws, sr + 10, sc + 2, data.totalQty || '', { font: font16, alignment: singleLineRight, border: horizThin, fill: whiteFill });
+      setCell(ws, sr + 10, sc + 3, 'PIECES', { font: font16, alignment: singleLineCenter, border: horizThin, fill: whiteFill });
+      setCell(ws, sr + 10, sc + 4, '', { font: font16, alignment: singleLineCenter, border: horizThin, fill: whiteFill });
+      setCell(ws, sr + 10, sc + 5, '', { font: font16, alignment: singleLineCenter, border: { top: borderThin, bottom: borderThin, right: borderThin }, fill: whiteFill });
+      applyBoxBorder(ws, sr + 10, sc, sr + 10, sc + 5, borderMed);
+
+      // CARTON row: A:B label, C number, D OF, E:F total packages.
+      mergeSet(ws, merges, sr + 11, sc, sr + 11, sc + 1, 'CARTON NUMBER', {
+        font: font16,
+        alignment: singleLineCenter,
+        border: allThin,
+        fill: whiteFill
+      });
+      setCell(ws, sr + 11, sc + 2, data.cartonNum || '', { font: font16, alignment: singleLineCenter, border: allThin, fill: whiteFill });
+      setCell(ws, sr + 11, sc + 3, 'OF', { font: font16, alignment: singleLineCenter, border: allThin, fill: whiteFill });
+      mergeSet(ws, merges, sr + 11, sc + 4, sr + 11, sc + 5, data.totalPackages || '', {
+        font: font16,
+        alignment: singleLineCenter,
+        border: allThin,
+        fill: whiteFill
+      });
+      applyBoxBorder(ws, sr + 11, sc, sr + 11, sc + 5, borderMed);
+
+      // WEIGHT row: A:B net label, C net value, D:E gross label, F gross value.
+      mergeSet(ws, merges, sr + 12, sc, sr + 12, sc + 1, 'NETT WEIGHT KG', {
+        font: font16,
+        alignment: singleLineCenter,
+        border: allThin,
+        fill: whiteFill
+      });
+      setCell(ws, sr + 12, sc + 2, formatWeight(data.netWt), { font: font16, alignment: singleLineCenter, border: allThin, fill: whiteFill });
+      mergeSet(ws, merges, sr + 12, sc + 3, sr + 12, sc + 4, 'GROSS WEIGHT KG', {
+        font: font16,
+        alignment: singleLineCenter,
+        border: allThin,
+        fill: whiteFill
+      });
+      setCell(ws, sr + 12, sc + 5, formatWeight(data.grossWt), { font: font16, alignment: singleLineCenter, border: allThin, fill: whiteFill });
+      applyBoxBorder(ws, sr + 12, sc, sr + 12, sc + 5, borderMed);
+
+      // Strong outer frame last.
+      applyBoxBorder(ws, sr, sc, sr + 12, sc + 5, borderMed);
+    }
+
+    function setCell(ws, r, c, value, style) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      const cell = ws[addr] || { t: 's', v: '' };
+      if (typeof value === 'number') {
+        cell.t = 'n';
+        cell.v = value;
+      } else {
+        cell.t = 's';
+        cell.v = value === null || value === undefined ? '' : String(value);
+      }
+      ws[addr] = cell;
+      if (style) ws[addr].s = mergeStyle(ws[addr].s || {}, style);
+    }
+
+    function mergeSet(ws, merges, r1, c1, r2, c2, value, style) {
+      const addr = XLSX.utils.encode_cell({ r: r1, c: c1 });
+      const cell = ws[addr] || { t: 's', v: '' };
+      if (typeof value === 'number') {
+        cell.t = 'n';
+        cell.v = value;
+      } else {
+        cell.t = 's';
+        cell.v = value === null || value === undefined ? '' : String(value);
+      }
+      ws[addr] = cell;
+      if (r1 !== r2 || c1 !== c2) merges.push({ s: { r: r1, c: c1 }, e: { r: r2, c: c2 } });
+      styleRange(ws, r1, r2, c1, c2, style);
+    }
+
+    function compactParcelAddressForLabel(address, fallback) {
+      const lines = String(address || fallback || '')
+        .split(/\r?\n/)
+        .map(x => x.trim().replace(/\u0016/g, ''))
+        .filter(Boolean);
+      if (!lines.length) return '';
+      // Keep parcel address as one logical line; the merged A:C cell wraps it naturally into fewer lines.
+      return lines.join(', ').replace(/,\s*,/g, ', ').replace(/\s+/g, ' ').trim();
+    }
+
+    function compactSupplierAddressForLabel(address, fallback) {
+      let lines = String(address || fallback || '')
+        .split(/\r?\n/)
+        .map(x => x.trim())
+        .filter(Boolean);
+      if (!lines.length) return '';
+
+      // Keep supplier compact: 3 lines max, with city/country combined.
+      if (lines.length >= 2) {
+        const last = lines[lines.length - 1];
+        const prev = lines[lines.length - 2];
+        if (/^(FRANCE|BULGARIA|ITALY|ITALIA)$/i.test(last) && !new RegExp(last, 'i').test(prev)) {
+          lines.splice(lines.length - 2, 2, `${prev}, ${last.toUpperCase()}`);
+        }
+      }
+      while (lines.length > 3) lines.splice(1, 2, `${lines[1]}, ${lines[2]}`);
+      return lines.join('\n');
+    }
+
+    function compactAddressForLabel(address, fallback) {
+      // Backwards-compatible wrapper for any older call sites.
+      return compactSupplierAddressForLabel(address, fallback);
+    }
+
+    function valueOrBlank(value) {
+      if (value === null || value === undefined) return '';
+      return String(value) === '' ? '' : value;
+    }
+
+    function printLabels() {
+      if (!activeLabelsData.length) {
+        alert('No labels generated yet.');
+        return;
+      }
+      const oldTitle = document.title;
+      document.title = safeFileName(`Dior Labels ${activeJob?.orderNo || ''} ${activeJob?.commessaNo || ''}`) || 'Dior Labels';
+      window.print();
+      setTimeout(() => { document.title = oldTitle; }, 800);
+    }
+
+    function firstMatch(text, regex) {
+      const m = String(text || '').match(regex);
+      return m ? (m[1] || '').trim() : '';
+    }
+
+    function parseEuroNumber(value) {
+      if (value === null || value === undefined || value === '') return NaN;
+      let s = String(value).trim().replace(/\s/g, '');
+      if (!s) return NaN;
+      if (s.includes(',') && s.includes('.')) {
+        s = s.replace(/\./g, '').replace(',', '.');
+      } else {
+        s = s.replace(',', '.');
+      }
+      const n = parseFloat(s);
+      return Number.isFinite(n) ? n : NaN;
+    }
+
+    function isSizeToken(s) {
+      return /^(?:XXXL|XXL|XL|XS|S|M|L|\d{1,3})$/i.test(String(s || '').trim());
+    }
+
+    function compareSizesKeepingCommonOrder(a, b) {
+      const order = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+      const ai = order.indexOf(String(a).toUpperCase());
+      const bi = order.indexOf(String(b).toUpperCase());
+      if (ai !== -1 || bi !== -1) return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+      const an = parseFloat(a), bn = parseFloat(b);
+      if (Number.isFinite(an) && Number.isFinite(bn)) return an - bn;
+      return String(a).localeCompare(String(b), undefined, { numeric: true });
+    }
+
+    function emptySizeMap(sizeColumns) {
+      const obj = {};
+      sizeColumns.forEach(s => obj[s] = 0);
+      return obj;
+    }
+
+    function sizeKey(sizeMap, sizeColumns) {
+      return sizeColumns.map(s => `${s}:${sizeMap[s] || 0}`).join('|');
+    }
+
+    function sumValues(obj) {
+      return Object.values(obj || {}).reduce((a, b) => a + (parseFloat(b) || 0), 0);
+    }
+
+    function sumRows(rows, key) {
+      return round2(rows.reduce((sum, row) => sum + (parseFloat(row[key]) || 0), 0));
+    }
+
+    function round2(n) { return Math.round((parseFloat(n) || 0) * 100) / 100; }
+    function formatWeight(wt) { const n = parseFloat(wt); return Number.isFinite(n) ? n.toFixed(2) : wt; }
+    function escapeRegExp(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+    function unique(arr) { return Array.from(new Set(arr)); }
+    function escapeHtml(value) {
+      return String(value === undefined || value === null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function colLetter(n) {
+      let s = '';
+      while (n > 0) {
+        const m = (n - 1) % 26;
+        s = String.fromCharCode(65 + m) + s;
+        n = Math.floor((n - 1) / 26);
+      }
+      return s;
+    }
+
+    function normalizeCartonSpec(value) {
+      const cleaned = String(value || '').trim().replace(/\s+/g, ' ');
+      if (!cleaned) return 'colis 60/40/15';
+      return /^colis\b/i.test(cleaned) ? cleaned : `colis ${cleaned}`;
+    }
+
+    function safeFileName(name) {
+      return String(name || 'file').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+  </script>
+</body>
+</html>

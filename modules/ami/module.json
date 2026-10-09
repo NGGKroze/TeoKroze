@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "id": "ami",
+  "name": "AMI Paris",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 20,
+  "summary": "PKL плюс баркод данни",
+  "requires": [
+    "PKL Excel файл",
+    "Barcode Excel файл или файл с налични баркод данни"
+  ],
+  "note": "Генераторът може да приема повече от един Excel файл. Заредете PKL и баркод файла заедно, когато клиентският комплект го изисква.",
+  "formats": [
+    "XLSX",
+    "XLS"
+  ],
+  "knownPageErrors": [
+    "printLabelsPDF is not defined"
+  ]
+}
