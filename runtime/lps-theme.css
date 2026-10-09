@@ -1,0 +1,54 @@
+/* Обща тема "мрамор и гранит". Само за екран - печатът (етикети, packing list) не се променя. */
+@media screen {
+  :root {
+    --lps-ink: #26272b; --lps-ink-soft: #5b5c62; --lps-brass: #b08d57; --lps-brass-dark: #8d6d3c;
+    --lps-stone: #ece9e4; --lps-line: #d8d3c8; --lps-graphite: #1f2023; --lps-graphite-2: #2f3034;
+    --lps-radius: 12px;
+  }
+  html { background: #e8e5df !important; }
+  body {
+    font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif !important;
+    color: var(--lps-ink);
+    background: #ebe8e2 url("{{MARBLE}}") center top / cover fixed no-repeat !important;
+  }
+  h1, h2, h3, h4 { font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif !important; letter-spacing: -0.01em; }
+  button, input, select, textarea { font-family: inherit; }
+
+  /* Полета */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select, textarea {
+    border-color: var(--lps-line) !important; border-radius: 10px !important; background-color: #fff;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: 2px solid var(--lps-brass) !important; outline-offset: 0 !important;
+    border-color: var(--lps-brass) !important; box-shadow: none !important;
+  }
+  input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color: var(--lps-graphite-2); }
+
+  /* Бутони (без да пипаме цветовете на Tailwind - те идват от палитрата) */
+  button { border-radius: 10px; }
+  button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--lps-brass); outline-offset: 2px; }
+
+  ::selection { background: #d9c7a3; color: #1b1c1f; }
+  a { color: var(--lps-brass-dark); }
+
+  /* Скролбарове */
+  * { scrollbar-width: thin; scrollbar-color: #a9a498 transparent; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #b6b1a5; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: #8e897d; background-clip: padding-box; border: 2px solid transparent; }
+
+  /* Карти - Tailwind "бели" панели с лек камък */
+  [class~="shadow-sm"][class~="bg-white"], [class~="shadow-md"][class~="bg-white"], [class~="shadow-lg"][class~="bg-white"], [class~="shadow-xl"][class~="bg-white"] {
+    border-color: var(--lps-line) !important;
+    box-shadow: 0 1px 2px rgba(31,32,35,.06), 0 8px 24px rgba(31,32,35,.07) !important;
+  }
+}
+
+/* Общи помощници за модулните lps.css: светла "карта" вместо цветна лента в заглавието */
+@media screen {
+  .lps-band, html[data-lps] .lps-band {
+    background: rgba(255, 255, 255, .86) !important; color: var(--lps-ink) !important;
+    border-bottom: 2px solid var(--lps-brass) !important; box-shadow: 0 6px 20px rgba(31, 32, 35, .07) !important;
+    backdrop-filter: blur(6px);
+  }
+}

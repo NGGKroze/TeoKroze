@@ -112,6 +112,13 @@ public sealed partial class ModuleView : UserControl, IDisposable
         };
 
         core.DownloadStarting += OnDownloadStarting;
+
+        // Обща тема: вкарва се преди скриптовете на страницата (може да се изключи в Настройки или в module.json).
+        if (AppServices.Settings.UnifiedTheme)
+        {
+            var themeScript = ThemeInjector.BuildScript(AppServices.Paths, _module);
+            if (themeScript != null) _ = core.AddScriptToExecuteOnDocumentCreatedAsync(themeScript);
+        }
         _coreReady = true;
     }
 

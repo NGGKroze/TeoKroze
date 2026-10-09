@@ -1,0 +1,7 @@
+/* LONGCHAMP - единна тема */
+@media screen {
+  html[data-lps="longchamp"] div.bg-blue-600.text-white.p-6 {
+    background: rgba(255,255,255,.86) !important; color:#26272b !important; border-bottom:2px solid #b08d57 !important;
+  }
+  html[data-lps="longchamp"] div.bg-blue-600.text-white.p-6 * { color:#26272b !important; }
+}

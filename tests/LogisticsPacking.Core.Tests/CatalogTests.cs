@@ -125,3 +125,50 @@ public class TileLayoutTests
         Assert.True(TileLayout.Compute(2, 1200, 640).TileHeight > TileLayout.Compute(19, 1200, 640).TileHeight);
     }
 }
+
+public class ThemeTests
+{
+    private static (AppPaths paths, ModuleInfo module, TempDir t) Setup(string manifest = """{"id":"m","name":"M"}""")
+    {
+        var t = new TempDir();
+        var dir = t.Module("modules", "m", manifest);
+        var rt = Path.Combine(t.Path, "runtime");
+        Directory.CreateDirectory(rt);
+        File.WriteAllText(Path.Combine(rt, "lps-theme.js"), "/* c */ var CSS = {{CSS}}; var MODULE = {{MODULE}};");
+        File.WriteAllText(Path.Combine(rt, "lps-theme.css"), "body{background:url(\"{{MARBLE}}\")}");
+        File.WriteAllBytes(Path.Combine(rt, "lps-marble.jpg"), new byte[] { 1, 2, 3 });
+        var paths = new AppPaths(t.Path, Path.Combine(t.Path, "user"));
+        return (paths, ModuleCatalog.Load(Path.Combine(t.Path, "modules"), null).Modules.Single(), t);
+    }
+
+    [Fact]
+    public void BuildsScriptWithModuleCssAndMarble()
+    {
+        var (paths, module, t) = Setup();
+        using var _ = t;
+        File.WriteAllText(Path.Combine(module.Directory, "lps.css"), "h1{color:red}");
+        var js = ThemeInjector.BuildScript(paths, module)!;
+        Assert.Contains("data:image/jpeg;base64,AQID", js);
+        Assert.Contains("h1{color:red}", js);
+        Assert.Contains("var MODULE = \"m\";", js);
+        Assert.DoesNotContain("{{", js);
+    }
+
+    [Fact]
+    public void ThemeCanBeDisabledPerModule()
+    {
+        var (paths, module, t) = Setup("""{"id":"m","name":"M","theme":false}""");
+        using var _ = t;
+        Assert.Null(ThemeInjector.BuildScript(paths, module));
+    }
+
+    [Fact]
+    public void RealThemeFilesHaveNoStrayPlaceholders()
+    {
+        var dir = AppContext.BaseDirectory;
+        while (dir != null && !Directory.Exists(Path.Combine(dir, "runtime"))) dir = Path.GetDirectoryName(dir);
+        var js = File.ReadAllText(Path.Combine(dir!, "runtime", "lps-theme.js"));
+        Assert.Equal(1, System.Text.RegularExpressions.Regex.Matches(js, @"\{\{CSS\}\}").Count);
+        Assert.Equal(1, System.Text.RegularExpressions.Regex.Matches(js, @"\{\{MODULE\}\}").Count);
+    }
+}

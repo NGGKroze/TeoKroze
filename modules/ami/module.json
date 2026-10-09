@@ -15,8 +15,5 @@
   "formats": [
     "XLSX",
     "XLS"
-  ],
-  "knownPageErrors": [
-    "printLabelsPDF is not defined"
   ]
 }

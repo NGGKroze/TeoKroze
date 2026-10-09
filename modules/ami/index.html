@@ -481,8 +481,10 @@ OTHER = 35-38, 39-42, 43-46</textarea>
         dom.chooseFilesBtn.onclick = (e) => { e.stopPropagation(); dom.fileInput.click(); };
         dom.dropZone.onclick = (e) => { if(e.target === dom.dropZone || e.target.tagName === 'H3') dom.fileInput.click(); };
         dom.fileInput.onchange = (e) => e.target.files.length && handleFiles(Array.from(e.target.files));
-        dom.exportPdfBtn.onclick = printLabelsPDF;
-        if (dom.exportExcelBtn) dom.exportExcelBtn.onclick = exportToExcel;
+        // TEOKROZE: printLabelsPDF е дефинирана в по-късен <script>; директното присвояване хвърляше ReferenceError
+        // и спираше инициализацията (drag&drop, Excel експорт, смяна на размерни решетки). Свързваме лениво.
+        dom.exportPdfBtn.onclick = () => printLabelsPDF();
+        if (dom.exportExcelBtn) dom.exportExcelBtn.onclick = () => exportToExcel();
 
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
             window.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }, false);

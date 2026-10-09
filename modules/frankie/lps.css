@@ -1,0 +1,4 @@
+/* FRANKIE - единна тема */
+@media screen {
+  html[data-lps="frankie"] { --accent:#2f3034; }
+}

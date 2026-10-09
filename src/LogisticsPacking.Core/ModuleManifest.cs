@@ -16,6 +16,8 @@ public sealed class ModuleManifest
     public string Entry { get; init; } = "index.html";
     public int Order { get; init; }
     public bool Enabled { get; init; } = true;
+    /// <summary>false = модулът се показва със собствения си вид (без общата тема).</summary>
+    public bool Theme { get; init; } = true;
     public string Summary { get; init; } = "";
     public string Note { get; init; } = "";
     public List<string> Requires { get; init; } = new();

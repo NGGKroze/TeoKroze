@@ -33,6 +33,12 @@ internal static class SettingsDialog
             IsOn = settings.AskWhereToSave,
         };
 
+        var theme = new ToggleSwitch
+        {
+            Header = "Вид на клиентските екрани", OnContent = "Единна тема (мрамор и гранит)", OffContent = "Оригиналният вид на всеки клиент",
+            IsOn = settings.UnifiedTheme,
+        };
+
         var userModules = new HyperlinkButton { Content = "Отвори папката с потребителски модули (поправки без нов инсталатор)" };
         userModules.Click += (_, _) =>
         {
@@ -45,6 +51,7 @@ internal static class SettingsDialog
         var panel = new StackPanel { Spacing = 14 };
         panel.Children.Add(row);
         panel.Children.Add(ask);
+        panel.Children.Add(theme);
         panel.Children.Add(userModules);
         panel.Children.Add(logs);
 
@@ -69,6 +76,7 @@ internal static class SettingsDialog
         {
             settings.OutputDirectory = pathBox.Text.Trim();
             settings.AskWhereToSave = ask.IsOn;
+            settings.UnifiedTheme = theme.IsOn;
             try { settings.Save(AppServices.Paths); }
             catch (Exception ex) { AppServices.Log("Запис на настройки: " + ex.Message); }
             onSaved();
