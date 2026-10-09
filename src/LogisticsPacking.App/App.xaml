@@ -42,13 +42,16 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
-                            <Grid x:Name="TileRoot" CornerRadius="14" BorderThickness="1.5"
+                            <Grid x:Name="TileRoot" CornerRadius="12" BorderThickness="1"
                                   BorderBrush="{StaticResource TileBorderBrush}"
-                                  Background="{StaticResource GraniteBrush}">
-                                <!-- Мащабът (потъване/повдигане) се прави от Motion.Press в кода -->
-                                <Border x:Name="TileGloss" Background="{StaticResource GlossBrush}" CornerRadius="14" IsHitTestVisible="False" />
-                                <Border x:Name="TileShine" Background="#22FFFFFF" CornerRadius="14" Opacity="0" IsHitTestVisible="False" />
-                                <Border x:Name="TilePressShade" Background="#33000000" CornerRadius="14" Opacity="0" IsHitTestVisible="False" />
+                                  Background="{StaticResource GraniteBrush}"
+                                  RenderTransformOrigin="0.5,0.5">
+                                <Grid.RenderTransform>
+                                    <ScaleTransform x:Name="TileScale" ScaleX="1" ScaleY="1" />
+                                </Grid.RenderTransform>
+                                <Border x:Name="TileGloss" Background="{StaticResource GlossBrush}" CornerRadius="12" IsHitTestVisible="False" />
+                                <Border x:Name="TileShine" Background="#22FFFFFF" CornerRadius="12" Opacity="0" IsHitTestVisible="False" />
+                                <Border x:Name="TilePressShade" Background="#33000000" CornerRadius="12" Opacity="0" IsHitTestVisible="False" />
                                 <ContentPresenter HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                                   VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
                                 <VisualStateManager.VisualStateGroups>
@@ -65,6 +68,8 @@
                                                 <Setter Target="TileShine.Opacity" Value="1" />
                                                 <Setter Target="TileRoot.BorderBrush" Value="{StaticResource BrassBrush}" />
                                                 <Setter Target="TilePressShade.Opacity" Value="1" />
+                                                <Setter Target="TileScale.ScaleX" Value="0.975" />
+                                                <Setter Target="TileScale.ScaleY" Value="0.975" />
                                             </VisualState.Setters>
                                         </VisualState>
                                         <VisualState x:Name="Disabled" />

@@ -122,15 +122,6 @@ THEMES = {
     "midnight": dict(
         wall=lambda w, h: marble(w, h, (14, 24, 52), (36, 56, 106), (190, 205, 235), 0.50),
         tile=lambda w, h: granite(w, h, (52, 76, 132), [((190, 205, 240), .32), ((14, 22, 48), .36), ((120, 140, 190), .20), ((226, 232, 248), .12)], 0.10, 0.20)),
-    "pearl": dict(
-        wall=lambda w, h: marble(w, h, (236, 212, 216), (252, 240, 241), (190, 130, 146), 0.50),
-        tile=lambda w, h: granite(w, h, (226, 186, 194), [((255, 248, 248), .36), ((176, 120, 134), .28), ((205, 160, 168), .24), ((120, 76, 90), .12)], 0.07, 0.22)),
-    "emerald": dict(
-        wall=lambda w, h: marble(w, h, (10, 44, 32), (26, 84, 62), (226, 240, 232), 0.60),
-        tile=lambda w, h: granite(w, h, (48, 112, 84), [((214, 236, 224), .30), ((8, 36, 26), .36), ((120, 170, 146), .22), ((236, 246, 240), .12)], 0.10, 0.18)),
-    "travertine": dict(
-        wall=lambda w, h: travertine(w, h, (206, 190, 160), (240, 230, 208), (150, 130, 100)),
-        tile=lambda w, h: granite(w, h, (204, 188, 158), [((250, 244, 228), .30), ((130, 110, 80), .30), ((168, 146, 112), .26), ((84, 68, 46), .14)], 0.07, 0.16)),
 }
 
 
@@ -156,6 +147,10 @@ if __name__ == "__main__":
     for name, th in THEMES.items():
         panelize(th["wall"](1920, 1200)).save(OUT / f"wall_{name}.jpg", quality=84)
         th["tile"](1024, 640).save(OUT / f"tile_{name}.jpg", quality=88)
+    # системните теми са плоски (само цвят)
+    for name, wall, tile in (("system-light", (243, 243, 243), (255, 255, 255)), ("system-dark", (32, 32, 32), (45, 45, 48))):
+        Image.new("RGB", (64, 64), wall).save(OUT / f"wall_{name}.jpg", quality=95)
+        Image.new("RGB", (64, 64), tile).save(OUT / f"tile_{name}.jpg", quality=95)
     ic = icon()
     ic.save(OUT / "app.png")
     ic.save(OUT / "app.ico", sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)])

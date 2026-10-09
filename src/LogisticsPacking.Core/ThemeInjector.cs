@@ -8,7 +8,7 @@ namespace LogisticsPacking.Core;
 /// </summary>
 public static class ThemeInjector
 {
-    public static string? BuildScript(AppPaths paths, ModuleInfo module, AppTheme? theme = null, bool animations = true)
+    public static string? BuildScript(AppPaths paths, ModuleInfo module, AppTheme? theme = null)
     {
         if (!module.Manifest.Theme) return null;
         var jsPath = Path.Combine(paths.RuntimeDir, "lps-theme.js");
@@ -26,7 +26,6 @@ public static class ThemeInjector
         var web = JsonSerializer.Serialize(theme?.Web ?? new WebPalette(), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         return File.ReadAllText(jsPath)
             .Replace("{{THEME}}", web)
-            .Replace("{{ANIM}}", animations ? "true" : "false")
             .Replace("{{MODULE}}", JsonSerializer.Serialize(module.Id))
             .Replace("{{CSS}}", JsonSerializer.Serialize(css));
     }

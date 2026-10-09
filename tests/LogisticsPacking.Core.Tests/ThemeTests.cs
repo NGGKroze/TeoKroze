@@ -34,6 +34,18 @@ public class ThemeCatalogTests
     }
 
     [Fact]
+    public void SystemThemeFollowsWindowsMode()
+    {
+        var repo = Repo();
+        var cat = ThemeCatalog.Load(new AppPaths(repo, Path.Combine(repo, "user")));
+        Assert.Equal("system-light", cat.Resolve("system", systemDark: false).Id);
+        Assert.Equal("system-dark", cat.Resolve("system", systemDark: true).Id);
+        Assert.Equal("midnight", cat.Resolve("midnight", systemDark: false).Id);
+        Assert.DoesNotContain(cat.Selectable, x => x.Hidden);
+        Assert.Equal(new[] { "granite", "midnight", "system" }, cat.Selectable.Select(x => x.Id));
+    }
+
+    [Fact]
     public void UnknownThemeFallsBackToGranite()
     {
         var repo = Repo();
@@ -53,20 +65,19 @@ public class ThemeCatalogTests
     }
 
     [Fact]
-    public void InjectorWritesThemePaletteAndMotionFlag()
+    public void InjectorWritesThemePalette()
     {
         using var t = new TempDir();
         t.Module("modules", "m", """{"id":"m","name":"M"}""");
         var rt = Path.Combine(t.Path, "runtime");
         Directory.CreateDirectory(rt);
-        File.WriteAllText(Path.Combine(rt, "lps-theme.js"), "var T = {{THEME}}; var A = {{ANIM}}; var CSS = {{CSS}}; var MODULE = {{MODULE}};");
+        File.WriteAllText(Path.Combine(rt, "lps-theme.js"), "var T = {{THEME}}; var CSS = {{CSS}}; var MODULE = {{MODULE}};");
         File.WriteAllText(Path.Combine(rt, "lps-theme.css"), "body{}");
         var paths = new AppPaths(t.Path, Path.Combine(t.Path, "user"));
         var module = ModuleCatalog.Load(Path.Combine(t.Path, "modules"), null).Modules.Single();
         var theme = new AppTheme { Id = "x", Web = new WebPalette { Accent = "#112233" } };
-        var js = ThemeInjector.BuildScript(paths, module, theme, animations: false)!;
+        var js = ThemeInjector.BuildScript(paths, module, theme)!;
         Assert.Contains("\"accent\":\"#112233\"", js);
-        Assert.Contains("var A = false;", js);
         Assert.DoesNotContain("{{", js);
     }
 }

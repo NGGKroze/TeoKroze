@@ -18,18 +18,13 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
 
-        var tb = AppWindow.TitleBar;
-        tb.ButtonBackgroundColor = Colors.Transparent;
-        tb.ButtonInactiveBackgroundColor = Colors.Transparent;
-        tb.ButtonForegroundColor = Colors.White;
-        tb.ButtonInactiveForegroundColor = Colors.Gray;
-        tb.ButtonHoverBackgroundColor = ColorHelper.FromArgb(60, 255, 255, 255);
+        ApplyChrome();
+        ThemeService.Changed += ApplyChrome;
 
         AppWindow.Resize(new SizeInt32(1360, 860));
         var icon = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
         if (File.Exists(icon)) AppWindow.SetIcon(icon);
 
-        ((FrameworkElement)Content).Loaded += (_, _) => CrashLog.Safe("бутони (прозорец)", () => Motion.PressAll((DependencyObject)Content));
         Home.OpenRequested += (module, variant) => OpenModule(module, variant);
         Home.SetHandle(WinRT.Interop.WindowNative.GetWindowHandle(this));
         Closed += (_, _) =>
@@ -37,6 +32,20 @@ public sealed partial class MainWindow : Window
             foreach (var v in _open.Values) v.Dispose();
             AppServices.Sidecars.Dispose();
         };
+    }
+
+    /// <summary>Светъл/тъмен вид на контролите и цвят на бутоните в заглавната лента според темата.</summary>
+    private void ApplyChrome()
+    {
+        RootGrid.RequestedTheme = ThemeService.ElementTheme;
+        var barLight = ThemeService.TryParse(ThemeService.Current?.Shell.Bar, out var bar) && (0.299 * bar.R + 0.587 * bar.G + 0.114 * bar.B) > 150;
+        var fg = barLight ? Colors.Black : Colors.White;
+        var tb = AppWindow.TitleBar;
+        tb.ButtonBackgroundColor = Colors.Transparent;
+        tb.ButtonInactiveBackgroundColor = Colors.Transparent;
+        tb.ButtonForegroundColor = fg;
+        tb.ButtonInactiveForegroundColor = Colors.Gray;
+        tb.ButtonHoverBackgroundColor = barLight ? ColorHelper.FromArgb(40, 0, 0, 0) : ColorHelper.FromArgb(60, 255, 255, 255);
     }
 
     private void OpenModule(ModuleInfo module, ModuleVariant? variant)
@@ -54,7 +63,6 @@ public sealed partial class MainWindow : Window
         foreach (var v in _open.Values) v.Visibility = ReferenceEquals(v, view) ? Visibility.Visible : Visibility.Collapsed;
         Home.Visibility = Visibility.Collapsed;
         ModuleHost.Visibility = Visibility.Visible;
-        Motion.FadeIn(ModuleHost);
     }
 
     private void ShowHome()

@@ -24,13 +24,19 @@
                         <TextBlock Text="Назад" />
                     </StackPanel>
                 </Button>
-                <TextBlock x:Name="TitleText" Text="Изберете клиент" FontSize="22" FontWeight="SemiBold"
-                           Foreground="{StaticResource InkBrush}" VerticalAlignment="Center" />
+                <StackPanel VerticalAlignment="Center" Spacing="2">
+                    <TextBlock x:Name="TitleText" Text="Изберете клиент" FontSize="24" FontWeight="SemiBold"
+                               Foreground="{StaticResource InkBrush}" />
+                    <TextBlock x:Name="CountText" FontSize="13" Foreground="{StaticResource InkSoftBrush}" />
+                </StackPanel>
             </StackPanel>
 
-            <TextBox x:Name="SearchBox" Grid.Column="1" Width="420" PlaceholderText="Търси клиент"
-                     TextChanged="OnSearchChanged" KeyDown="OnSearchKeyDown" CornerRadius="10" Padding="14,10"
-                     FontSize="16" />
+            <Grid Grid.Column="1" Width="440">
+                <TextBox x:Name="SearchBox" PlaceholderText="Търси клиент" TextChanged="OnSearchChanged" KeyDown="OnSearchKeyDown"
+                         CornerRadius="8" Padding="42,11,14,11" FontSize="16" />
+                <FontIcon Glyph="&#xE721;" FontSize="16" Margin="15,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                          Opacity="0.6" IsHitTestVisible="False" />
+            </Grid>
 
             <Button x:Name="SettingsButton" Grid.Column="2" HorizontalAlignment="Right" Padding="12,8" Click="OnSettings"
                     ToolTipService.ToolTip="Настройки">

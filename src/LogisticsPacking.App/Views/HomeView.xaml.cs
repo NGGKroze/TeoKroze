@@ -23,8 +23,7 @@ public sealed partial class HomeView : UserControl
     public HomeView()
     {
         InitializeComponent();
-        Render(animate: true);
-        Loaded += (_, _) => CrashLog.Safe("бутони (начален екран)", () => Motion.PressAll(this));
+        Render();
     }
 
     public void SetHandle(IntPtr hwnd) => _hwnd = hwnd;
@@ -32,7 +31,7 @@ public sealed partial class HomeView : UserControl
     public void Refresh(HashSet<string> openKeys)
     {
         _openKeys = openKeys;
-        Render(animate: true);
+        Render();
     }
 
     private IEnumerable<Tile> BuildTiles()
@@ -51,7 +50,7 @@ public sealed partial class HomeView : UserControl
 
     private static bool Contains(string text, string q) => text.Contains(q, StringComparison.CurrentCultureIgnoreCase);
 
-    private void Render(bool animate = false)
+    private void Render()
     {
         TitleText.Text = _group == null ? "Изберете клиент" : _group.Manifest.Name + " – изберете подклиент";
         BackButton.Visibility = _group == null ? Visibility.Collapsed : Visibility.Visible;
@@ -59,14 +58,8 @@ public sealed partial class HomeView : UserControl
 
         TileGrid.Children.Clear();
         var tiles = BuildTiles().ToList();
-        var i = 0;
-        foreach (var t in tiles)
-        {
-            var tile = (FrameworkElement)MakeTile(t);
-            TileGrid.Children.Add(tile);
-            CrashLog.Safe("анимация на плочка", () => { Motion.Press(tile, pressed: 0.955f, hover: 1.015f); if (animate) Motion.Reveal(tile, i); });
-            i++;
-        }
+        foreach (var t in tiles) TileGrid.Children.Add(MakeTile(t));
+        CountText.Text = _group == null ? $"{tiles.Count} клиента" : $"{tiles.Count} подклиента";
         EmptyText.Visibility = tiles.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -77,13 +70,13 @@ public sealed partial class HomeView : UserControl
 
         var name = new TextBlock
         {
-            Text = t.Title, FontSize = 34, FontWeight = FontWeights.SemiBold,
+            Text = t.Title, FontSize = 30, FontWeight = FontWeights.SemiBold,
             Foreground = (Brush)Application.Current.Resources["TileTextBrush"],
             TextAlignment = Microsoft.UI.Xaml.TextAlignment.Center, TextWrapping = TextWrapping.Wrap,
         };
         var rule = new Border
         {
-            Width = 46, Height = 2, Margin = new Thickness(0, 4, 0, 0),
+            Width = 36, Height = 2, Margin = new Thickness(0, 6, 0, 2),
             Background = (Brush)Application.Current.Resources["BrassBrush"], HorizontalAlignment = HorizontalAlignment.Center,
         };
         var sub = new TextBlock
@@ -123,7 +116,7 @@ public sealed partial class HomeView : UserControl
         {
             _group = t.Module;
             SearchBox.Text = "";
-            Render(animate: true);
+            Render();
             return;
         }
         OpenRequested?.Invoke(t.Module, t.Variant);
@@ -133,7 +126,7 @@ public sealed partial class HomeView : UserControl
     {
         _group = null;
         SearchBox.Text = "";
-        Render(animate: true);
+        Render();
     }
 
     private void OnSearchChanged(object sender, TextChangedEventArgs e) => Render();
@@ -149,5 +142,5 @@ public sealed partial class HomeView : UserControl
     }
 
     private async void OnSettings(object sender, RoutedEventArgs e) =>
-        await SettingsDialog.ShowAsync(XamlRoot, _hwnd, () => Render(animate: true));
+        await SettingsDialog.ShowAsync(XamlRoot, _hwnd, () => Render());
 }

@@ -119,34 +119,7 @@
   #lps-side .rounded-\[2rem\], #lps-side .rounded-\[3rem\], #lps-side .rounded-3xl { border-radius: 14px !important; }
 }
 
-/* ===== Плавност: бутоните потъват при натискане, картите се появяват меко ===== */
+/* Натиснат бутон: леко потъване (без анимация, без премигване) */
 @media screen {
-  html:not([data-lps-motion="off"]) button,
-  html:not([data-lps-motion="off"]) [role="button"],
-  html:not([data-lps-motion="off"]) .lps-btn {
-    transition: transform .14s cubic-bezier(.2, .8, .2, 1), box-shadow .18s ease, background-color .18s ease, border-color .18s ease, color .18s ease, opacity .18s ease !important;
-  }
-  html:not([data-lps-motion="off"]) button:active:not(:disabled),
-  html:not([data-lps-motion="off"]) [role="button"]:active,
-  html:not([data-lps-motion="off"]) .lps-btn:active:not(:disabled) {
-    transform: translateY(1px) scale(.965) !important;
-    box-shadow: inset 0 3px 8px rgba(0, 0, 0, .22) !important;
-    transition-duration: .06s !important;
-  }
-  html:not([data-lps-motion="off"]) .lps-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, .14) !important; }
-  html:not([data-lps-motion="off"]) input, html:not([data-lps-motion="off"]) select, html:not([data-lps-motion="off"]) textarea { transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease; }
-
-  @keyframes lps-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-  @keyframes lps-fade { from { opacity: 0; } to { opacity: 1; } }
-  html:not([data-lps-motion="off"]) body { animation: lps-fade .28s ease-out both; }
-  html:not([data-lps-motion="off"]) #lps-head { animation: lps-fade .35s ease-out both; }
-  html:not([data-lps-motion="off"]) #lps-bar { animation: lps-rise .35s .1s cubic-bezier(.2, .8, .2, 1) both; }
-  html:not([data-lps-motion="off"]) .lps-card { animation: lps-rise .42s cubic-bezier(.2, .8, .2, 1) both; }
-  html:not([data-lps-motion="off"]) .lps-card:nth-child(2) { animation-delay: .05s; }
-  html:not([data-lps-motion="off"]) .lps-card:nth-child(3) { animation-delay: .10s; }
-  html:not([data-lps-motion="off"]) .lps-card:nth-child(4) { animation-delay: .15s; }
-  html:not([data-lps-motion="off"]) .lps-card:nth-child(n+5) { animation-delay: .2s; }
-}
-@media (prefers-reduced-motion: reduce) {
-  html button, html [role="button"], html .lps-btn, html body, html #lps-head, html #lps-bar, html .lps-card { animation: none !important; transition: none !important; }
+  button:active:not(:disabled), .lps-btn:active:not(:disabled) { transform: translateY(1px); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .2) !important; }
 }

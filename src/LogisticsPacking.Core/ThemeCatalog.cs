@@ -41,6 +41,14 @@ public sealed class AppTheme
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string Desc { get; set; } = "";
+    /// <summary>light | dark - как да изглеждат стандартните контроли (бутони, полета, диалози).</summary>
+    public string Mode { get; set; } = "light";
+    /// <summary>Лъскавина на плочките 0..1 (0 = плоски карти).</summary>
+    public double Gloss { get; set; } = 1.0;
+    /// <summary>Скрита от списъка за избор (ползва се само през "system").</summary>
+    public bool Hidden { get; set; }
+    /// <summary>true = светла или тъмна според Windows (системна тема).</summary>
+    public bool Auto { get; set; }
     public string Wall { get; set; } = "";
     public string Tile { get; set; } = "";
     public ShellPalette Shell { get; set; } = new();
@@ -76,6 +84,17 @@ public sealed class ThemeCatalog
             cat.Themes.Add(new AppTheme { Id = FallbackId, Name = "Гранит", Wall = "wall_granite.jpg", Tile = "tile_granite.jpg" });
         return cat;
     }
+
+    public const string SystemId = "system";
+
+    /// <summary>Темата за избор; "system" се разрешава на светла/тъмна според Windows.</summary>
+    public AppTheme Resolve(string? id, bool systemDark)
+    {
+        var t = Get(id);
+        return t.Auto ? Get(systemDark ? "system-dark" : "system-light") : t;
+    }
+
+    public IEnumerable<AppTheme> Selectable => Themes.Where(t => !t.Hidden);
 
     public AppTheme Get(string? id) => Themes.FirstOrDefault(t => t.Id == id) ?? Themes.FirstOrDefault(t => t.Id == FallbackId) ?? Themes[0];
 }

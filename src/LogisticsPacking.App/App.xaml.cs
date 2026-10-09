@@ -32,16 +32,15 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        // Ако предишното стартиране не е стигнало до стабилно състояние (срив) -> безопасен режим: без анимации и с основната тема.
+        // Ако предишното стартиране не е стигнало до стабилно състояние (срив) -> безопасен режим: с основната тема.
         var safeMode = CrashLog.BeginAttempt();
         if (safeMode)
         {
-            CrashLog.Write("!!! Предишното стартиране е прекъснато - безопасен режим (без анимации, тема Гранит).");
-            AppServices.Settings.Animations = false;
+            CrashLog.Write("!!! Предишното стартиране е прекъснато - безопасен режим (тема Гранит).");
             AppServices.Settings.Theme = LogisticsPacking.Core.ThemeCatalog.FallbackId;
             CrashLog.Safe("запис на настройките", () => AppServices.Settings.Save(AppServices.Paths));
         }
-        else CrashLog.Safe("тема", ThemeService.Init, logOk: true);   // стена, плочки и цветове според избраната тема
+        CrashLog.Safe("тема", ThemeService.Init, logOk: true);   // стена, плочки и цветове според избраната тема
         try
         {
             _window = new MainWindow();

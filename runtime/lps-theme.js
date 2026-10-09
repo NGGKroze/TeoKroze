@@ -6,7 +6,6 @@
   var MODULE = {{MODULE}};
 
   var THEME = {{THEME}};
-  var ANIM = {{ANIM}};
 
   // Смесва два цвята (#rrggbb): t=0 -> a, t=1 -> b.
   function mix(a, b, t) {
@@ -30,10 +29,9 @@
   function apply() {
     if (document.getElementById('lps-theme')) return;
     document.documentElement.setAttribute('data-lps', MODULE);
-    if (!ANIM) document.documentElement.setAttribute('data-lps-motion', 'off');
     var s = document.createElement('style');
     s.id = 'lps-theme';
-    s.textContent = VARS + CSS;
+    s.textContent = CSS + VARS;   // променливите на темата след стила по подразбиране
     (document.head || document.documentElement).appendChild(s);
     if (window.tailwind) {
       try {
