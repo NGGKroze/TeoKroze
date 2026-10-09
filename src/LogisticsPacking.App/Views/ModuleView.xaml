@@ -63,17 +63,17 @@
         <Grid Grid.Row="1" Background="White">
             <WebView2 x:Name="Web" />
 
-            <Grid x:Name="LoadingPanel" Background="#F5F2EC">
+            <Grid x:Name="LoadingPanel" Background="{StaticResource PaperBrush}">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
                     <ProgressRing IsActive="True" Width="56" Height="56" />
-                    <TextBlock x:Name="LoadingText" Text="Зарежда се…" FontSize="16" Foreground="{StaticResource InkSoftBrush}" HorizontalAlignment="Center" />
+                    <TextBlock x:Name="LoadingText" Text="Зарежда се…" FontSize="16" Foreground="{StaticResource PaperInkSoftBrush}" HorizontalAlignment="Center" />
                 </StackPanel>
             </Grid>
 
-            <StackPanel x:Name="ErrorPanel" Visibility="Collapsed" Background="#F5F2EC" Padding="40"
+            <StackPanel x:Name="ErrorPanel" Visibility="Collapsed" Background="{StaticResource PaperBrush}" Padding="40"
                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Spacing="14">
-                <TextBlock Text="Клиентът не може да се зареди" FontSize="24" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
-                <TextBlock x:Name="ErrorText" IsTextSelectionEnabled="True" TextWrapping="Wrap" FontSize="14" Foreground="{StaticResource InkSoftBrush}" />
+                <TextBlock Text="Клиентът не може да се зареди" FontSize="24" FontWeight="SemiBold" Foreground="{StaticResource PaperInkBrush}" />
+                <TextBlock x:Name="ErrorText" IsTextSelectionEnabled="True" TextWrapping="Wrap" FontSize="14" Foreground="{StaticResource PaperInkSoftBrush}" />
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <Button Content="Опитай отново" Click="OnReload" />
                     <Button x:Name="OpenLogButton" Content="Отвори лога" Click="OnOpenLog" Visibility="Collapsed" />

@@ -23,7 +23,8 @@ public sealed partial class HomeView : UserControl
     public HomeView()
     {
         InitializeComponent();
-        Render();
+        Render(animate: true);
+        Loaded += (_, _) => Motion.PressAll(this);
     }
 
     public void SetHandle(IntPtr hwnd) => _hwnd = hwnd;
@@ -31,7 +32,7 @@ public sealed partial class HomeView : UserControl
     public void Refresh(HashSet<string> openKeys)
     {
         _openKeys = openKeys;
-        Render();
+        Render(animate: true);
     }
 
     private IEnumerable<Tile> BuildTiles()
@@ -50,7 +51,7 @@ public sealed partial class HomeView : UserControl
 
     private static bool Contains(string text, string q) => text.Contains(q, StringComparison.CurrentCultureIgnoreCase);
 
-    private void Render()
+    private void Render(bool animate = false)
     {
         TitleText.Text = _group == null ? "Изберете клиент" : _group.Manifest.Name + " – изберете подклиент";
         BackButton.Visibility = _group == null ? Visibility.Collapsed : Visibility.Visible;
@@ -58,7 +59,14 @@ public sealed partial class HomeView : UserControl
 
         TileGrid.Children.Clear();
         var tiles = BuildTiles().ToList();
-        foreach (var t in tiles) TileGrid.Children.Add(MakeTile(t));
+        var i = 0;
+        foreach (var t in tiles)
+        {
+            var tile = (FrameworkElement)MakeTile(t);
+            TileGrid.Children.Add(tile);
+            Motion.Press(tile, pressed: 0.955f, hover: 1.015f);
+            if (animate) Motion.Reveal(tile, i++);
+        }
         EmptyText.Visibility = tiles.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -115,7 +123,7 @@ public sealed partial class HomeView : UserControl
         {
             _group = t.Module;
             SearchBox.Text = "";
-            Render();
+            Render(animate: true);
             return;
         }
         OpenRequested?.Invoke(t.Module, t.Variant);
@@ -125,7 +133,7 @@ public sealed partial class HomeView : UserControl
     {
         _group = null;
         SearchBox.Text = "";
-        Render();
+        Render(animate: true);
     }
 
     private void OnSearchChanged(object sender, TextChangedEventArgs e) => Render();
@@ -141,5 +149,5 @@ public sealed partial class HomeView : UserControl
     }
 
     private async void OnSettings(object sender, RoutedEventArgs e) =>
-        await SettingsDialog.ShowAsync(XamlRoot, _hwnd, () => Render());
+        await SettingsDialog.ShowAsync(XamlRoot, _hwnd, () => Render(animate: true));
 }

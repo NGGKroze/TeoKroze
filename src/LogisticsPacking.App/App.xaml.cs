@@ -20,6 +20,7 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        ThemeService.Init();   // стена, плочки и цветове според избраната тема
         _window = new MainWindow();
         _window.Activate();
     }

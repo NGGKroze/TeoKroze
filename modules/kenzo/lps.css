@@ -1,12 +1,12 @@
 /* KENZO - единна тема */
 @media screen {
-  html[data-lps="kenzo"] { --blue:#8d6d3c; }
-  html[data-lps="kenzo"] header { background: rgba(255,255,255,.86) !important; color: #26272b !important; border-bottom: 2px solid #b08d57 !important; box-shadow: 0 6px 20px rgba(31,32,35,.07) !important; }
+  html[data-lps="kenzo"] { --blue:var(--lps-brass-dark); }
+  html[data-lps="kenzo"] header { background: rgba(255,255,255,.86) !important; color: #26272b !important; border-bottom: 2px solid var(--lps-brass) !important; box-shadow: 0 6px 20px rgba(31,32,35,.07) !important; }
   html[data-lps="kenzo"] header p { color:#5b5c62 !important; }
-  html[data-lps="kenzo"] button { background:#2f3034; }
+  html[data-lps="kenzo"] button { background:var(--lps-accent); }
   html[data-lps="kenzo"] button.secondary { background:#e8e4dc; color:#26272b; }
   html[data-lps="kenzo"] button.success { background:#16a34a; }
-  html[data-lps="kenzo"] .drop.drag { background:#f3ede0 !important; border-color:#b08d57 !important; }
+  html[data-lps="kenzo"] .drop.drag { background:var(--lps-soft) !important; border-color:var(--lps-brass) !important; }
 }
 @media screen {
   html[data-lps="kenzo"] main { max-width: none !important; padding: 0 !important; margin: 0 !important; }

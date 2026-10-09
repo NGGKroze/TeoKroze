@@ -1,7 +1,7 @@
 /* DIOR - единна тема */
 @media screen {
-  html[data-lps="dior"] { --blue:#8d6d3c; --light-blue:#f3ede0; }
-  html[data-lps="dior"] button { background:#2f3034; }
+  html[data-lps="dior"] { --blue:var(--lps-brass-dark); --light-blue:var(--lps-soft); }
+  html[data-lps="dior"] button { background:var(--lps-accent); }
   html[data-lps="dior"] button.secondary { background:#46474d; }
   html[data-lps="dior"] button.ghost { background:#fff; color:#26272b; }
 }

@@ -9,8 +9,8 @@
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Палитра: мрамор (фон), гранит (плочки), месингов акцент -->
-            <ImageBrush x:Key="MarbleBrush" ImageSource="ms-appx:///Assets/marble.jpg" Stretch="UniformToFill" />
-            <ImageBrush x:Key="GraniteBrush" ImageSource="ms-appx:///Assets/granite.jpg" Stretch="UniformToFill" />
+            <ImageBrush x:Key="MarbleBrush" ImageSource="ms-appx:///Assets/wall_granite.jpg" Stretch="UniformToFill" />
+            <ImageBrush x:Key="GraniteBrush" ImageSource="ms-appx:///Assets/tile_granite.jpg" Stretch="UniformToFill" />
             <SolidColorBrush x:Key="InkBrush" Color="#26272B" />
             <SolidColorBrush x:Key="InkSoftBrush" Color="#5B5C62" />
             <SolidColorBrush x:Key="StoneTextBrush" Color="#F4F1EA" />
@@ -27,6 +27,10 @@
             </LinearGradientBrush>
             <SolidColorBrush x:Key="TileBorderBrush" Color="#8C8F96" />
             <SolidColorBrush x:Key="BarBrush" Color="#F01F2023" />
+            <!-- Светла "хартия" (зареждане/грешка в клиент) - текстът е винаги тъмен, независимо от темата -->
+            <SolidColorBrush x:Key="PaperBrush" Color="#F5F2EC" />
+            <SolidColorBrush x:Key="PaperInkBrush" Color="#26272B" />
+            <SolidColorBrush x:Key="PaperInkSoftBrush" Color="#5B5C62" />
 
             <!-- Голяма гранитна плочка за клиент -->
             <Style x:Key="TileButtonStyle" TargetType="Button">
@@ -40,13 +44,19 @@
                         <ControlTemplate TargetType="Button">
                             <Grid x:Name="TileRoot" CornerRadius="14" BorderThickness="1.5"
                                   BorderBrush="{StaticResource TileBorderBrush}"
-                                  Background="{StaticResource GraniteBrush}"
-                                  RenderTransformOrigin="0.5,0.5">
-                                <Grid.RenderTransform>
-                                    <ScaleTransform x:Name="TileScale" ScaleX="1" ScaleY="1" />
-                                </Grid.RenderTransform>
+                                  Background="{StaticResource GraniteBrush}">
+                                <!-- Мащабът (потъване/повдигане) се прави от Motion.Press в кода -->
                                 <Border x:Name="TileGloss" Background="{StaticResource GlossBrush}" CornerRadius="14" IsHitTestVisible="False" />
-                                <Border x:Name="TileShine" Background="#22FFFFFF" CornerRadius="14" Opacity="0" />
+                                <Border x:Name="TileShine" Background="#22FFFFFF" CornerRadius="14" Opacity="0" IsHitTestVisible="False">
+                                    <Border.OpacityTransition>
+                                        <ScalarTransition Duration="0:0:0.18" />
+                                    </Border.OpacityTransition>
+                                </Border>
+                                <Border x:Name="TilePressShade" Background="#33000000" CornerRadius="14" Opacity="0" IsHitTestVisible="False">
+                                    <Border.OpacityTransition>
+                                        <ScalarTransition Duration="0:0:0.1" />
+                                    </Border.OpacityTransition>
+                                </Border>
                                 <ContentPresenter HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                                   VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
                                 <VisualStateManager.VisualStateGroups>
@@ -56,16 +66,13 @@
                                             <VisualState.Setters>
                                                 <Setter Target="TileShine.Opacity" Value="1" />
                                                 <Setter Target="TileRoot.BorderBrush" Value="{StaticResource BrassBrush}" />
-                                                <Setter Target="TileScale.ScaleX" Value="1.02" />
-                                                <Setter Target="TileScale.ScaleY" Value="1.02" />
                                             </VisualState.Setters>
                                         </VisualState>
                                         <VisualState x:Name="Pressed">
                                             <VisualState.Setters>
                                                 <Setter Target="TileShine.Opacity" Value="1" />
                                                 <Setter Target="TileRoot.BorderBrush" Value="{StaticResource BrassBrush}" />
-                                                <Setter Target="TileScale.ScaleX" Value="0.98" />
-                                                <Setter Target="TileScale.ScaleY" Value="0.98" />
+                                                <Setter Target="TilePressShade.Opacity" Value="1" />
                                             </VisualState.Setters>
                                         </VisualState>
                                         <VisualState x:Name="Disabled" />

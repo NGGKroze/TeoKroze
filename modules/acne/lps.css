@@ -1,13 +1,13 @@
 /* ACNE - единна тема */
 @media screen {
-  html[data-lps="acne"] { --blue:#8d6d3c; }
-  html[data-lps="acne"] header { background: rgba(255,255,255,.86) !important; color: #26272b !important; border-bottom: 2px solid #b08d57 !important; box-shadow: 0 6px 20px rgba(31,32,35,.07) !important; }
+  html[data-lps="acne"] { --blue:var(--lps-brass-dark); }
+  html[data-lps="acne"] header { background: rgba(255,255,255,.86) !important; color: #26272b !important; border-bottom: 2px solid var(--lps-brass) !important; box-shadow: 0 6px 20px rgba(31,32,35,.07) !important; }
   html[data-lps="acne"] header .sub { color:#5b5c62 !important; }
-  html[data-lps="acne"] .btn:not(.light):not(.green), html[data-lps="acne"] th, html[data-lps="acne"] .order-tab.active { background:#2f3034 !important; border-color:#2f3034 !important; }
+  html[data-lps="acne"] .btn:not(.light):not(.green), html[data-lps="acne"] th, html[data-lps="acne"] .order-tab.active { background:var(--lps-accent) !important; border-color:var(--lps-accent) !important; }
   html[data-lps="acne"] .order-tabs { background:transparent !important; }
   html[data-lps="acne"] .drop { background:#f6f3ec !important; }
-  html[data-lps="acne"] .drop.dragover, html[data-lps="acne"] td input:focus { background:#f3ede0 !important; }
-  html[data-lps="acne"] .btn.blue { background:#2f3034 !important; }
+  html[data-lps="acne"] .drop.dragover, html[data-lps="acne"] td input:focus { background:var(--lps-soft) !important; }
+  html[data-lps="acne"] .btn.blue { background:var(--lps-accent) !important; }
   html[data-lps="acne"] .pack-preview th { background:#1f2023 !important; }
 }
 @media screen {

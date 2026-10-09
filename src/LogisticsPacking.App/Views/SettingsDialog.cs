@@ -33,9 +33,25 @@ internal static class SettingsDialog
             IsOn = settings.AskWhereToSave,
         };
 
+        // Тема: стенно пано + камък. Избор се вижда веднага (преглед); при "Отказ" се връща предишната.
+        var originalTheme = ThemeService.Current.Id;
+        var themeBox = new ComboBox { Header = "Тема (стенно пано и камък)", MinWidth = 380 };
+        foreach (var t in ThemeService.Catalog.Themes)
+            themeBox.Items.Add(new ComboBoxItem { Content = $"{t.Name} – {t.Desc}", Tag = t.Id });
+        themeBox.SelectedIndex = Math.Max(0, ThemeService.Catalog.Themes.FindIndex(t => t.Id == originalTheme));
+        themeBox.SelectionChanged += (_, _) =>
+        {
+            if (themeBox.SelectedItem is ComboBoxItem it && it.Tag is string id) ThemeService.Apply(id);
+        };
+        var anim = new ToggleSwitch
+        {
+            Header = "Анимации", OnContent = "Плавни (бутоните потъват, плочките се появяват меко)", OffContent = "Без движение",
+            IsOn = settings.Animations,
+        };
+
         var theme = new ToggleSwitch
         {
-            Header = "Вид на клиентските екрани", OnContent = "Единна тема (мрамор и гранит)", OffContent = "Оригиналният вид на всеки клиент",
+            Header = "Вид на клиентските екрани", OnContent = "Единна тема (цветове на избраната тема)", OffContent = "Оригиналният вид на всеки клиент",
             IsOn = settings.UnifiedTheme,
         };
 
@@ -62,6 +78,9 @@ internal static class SettingsDialog
         var panel = new StackPanel { Spacing = 14 };
         panel.Children.Add(row);
         panel.Children.Add(ask);
+        panel.Children.Add(themeBox);
+        panel.Children.Add(new TextBlock { Text = "Цветовете на отворените клиенти се сменят след „Презареди“.", Opacity = 0.6, FontSize = 12, TextWrapping = TextWrapping.Wrap });
+        panel.Children.Add(anim);
         panel.Children.Add(theme);
         panel.Children.Add(layout);
         panel.Children.Add(bg);
@@ -85,8 +104,12 @@ internal static class SettingsDialog
             XamlRoot = root, Title = "Настройки", Content = panel,
             PrimaryButtonText = "Запази", CloseButtonText = "Отказ", DefaultButton = ContentDialogButton.Primary,
         };
-        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        var result = await dialog.ShowAsync();
+        if (result != ContentDialogResult.Primary) ThemeService.Apply(originalTheme);   // отказ -> старата тема
+        if (result == ContentDialogResult.Primary)
         {
+            settings.Theme = themeBox.SelectedItem is ComboBoxItem sel && sel.Tag is string tid ? tid : originalTheme;
+            settings.Animations = anim.IsOn;
             settings.OutputDirectory = pathBox.Text.Trim();
             settings.AskWhereToSave = ask.IsOn;
             settings.UnifiedTheme = theme.IsOn;

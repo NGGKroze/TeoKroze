@@ -14,6 +14,10 @@ public sealed class AppSettings
     public bool BulgarianUi { get; set; } = true;
     /// <summary>Единна структура на клиентските екрани (заглавие, ляв панел, лента с действия).</summary>
     public bool UnifiedLayout { get; set; } = true;
+    /// <summary>Идентификатор на темата (runtime\themes.json): granite, midnight, pearl, emerald, travertine.</summary>
+    public string Theme { get; set; } = ThemeCatalog.FallbackId;
+    /// <summary>Плавни анимации (потъване на бутоните, поява на плочките, преходи). false = без движение.</summary>
+    public bool Animations { get; set; } = true;
 
     public string ResolveOutputDirectory()
     {

@@ -12,7 +12,7 @@
         </Grid.RowDefinitions>
 
         <!-- Заглавна лента: името на програмата (като в скицата) -->
-        <Grid x:Name="AppTitleBar" Grid.Row="0" Background="#E61F2023">
+        <Grid x:Name="AppTitleBar" Grid.Row="0" Background="{StaticResource BarBrush}">
             <StackPanel Orientation="Horizontal" Margin="14,0,0,0" Spacing="10" VerticalAlignment="Center">
                 <Image Source="ms-appx:///Assets/app.png" Width="22" Height="22" />
                 <TextBlock Text="Logistics Packing Solution" Foreground="{StaticResource StoneTextBrush}"

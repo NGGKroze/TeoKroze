@@ -17,7 +17,7 @@ const html = fs.readdirSync(root).filter(d => fs.existsSync(`${root}/${d}/index.
 const targets = [...html, ['acne', 'http://127.0.0.1:5301/'], ['asphalte', 'http://127.0.0.1:5302/'], ['courreges', 'http://127.0.0.1:5303/']].filter(([id]) => !only.length || only.includes(id));
 for (const [id, url] of targets) {
   const pg = await b.newPage({ viewport: { width: 1280, height: 760 } });
-  for (const sc of lpsScripts(repo, id, { layout: process.env.NOLAYOUT ? false : true })) await pg.addInitScript(sc);
+  for (const sc of lpsScripts(repo, id, { layout: process.env.NOLAYOUT ? false : true, theme: process.env.THEME })) await pg.addInitScript(sc);
   await pg.goto(url); await pg.waitForTimeout(1000);
   await pg.screenshot({ path: `${out}/${id}.png` }); await pg.close();
 }

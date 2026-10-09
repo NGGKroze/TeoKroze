@@ -29,6 +29,7 @@ public sealed partial class MainWindow : Window
         var icon = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
         if (File.Exists(icon)) AppWindow.SetIcon(icon);
 
+        ((FrameworkElement)Content).Loaded += (_, _) => Motion.PressAll((DependencyObject)Content);
         Home.OpenRequested += (module, variant) => OpenModule(module, variant);
         Home.SetHandle(WinRT.Interop.WindowNative.GetWindowHandle(this));
         Closed += (_, _) =>
@@ -53,6 +54,7 @@ public sealed partial class MainWindow : Window
         foreach (var v in _open.Values) v.Visibility = ReferenceEquals(v, view) ? Visibility.Visible : Visibility.Collapsed;
         Home.Visibility = Visibility.Collapsed;
         ModuleHost.Visibility = Visibility.Visible;
+        Motion.FadeIn(ModuleHost);
     }
 
     private void ShowHome()

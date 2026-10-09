@@ -5,7 +5,8 @@ export function lpsScripts(repo, id, opts = {}) {
   const rd = f => fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8').replace(/^﻿/, '')) : null;
   const out = [];
   const css = fs.readFileSync(path.join(rt, 'lps-theme.css'), 'utf8') + (fs.existsSync(path.join(root, id, 'lps.css')) ? '\n' + fs.readFileSync(path.join(root, id, 'lps.css'), 'utf8') : '');
-  out.push(fs.readFileSync(path.join(rt, 'lps-theme.js'), 'utf8').replace('{{MODULE}}', JSON.stringify(id)).replace('{{CSS}}', JSON.stringify(css)));
+  const cat = rd(path.join(rt, 'themes.json')); const th = cat.themes.find(x => x.id === (opts.theme || cat.default)) || cat.themes[0];
+  out.push(fs.readFileSync(path.join(rt, 'lps-theme.js'), 'utf8').replace('{{THEME}}', JSON.stringify(th.web)).replace('{{ANIM}}', opts.animations === false ? 'false' : 'true').replace('{{MODULE}}', JSON.stringify(id)).replace('{{CSS}}', JSON.stringify(css)));
   const lay = rd(path.join(root, id, 'layout.json'));
   if (lay && opts.layout !== false) out.push(fs.readFileSync(path.join(rt, 'lps-layout.js'), 'utf8').replace('{{LAYOUT}}', JSON.stringify(lay)));
   if (opts.i18n !== false) {

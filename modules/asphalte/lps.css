@@ -1,9 +1,9 @@
 /* ASPHALTE - единна тема */
 @media screen {
-  html[data-lps="asphalte"] { --accent:#8d6d3c; --accent-2:#b08d57; --blue:#2f3034; --bg:transparent; --shell:transparent; }
-  html[data-lps="asphalte"] header { background: rgba(255,255,255,.86) !important; border-bottom:2px solid #b08d57 !important; backdrop-filter: blur(6px); }
-  html[data-lps="asphalte"] .logo { background: linear-gradient(135deg,#2f3034,#131416) !important; }
-  html[data-lps="asphalte"] .tab.active, html[data-lps="asphalte"] .rtab.active, html[data-lps="asphalte"] .lang-pill { background:#2f3034 !important; border-color:#2f3034 !important; }
+  html[data-lps="asphalte"] { --accent:var(--lps-brass-dark); --accent-2:var(--lps-brass); --blue:var(--lps-accent); --bg:transparent; --shell:transparent; }
+  html[data-lps="asphalte"] header { background: rgba(255,255,255,.86) !important; border-bottom:2px solid var(--lps-brass) !important; backdrop-filter: blur(6px); }
+  html[data-lps="asphalte"] .logo { background: linear-gradient(135deg,var(--lps-accent),var(--lps-accent-dark)) !important; }
+  html[data-lps="asphalte"] .tab.active, html[data-lps="asphalte"] .rtab.active, html[data-lps="asphalte"] .lang-pill { background:var(--lps-accent) !important; border-color:var(--lps-accent) !important; }
 }
 @media screen {
   html[data-lps="asphalte"] main { display: block !important; padding: 0 !important; max-width: none !important; }

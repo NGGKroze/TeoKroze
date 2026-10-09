@@ -1,7 +1,7 @@
 /* MARGIELA - единна тема */
 @media screen {
-  html[data-lps="margiela"] { --accent:#2f3034; }
-  html[data-lps="margiela"] button.primary { background:#2f3034; border-color:#2f3034; }
+  html[data-lps="margiela"] { --accent:var(--lps-accent); }
+  html[data-lps="margiela"] button.primary { background:var(--lps-accent); border-color:var(--lps-accent); }
 }
 @media screen {
   html[data-lps="margiela"] .app, html[data-lps="margiela"] .controls { max-width: none !important; box-shadow: none !important; border: 0 !important; background: transparent !important; padding: 0 !important; margin: 0 !important; }

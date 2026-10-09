@@ -5,11 +5,11 @@
     --lps-stone: #ece9e4; --lps-line: #d8d3c8; --lps-graphite: #1f2023; --lps-graphite-2: #2f3034;
     --lps-radius: 12px;
   }
-  html { background: #ebe8e2 !important; }
+  html { background: var(--lps-bg) !important; }
   body {
     font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif !important;
     color: var(--lps-ink);
-    background: #ebe8e2 !important;   /* плосък фон в клиентските екрани (мраморът е само в обвивката) */
+    background: var(--lps-bg) !important;   /* плосък фон в клиентските екрани (мраморът е само в обвивката) */
   }
   h1, h2, h3, h4 { font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif !important; letter-spacing: -0.01em; }
   /* Еднакви заглавия във всички клиенти */
@@ -31,14 +31,14 @@
   button { border-radius: 10px; }
   button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--lps-brass); outline-offset: 2px; }
 
-  ::selection { background: #d9c7a3; color: #1b1c1f; }
+  ::selection { background: var(--lps-sel); color: var(--lps-accent-dark); }
   a { color: var(--lps-brass-dark); }
 
   /* Скролбарове */
-  * { scrollbar-width: thin; scrollbar-color: #a9a498 transparent; }
+  * { scrollbar-width: thin; scrollbar-color: var(--lps-thumb) transparent; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-thumb { background: #b6b1a5; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
-  ::-webkit-scrollbar-thumb:hover { background: #8e897d; background-clip: padding-box; border: 2px solid transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--lps-thumb); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--lps-thumb); background-clip: padding-box; border: 2px solid transparent; }
 
   /* Карти - Tailwind "бели" панели с лек камък */
   [class~="shadow-sm"][class~="bg-white"], [class~="shadow-md"][class~="bg-white"], [class~="shadow-lg"][class~="bg-white"], [class~="shadow-xl"][class~="bg-white"] {
@@ -70,7 +70,7 @@
   .lps-head-right { display: flex; align-items: center; gap: 10px; }
 
   #lps-side { position: fixed; z-index: 40; top: 64px; left: 0; bottom: 72px; width: 408px; overflow-y: auto; overflow-x: hidden; padding: 16px;
-    background: #e6e2da; border-right: 1px solid var(--lps-line); }
+    background: var(--lps-side); border-right: 1px solid var(--lps-line); }
   html.lps-no-bar #lps-side { bottom: 0; }
   .lps-card { background: #fff; border: 1px solid var(--lps-line); border-radius: 14px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(31,32,35,.05); }
   .lps-card > h2 { margin: 0 0 12px !important; font-size: 12px !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: .06em; color: var(--lps-ink-soft) !important; }
@@ -91,12 +91,12 @@
   #lps-bar .lps-spacer { flex: 1; }
   .lps-bar-left, .lps-bar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .lps-btn { height: 44px !important; min-width: 120px; padding: 0 20px !important; border-radius: 12px !important; font-size: 14px !important; font-weight: 600 !important;
-    line-height: 1 !important; cursor: pointer; border: 1px solid #2f3034 !important; box-shadow: none !important; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; text-transform: none !important; letter-spacing: 0 !important; }
+    line-height: 1 !important; cursor: pointer; border: 1px solid var(--lps-accent) !important; box-shadow: none !important; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; text-transform: none !important; letter-spacing: 0 !important; }
   .lps-btn:disabled { opacity: .45 !important; cursor: not-allowed; }
-  .lps-btn.lps-primary { background: #2f3034 !important; color: #fff !important; }
-  .lps-btn.lps-primary:hover:not(:disabled) { background: #131416 !important; }
-  .lps-btn.lps-secondary { background: #fff !important; color: #2f3034 !important; }
-  .lps-btn.lps-secondary:hover:not(:disabled) { background: #f3f0ea !important; }
+  .lps-btn.lps-primary { background: var(--lps-accent) !important; color: #fff !important; }
+  .lps-btn.lps-primary:hover:not(:disabled) { background: var(--lps-accent-dark) !important; }
+  .lps-btn.lps-secondary { background: #fff !important; color: var(--lps-accent) !important; }
+  .lps-btn.lps-secondary:hover:not(:disabled) { background: var(--lps-soft) !important; }
   .lps-btn.lps-danger { background: #fff !important; color: #a83a32 !important; border-color: #a83a32 !important; }
   .lps-btn.lps-danger:hover:not(:disabled) { background: #fbefee !important; }
 }
@@ -117,4 +117,36 @@
   #lps-side h1, #lps-side h3, #lps-side .text-xl, #lps-side .text-2xl, #lps-side .text-3xl { font-size: 15px !important; line-height: 1.3 !important; }
   #lps-side p, #lps-side .text-sm { font-size: 13px; }
   #lps-side .rounded-\[2rem\], #lps-side .rounded-\[3rem\], #lps-side .rounded-3xl { border-radius: 14px !important; }
+}
+
+/* ===== Плавност: бутоните потъват при натискане, картите се появяват меко ===== */
+@media screen {
+  html:not([data-lps-motion="off"]) button,
+  html:not([data-lps-motion="off"]) [role="button"],
+  html:not([data-lps-motion="off"]) .lps-btn {
+    transition: transform .14s cubic-bezier(.2, .8, .2, 1), box-shadow .18s ease, background-color .18s ease, border-color .18s ease, color .18s ease, opacity .18s ease !important;
+  }
+  html:not([data-lps-motion="off"]) button:active:not(:disabled),
+  html:not([data-lps-motion="off"]) [role="button"]:active,
+  html:not([data-lps-motion="off"]) .lps-btn:active:not(:disabled) {
+    transform: translateY(1px) scale(.965) !important;
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, .22) !important;
+    transition-duration: .06s !important;
+  }
+  html:not([data-lps-motion="off"]) .lps-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, .14) !important; }
+  html:not([data-lps-motion="off"]) input, html:not([data-lps-motion="off"]) select, html:not([data-lps-motion="off"]) textarea { transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease; }
+
+  @keyframes lps-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes lps-fade { from { opacity: 0; } to { opacity: 1; } }
+  html:not([data-lps-motion="off"]) body { animation: lps-fade .28s ease-out both; }
+  html:not([data-lps-motion="off"]) #lps-head { animation: lps-fade .35s ease-out both; }
+  html:not([data-lps-motion="off"]) #lps-bar { animation: lps-rise .35s .1s cubic-bezier(.2, .8, .2, 1) both; }
+  html:not([data-lps-motion="off"]) .lps-card { animation: lps-rise .42s cubic-bezier(.2, .8, .2, 1) both; }
+  html:not([data-lps-motion="off"]) .lps-card:nth-child(2) { animation-delay: .05s; }
+  html:not([data-lps-motion="off"]) .lps-card:nth-child(3) { animation-delay: .10s; }
+  html:not([data-lps-motion="off"]) .lps-card:nth-child(4) { animation-delay: .15s; }
+  html:not([data-lps-motion="off"]) .lps-card:nth-child(n+5) { animation-delay: .2s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html button, html [role="button"], html .lps-btn, html body, html #lps-head, html #lps-bar, html .lps-card { animation: none !important; transition: none !important; }
 }
