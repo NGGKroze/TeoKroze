@@ -56,8 +56,8 @@ DESTINATION_PRESETS = {
     "KR": {
         "display": "Korea / 3PL KR",
         "summary": "Korea",
-        "label_address": ["Acne Studios Korea LLC", "c/o Maersk Logistics DC8", "Dock 1, 2F, 1911, Hwangmu-ro, Bubal-eup, Icheon-si", "Gyeonggi-do 17405", "Republic of Korea"],
-        "packing_rows": {10: "Acne Studios Korea LLC", 11: "c/o Maersk Logistics DC8", 12: "Dock 1, 2F, 1911, Hwangmu-ro, Bubal-eup, Icheon-si", 13: "Gyeonggi-do 17405", 14: "Republic of Korea"},
+        "label_address": ["Acne Studios Korea LLC", "c/o Maersk Logistics DC11", "Dock 12, 2F, 536, Yeojunam-ro, Ganam-eup, Yeoju-si", "Gyeonggi-do 12646", "Republic of Korea"],
+        "packing_rows": {10: "Acne Studios Korea LLC", 11: "c/o Maersk Logistics DC11", 12: "Dock 12, 2F, 536, Yeojunam-ro, Ganam-eup, Yeoju-si", 13: "Gyeonggi-do 12646", 14: "Republic of Korea"},
     },
     "JP": {
         "display": "Japan / 3PL JP",
@@ -413,7 +413,7 @@ def _detect_destination_from_packing(ws, filename: str = "") -> str:
         return "CN"
     if "BERGEN LOGISTICS" in blob or "NORTH BERGEN" in blob:
         return "US"
-    if "MAERSK LOGISTICS DC8" in blob or "REPUBLIC OF KOREA" in blob or "GYEONGGI" in blob:
+    if "MAERSK LOGISTICS DC8" in blob or "MAERSK LOGISTICS DC11" in blob or "YEOJU" in blob or "REPUBLIC OF KOREA" in blob or "GYEONGGI" in blob:
         return "KR"
     if "ICHIKAWA" in blob or "AOYAMA" in blob or "JAPAN" in blob:
         return "JP"
