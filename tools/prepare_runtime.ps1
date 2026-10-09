@@ -1,4 +1,4 @@
-<#
+﻿<#
   Подготвя runtime\python (вграден Python + пакетите) и runtime\tesseract (OCR).
   Резултатът НЕ се качва в git (виж .gitignore), а се пакетира от инсталатора.
 
