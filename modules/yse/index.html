@@ -370,6 +370,15 @@
             }
 
             if (headerIdx === -1 || cols['BOX'] === undefined || cols['QTY'] === undefined) {
+                if (window.LPS && LPS.diag) {
+                    const r = LPS.diag.analyze(json, {
+                        REF: { label: 'Référence', header: [/r[ée]f[ée]rence/i], type: 'text' },
+                        QTY: { label: 'Quantité', header: [/quant/i, /^qty$/i], type: 'int' },
+                        BOX: { label: 'Numéro colis / Box', header: [/num[ée]ro colis/i, /^box$/i], type: 'int' },
+                        PAL: { label: 'Palette', header: [/palette/i, /^pal$/i], required: false }
+                    });
+                    LPS.diag.report('YSE: файлът не може да се прочете', ['Не са намерени задължителните колони (Reference, Quantity, Box number).', 'Възможна причина: чернова (DRAFT) формат без номера на кашони.', ''].concat(r.lines));
+                }
                 return alert("Required columns (Reference, Quantity, Box number) not found.");
             }
 

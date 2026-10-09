@@ -52,4 +52,75 @@
       });
     }
   };
+
+  /* ---- Диагностика на Excel/таблични файлове ----
+     LPS.diag.analyze(rows, spec) -> { headerRow, cols, guessed, missing, lines }
+       spec: { ключ: { label:'Колона', header:[/regex/], type:'ean'|'int'|'text', required:true } }
+       1) намира реда със най-много разпознати заглавия, 2) за липсващи колони пробва по съдържание
+       (само EAN = колона с 12-14 цифри; количества/номера са двусмислени и се отчитат като липсващи) - ако заглавието липсва или е разменено.
+     LPS.diag.report(title, lines) - показва на български какво и защо липсва (с бутон за копиране). */
+  function cellText(v) { return v == null ? '' : String(v).trim(); }
+  var TYPE_TEST = {
+    ean: function (s) { return /^\d{12,14}$/.test(s.replace(/\s/g, '')); },
+    int: function (s) { return /^\d{1,5}$/.test(s); },
+    text: function (s) { return s.length > 1 && /[A-Za-zА-Яа-я]/.test(s); }
+  };
+  function analyze(rows, spec) {
+    var keys = Object.keys(spec), best = -1, bestScore = 0, i, k, c;
+    for (i = 0; i < Math.min(rows.length, 60); i++) {
+      var score = 0, row = rows[i] || [];
+      keys.forEach(function (key) { if (row.some(function (v) { return spec[key].header.some(function (re) { return re.test(cellText(v)); }); })) score++; });
+      if (score > bestScore) { bestScore = score; best = i; }
+    }
+    var cols = {}, guessed = {}, missing = [], lines = [];
+    if (best < 0) {
+      lines.push('Не е намерен ред със заглавия на колоните (очаквани: ' + keys.map(function (x) { return spec[x].label; }).join(', ') + ').');
+      lines.push('Първите редове във файла: ' + rows.slice(0, 3).map(function (r) { return '[' + (r || []).map(cellText).filter(Boolean).slice(0, 8).join(' | ') + ']'; }).join(' '));
+      return { headerRow: -1, cols: cols, guessed: guessed, missing: keys.map(function (x) { return spec[x].label; }), lines: lines };
+    }
+    var header = rows[best] || [];
+    keys.forEach(function (key) {
+      for (c = 0; c < header.length; c++) if (spec[key].header.some(function (re) { return re.test(cellText(header[c])); })) { cols[key] = c; break; }
+    });
+    var used = {}; Object.keys(cols).forEach(function (x) { used[cols[x]] = 1; });
+    keys.forEach(function (key) {
+      if (cols[key] != null) return;
+      var test = spec[key].type === 'ean' ? TYPE_TEST.ean : null; if (!test) return; // налучкваме само отличимото (EAN); целите числа са двусмислени
+      var width = 0; rows.slice(best + 1, best + 40).forEach(function (r) { width = Math.max(width, (r || []).length); });
+      var bestCol = -1, bestRatio = 0;
+      for (c = 0; c < width; c++) {
+        if (used[c]) continue;
+        var n = 0, ok = 0;
+        rows.slice(best + 1, best + 40).forEach(function (r) { var s = cellText((r || [])[c]); if (s) { n++; if (test(s)) ok++; } });
+        if (n >= 3 && ok / n > 0.8 && ok / n > bestRatio) { bestRatio = ok / n; bestCol = c; }
+      }
+      if (bestCol >= 0) { guessed[key] = bestCol; used[bestCol] = 1; }
+    });
+    keys.forEach(function (key) {
+      if (cols[key] == null && guessed[key] == null && spec[key].required !== false) missing.push(spec[key].label);
+    });
+    lines.push('Ред със заглавия: ' + (best + 1) + '. Прочетени заглавия: ' + header.map(cellText).filter(Boolean).join(' | '));
+    keys.forEach(function (key) {
+      var L = spec[key].label;
+      if (cols[key] != null) lines.push('✔ ' + L + ' - колона ' + (cols[key] + 1) + ' („' + cellText(header[cols[key]]) + '“)');
+      else if (guessed[key] != null) lines.push('≈ ' + L + ' - няма заглавие, налучкана по съдържанието: колона ' + (guessed[key] + 1));
+      else lines.push((spec[key].required === false ? '○ ' : '✘ ') + L + ' - не е намерена (нито по заглавие, нито по съдържание).');
+    });
+    return { headerRow: best, cols: cols, guessed: guessed, missing: missing, lines: lines };
+  }
+  function report(title, lines) {
+    var old = document.getElementById('lps-diag'); if (old) old.remove();
+    var box = document.createElement('div'); box.id = 'lps-diag';
+    box.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font:14px Segoe UI,Arial,sans-serif';
+    var card = document.createElement('div');
+    card.style.cssText = 'background:#fff;color:#111;max-width:760px;width:92%;max-height:80vh;overflow:auto;border-radius:10px;padding:18px 22px;box-shadow:0 10px 40px rgba(0,0,0,.4)';
+    var h = document.createElement('h3'); h.textContent = title; h.style.cssText = 'margin:0 0 10px;font-size:17px';
+    var pre = document.createElement('pre'); pre.textContent = lines.join('\n'); pre.style.cssText = 'white-space:pre-wrap;margin:0 0 14px;font:13px Consolas,monospace';
+    var bar = document.createElement('div'); bar.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
+    function btn(txt, fn) { var b = document.createElement('button'); b.textContent = txt; b.style.cssText = 'padding:7px 16px;border:1px solid #888;border-radius:6px;background:#eee;cursor:pointer'; b.onclick = fn; return b; }
+    bar.appendChild(btn('Копирай', function () { try { navigator.clipboard.writeText(title + '\n' + lines.join('\n')); } catch (e) { } }));
+    bar.appendChild(btn('Затвори', function () { box.remove(); }));
+    card.appendChild(h); card.appendChild(pre); card.appendChild(bar); box.appendChild(card); document.body.appendChild(box);
+  }
+  LPS.diag = { analyze: analyze, report: report };
 })();

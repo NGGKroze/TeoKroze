@@ -482,13 +482,27 @@
       return '#ffffff';
     }
 
+    function diagFail(rows, msg) {
+      if (window.LPS && LPS.diag) {
+        const r = LPS.diag.analyze(rows, {
+          box: { label: '№ colis (номер на кашон)', header: [/colis/i, /ctn/i, /box/i] },
+          product: { label: 'Product', header: [/product/i, /style name/i], type: 'text' },
+          ean: { label: 'EAN(13)', header: [/ean/i, /genc/i, /barcode/i], type: 'ean' },
+          color: { label: 'Coloris', header: [/coloris/i, /colou?r/i], type: 'text' },
+          qty: { label: 'Quantité livrée', header: [/quantit/i, /qty/i], type: 'int' }
+        });
+        LPS.diag.report('Tresse: файлът не може да се прочете', [msg, ''].concat(r.lines));
+      }
+      throw new Error(msg);
+    }
+
     function parsePackingRows(rows) {
       const headerIndex = rows.findIndex(row => {
         const rowText = row.map(text).join(' | ');
         return /colis/i.test(rowText) && /product/i.test(rowText) && /ean/i.test(rowText) && /coloris/i.test(rowText);
       });
 
-      if (headerIndex < 0) throw new Error('Could not find the packing list header row with № colis / Product / EAN / Coloris.');
+      if (headerIndex < 0) diagFail(rows, 'Не е намерен ред със заглавия № colis / Product / EAN / Coloris.');
 
       const header = rows[headerIndex] || [];
       const sizeHeader = rows[headerIndex + 1] || [];
@@ -506,7 +520,7 @@
             if (colEan < 0) missing.push('EAN(13)');
       if (colColor < 0) missing.push('Coloris');
       if (colQty < 0) missing.push('Quantité livrée');
-      if (missing.length) throw new Error('Missing required columns: ' + missing.join(', '));
+      if (missing.length) diagFail(rows, 'Липсват задължителни колони: ' + missing.join(', '));
 
       const sizeCols = [];
       for (let c = colColor + 1; c < colQty; c++) {
@@ -609,7 +623,7 @@
         }
       }
 
-      if (!boxes.length) throw new Error('No box rows with quantities were found.');
+      if (!boxes.length) diagFail(rows, 'Не са намерени редове с кашони и количества (при закачалки/DARVY няма номера на кашони - Size Sets се правят ръчно).');
 
       for (const box of boxes) {
         for (const size of box.activeSizes) {
