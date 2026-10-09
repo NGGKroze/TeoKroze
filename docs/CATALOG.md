@@ -12,7 +12,7 @@
 | Emberclaw Scout | unit/effect | 3 | 1200/800 | common | When Normal Summoned: add 1 Emberclaw Tactic or Snare from your deck to your hand. Once per turn. |
 | Cindertail Fox | unit/effect | 3 | 1000/1000 | common | If destroyed by battle: inflict 500 damage to your opponent. |
 | Ashmane Lion | unit/effect | 4 | 1700/1200 | rare | Gains 300 ATK for each other Emberclaw unit you control. |
-| Flare Raider | unit/effect | 4 | 1700/1000 | common | Once per turn: discard 1 card; inflict 600 damage to your opponent. |
+| Flare Raider | unit/effect | 4 | 1700/1000 | common | Once per turn: discard 1 card; inflict 400 damage to your opponent. |
 | Scorchwing Hawk | unit/effect | 4 | 1600/900 | common | Piercing (inflicts the difference as damage when attacking a Defense unit). |
 | Pyre Matriarch | unit/effect | 5 | 2200/1600 | rare | When Tribute Summoned: destroy 1 Tactic or Snare your opponent controls. |
 | Magma Warden | unit/effect | 6 | 2500/1800 | rare | When this card destroys a unit by battle: inflict 500 damage to your opponent. |
@@ -31,9 +31,9 @@
 | Ironwatch Recruit | unit/effect | 2 | 500/1200 | common | When Normal Summoned: Special Summon 1 Level 3 or lower Iron Covenant unit from your hand in Defense Position. |
 | Bulwark Sentry | unit/effect | 3 | 800/1800 | common | While in Defense Position, your other Iron Covenant units cannot be targeted by your opponent's card effects. |
 | Rune Smith | unit/effect | 3 | 1000/1200 | common | When Normal Summoned: add 1 Equip Tactic from your deck to your hand. Once per turn. |
-| Pikewall Soldier | unit/effect | 3 | 1300/1100 | common | Gains 500 DEF while in Defense Position. |
+| Pikewall Soldier | unit/effect | 3 | 1500/1100 | common | Gains 500 DEF while in Defense Position. |
 | Shieldwall Captain | unit/effect | 4 | 1500/2000 | rare | While in Defense Position, your opponent's units must attack this card if able. |
-| Gatekeeper Golem | unit/normal | 4 | 1400/2200 | common |  |
+| Gatekeeper Golem | unit/normal | 4 | 1700/2000 | common |  |
 | Covenant Oathkeeper | unit/effect | 4 | 1800/1600 | rare | When an Equip Tactic is equipped to this card: draw 1 card. |
 | Citadel Knight | unit/effect | 5 | 2000/2400 | rare | When Tribute Summoned: equip 1 Equip Tactic from your deck to this card. |
 | Warden of the Last Wall | unit/effect | 6 | 2200/2800 | epic | Once per turn, when another Iron Covenant unit would be destroyed by battle or effect, you can destroy this card instead. |

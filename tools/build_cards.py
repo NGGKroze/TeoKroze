@@ -53,8 +53,8 @@ unit("ashmane_lion", "Ashmane Lion", A, "flame", "beast", 4, 1700, 1200,
      [{"timing": "continuous", "ops": [{"op": "modify_stat", "stat": "atk", "per": {"count": "other_units_you_control", "filter": flt(archetype=A)}, "amount": 300}]}],
      rarity="rare", art="Lion with a mane of drifting ash and glowing embers, roaring")
 unit("flare_raider", "Flare Raider", A, "flame", "warrior", 4, 1700, 1000,
-     "Once per turn: discard 1 card; inflict 600 damage to your opponent.",
-     [{"timing": "ignition", "limit": OPT, "cost": [{"discard": 1}], "ops": [dmg(600)]}],
+     "Once per turn: discard 1 card; inflict 400 damage to your opponent.",
+     [{"timing": "ignition", "limit": OPT, "cost": [{"discard": 1}], "ops": [dmg(400)]}],
      art="Masked raider hurling a flaming chakram mid-sprint")
 unit("scorchwing_hawk", "Scorchwing Hawk", A, "flame", "beast", 4, 1600, 900,
      "Piercing (inflicts the difference as damage when attacking a Defense unit).",
@@ -115,7 +115,7 @@ unit("rune_smith", "Rune Smith", A, "stone", "mage", 3, 1000, 1200,
      "When Normal Summoned: add 1 Equip Tactic from your deck to your hand. Once per turn.",
      [{"timing": "trigger", "trigger": "normal_summoned", "limit": OPT, "ops": [{"op": "search", "from": "deck", "to": "hand", "filter": flt(type="tactic", subtype="equip")}]}],
      art="Smith carving glowing runes into a steel plate")
-unit("pikewall_soldier", "Pikewall Soldier", A, "stone", "warrior", 3, 1300, 1100,
+unit("pikewall_soldier", "Pikewall Soldier", A, "stone", "warrior", 3, 1500, 1100,
      "Gains 500 DEF while in Defense Position.",
      [{"timing": "continuous", "condition": "self_in_defense", "ops": [{"op": "modify_stat", "stat": "def", "amount": 500}]}],
      art="Rank of soldiers bracing long pikes in formation")
@@ -123,7 +123,7 @@ unit("shieldwall_captain", "Shieldwall Captain", A, "stone", "warrior", 4, 1500,
      "While in Defense Position, your opponent's units must attack this card if able.",
      [{"timing": "continuous", "condition": "self_in_defense", "ops": [{"op": "force_attack_target", "target": "self"}]}],
      rarity="rare", art="Veteran captain planting a banner-shield into the ground")
-unit("gatekeeper_golem", "Gatekeeper Golem", A, "stone", "construct", 4, 1400, 2200,
+unit("gatekeeper_golem", "Gatekeeper Golem", A, "stone", "construct", 4, 1700, 2000,
      "", [], subtype="normal", art="Stone golem blocking a mountain gate, moss on its shoulders")
 unit("covenant_oathkeeper", "Covenant Oathkeeper", A, "stone", "warrior", 4, 1800, 1600,
      "When an Equip Tactic is equipped to this card: draw 1 card.",
@@ -287,6 +287,27 @@ snare("giants_fall", "Giant's Fall", A, "normal",
       [{"timing": "quick", "trigger": "opponent_attack_declared", "condition": {"attacker_atk_min": 2000}, "ops": [{"op": "destroy", "target": "attacker"}]}],
       rarity="rare", art="Collapsing rope trap bringing down a huge shadow")
 
+
+# ===================== TEST DECKS (39 main + 1 extra = 40 each, 80 total) =====================
+DECKS = {
+  "emberclaw": {
+    "name": "Emberclaw — агресия", "blurb": "Бързо поле, директни щети, Volcarex като финишър.",
+    "main": {"ember_imp":3,"emberclaw_whelp":3,"emberclaw_scout":3,"cindertail_fox":3,"ashmane_lion":3,
+             "flare_raider":2,"scorchwing_hawk":2,"pyre_matriarch":2,"magma_warden":1,"volcarex":1,
+             "ember_spark":3,"rekindle":1,"caldera_of_claws":1,"backdraft":2,"ash_veil":1,
+             "scholars_gambit":2,"shatter_strike":1,"forge_of_unity":1,"cleansing_gale":1,
+             "hollow_ward":1,"grave_call":1,"guild_courier":1},
+    "extra": ["pyrovex_infernal"]},
+  "iron_covenant": {
+    "name": "Iron Covenant — защита", "blurb": "Стена от Defense юнити, Equip карти и Snares; печели бавно.",
+    "main": {"ironwatch_recruit":3,"bulwark_sentry":2,"rune_smith":3,"pikewall_soldier":3,"shieldwall_captain":2,
+             "gatekeeper_golem":3,"covenant_oathkeeper":2,"citadel_knight":2,"warden_last_wall":1,"ironclad_colossus":1,
+             "forged_oath":2,"rune_plate":3,"bastion_field":1,"iron_reprisal":2,"bulwark_call":2,
+             "shatter_strike":1,"forge_of_unity":1,"cleansing_gale":1,"giants_fall":1,"counterweight":1,
+             "scholars_gambit":1,"wandering_mercenary":1},
+    "extra": ["aegis_paragon"]},
+}
+
 # ===================== VALIDATION & OUTPUT =====================
 def validate():
     errs, warns = [], []
@@ -306,6 +327,16 @@ def validate():
             if c["subtype"] != "normal" and not c["effects"] and not c["text"]: errs.append(f"{i}: effect unit w/o text")
         for e in c["effects"]:
             if "timing" not in e: errs.append(f"{i}: effect without timing")
+    byid = {c["id"]: c for c in CARDS}
+    for k, d in DECKS.items():
+        n = sum(d["main"].values())
+        if n != 39: errs.append(f"deck {k}: main has {n}, need 39")
+        for cid, q in d["main"].items():
+            if cid not in byid: errs.append(f"deck {k}: unknown {cid}")
+            elif byid[cid]["deck"] == "extra": errs.append(f"deck {k}: extra card {cid} in main")
+            if q > 3: errs.append(f"deck {k}: {cid} x{q}")
+        for cid in d["extra"]:
+            if byid.get(cid, {}).get("deck") != "extra": errs.append(f"deck {k}: {cid} not extra")
     return errs, warns
 
 def md_catalog():
@@ -337,5 +368,9 @@ if __name__ == "__main__":
         json.dump(v, open(os.path.join(ROOT, "cards", f"{k}.json"), "w"), indent=2, ensure_ascii=False)
     json.dump([clean(c) for c in CARDS], open(os.path.join(ROOT, "cards", "all.json"), "w"), indent=1, ensure_ascii=False)
     open(os.path.join(ROOT, "docs", "CATALOG.md"), "w").write(md_catalog())
+    os.makedirs(os.path.join(ROOT, "web"), exist_ok=True)
+    json.dump(DECKS, open(os.path.join(ROOT, "cards", "decks.json"), "w"), indent=2, ensure_ascii=False)
+    blob = "var CARD_DATA = %s;\nvar DECK_DATA = %s;\n" % (json.dumps([clean(c) for c in CARDS], ensure_ascii=False), json.dumps(DECKS, ensure_ascii=False))
+    open(os.path.join(ROOT, "web", "data.js"), "w").write(blob + "if (typeof module !== 'undefined') module.exports = { CARD_DATA, DECK_DATA };\n")
     cnt = collections.Counter((c["archetype"]) for c in CARDS)
     print("OK", len(CARDS), "cards", dict(cnt))

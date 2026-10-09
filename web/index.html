@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Riftbound — тестов дуел</title>
+<style>
+:root{--bg:#12141a;--panel:#1b1e27;--panel2:#232734;--line:#323850;--fg:#e8eaf2;--mut:#98a0b8;--acc:#ffd43b;--bad:#ff6b6b;--good:#69db7c;--ember:#e8590c;--iron:#4dabf7;--astral:#9775fa;--neutral:#adb5bd}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:14px/1.35 system-ui,Segoe UI,Roboto,sans-serif}
+button{font:inherit;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--acc)}
+button:disabled{opacity:.45;cursor:default}
+button.pri{background:#3b5bdb;border-color:#5c7cfa}
+button.warn{background:#7a2b2b;border-color:#c0392b}
+#menu{max-width:980px;margin:0 auto;padding:28px 16px}
+#menu h1{margin:0 0 4px;font-size:28px}
+.decks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:20px 0}
+.deckcard{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:16px;cursor:pointer}
+.deckcard:hover{border-color:var(--acc)}
+.deckcard h2{margin:0 0 6px;font-size:20px}
+.deckcard ul{margin:10px 0 0;padding-left:18px;color:var(--mut);font-size:13px;columns:2}
+.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+#game{display:none;height:100vh;grid-template-columns:1fr 310px;gap:8px;padding:8px}
+#board{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:auto}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px}
+.bar{display:flex;gap:12px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.lp{font-weight:700;font-size:18px}.lp small{color:var(--mut);font-weight:400;font-size:12px}
+.lpbar{height:8px;width:160px;background:#2a2f40;border-radius:6px;overflow:hidden}.lpbar i{display:block;height:100%;background:linear-gradient(90deg,#f03e3e,#fcc419,#51cf66)}
+.rows{display:grid;grid-template-columns:repeat(5,104px) 14px 104px 104px;gap:6px;align-items:start}
+.row{display:contents}
+.slot{width:104px;height:146px;border:1px dashed #2f3550;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#3a4160;font-size:11px;position:relative}
+.slot.pile{border-style:solid;color:var(--mut);flex-direction:column;gap:2px;text-align:center}
+.spacer{}
+#mid{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px 10px;flex-wrap:wrap}
+#hint{color:var(--acc);font-weight:600}
+#hand{display:flex;gap:6px;flex-wrap:wrap;min-height:156px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.card{width:100px;height:142px;border-radius:9px;border:2px solid #555;background:#2a2d38;position:relative;overflow:hidden;cursor:default;flex:none;display:flex;flex-direction:column;font-size:11px;user-select:none}
+.card .hd{padding:3px 4px;font-weight:700;font-size:10.5px;line-height:1.1;min-height:26px;background:rgba(0,0,0,.35)}
+.card .lv{font-size:9px;color:#ffd43b;padding:0 4px;height:12px}
+.card .art{flex:1;display:flex;align-items:center;justify-content:center;font-size:34px}
+.card .st{display:flex;justify-content:space-between;padding:2px 5px;font-weight:700;background:rgba(0,0,0,.45);font-size:11px}
+.card .tp{padding:2px 5px;text-align:center;background:rgba(0,0,0,.45);font-size:9px;color:#ddd}
+.card.unit{border-color:#d9a441}.card.merge{border-color:#9775fa}.card.tactic{border-color:#51cf66}.card.snare{border-color:#e03131}
+.card.emberclaw .art{background:radial-gradient(circle at 50% 70%,#e8590c,#3b1a0e)}
+.card.iron_covenant .art{background:radial-gradient(circle at 50% 70%,#4dabf7,#1b2430)}
+.card.astral_weavers .art{background:radial-gradient(circle at 50% 70%,#9775fa,#1a1333)}
+.card.neutral .art{background:radial-gradient(circle at 50% 70%,#8a8f98,#26292e)}
+.card.def{transform:scale(.92);box-shadow:0 0 0 2px #4dabf7 inset}
+.card.back{background:repeating-linear-gradient(45deg,#2b2f55,#2b2f55 8px,#232744 8px,#232744 16px);border-color:#5c63a8;align-items:center;justify-content:center;color:#6b73b8;font-size:28px}
+.card.can{box-shadow:0 0 0 3px var(--acc),0 0 14px var(--acc);cursor:pointer}
+.card.tgt{box-shadow:0 0 0 3px var(--bad),0 0 14px var(--bad);cursor:pointer}
+.card.sel{outline:3px solid var(--good)}
+.card.dim{opacity:.55}
+.up{color:var(--good)}.down{color:var(--bad)}
+.badge2{position:absolute;top:30px;right:3px;font-size:9px;padding:1px 4px;border-radius:5px;background:#1c4f8a;color:#fff}
+.badge3{position:absolute;bottom:20px;left:3px;font-size:9px;padding:1px 4px;border-radius:5px;background:#555;color:#fff}
+#side{display:flex;flex-direction:column;gap:8px;min-height:0}
+#detail{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;min-height:250px;font-size:13px}
+#detail h3{margin:0 0 4px;font-size:16px}#detail .meta{color:var(--mut);font-size:12px;margin-bottom:6px}#detail .txt{white-space:pre-wrap}#detail .art{font-style:italic;color:var(--mut);margin-top:8px;font-size:12px}
+#log{flex:1;min-height:120px;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;font-size:12px;color:#c4c9dc}
+#log div{padding:1px 0}#log .t{color:var(--acc);font-weight:700;margin-top:4px}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:10;padding:14px}
+#mbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;max-width:880px;max-height:90vh;overflow:auto;width:100%}
+#mbox h3{margin:0 0 10px}
+.mcards{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.mcards .card{cursor:pointer}
+.mbtns{display:flex;gap:8px;flex-wrap:wrap}
+.zonetag{font-size:10px;color:var(--mut);text-align:center}
+.mcol{display:flex;flex-direction:column;align-items:center;gap:2px}
+@media (max-width:1100px){#game{grid-template-columns:1fr}#side{order:2}}
+</style>
+</head>
+<body>
+<div id="menu">
+  <h1>Riftbound — тестов дуел</h1>
+  <div style="color:var(--mut)">Прототип с правила, близки до Yu-Gi-Oh!: 8000 LP, 5 карти в ръка, едно нормално призоваване на ход, tribute за ниво 5+, Snares се слагат закрито. Избери тесте — другото получава противникът (управляван от AI).</div>
+  <div class="decks" id="decks"></div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <button id="btnRules">Правила на прототипа</button>
+    <span class="badge">AI срещу AI симулация: ~50% / ~50% (виж README)</span>
+  </div>
+</div>
+
+<div id="game">
+  <div id="board">
+    <div class="side" id="opp"></div>
+    <div id="mid"><div><span id="turninfo"></span> · <span id="hint"></span></div><div id="btns"></div></div>
+    <div class="side" id="me"></div>
+    <div id="hand"></div>
+  </div>
+  <div id="side">
+    <div id="detail"><div class="meta">Задръж курсора върху карта за детайли.</div></div>
+    <div id="log"></div>
+    <div style="display:flex;gap:8px"><button id="btnRules2">Правила</button><button class="warn" id="btnSurr">Предай се</button><button id="btnNew">Ново меню</button></div>
+  </div>
+</div>
+
+<div id="modal"><div id="mbox"></div></div>
+
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script src="ai.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>

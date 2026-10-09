@@ -117,7 +117,7 @@
     "attribute": "stone",
     "race": "warrior",
     "level": 3,
-    "atk": 1300,
+    "atk": 1500,
     "rarity": "common",
     "deck": "main",
     "tags": [],
@@ -178,7 +178,7 @@
     "attribute": "stone",
     "race": "construct",
     "level": 4,
-    "atk": 1400,
+    "atk": 1700,
     "rarity": "common",
     "deck": "main",
     "tags": [],
@@ -186,7 +186,7 @@
     "effects": [],
     "art_brief": "Stone golem blocking a mountain gate, moss on its shoulders",
     "status": "draft",
-    "def": 2200
+    "def": 2000
   },
   {
     "id": "covenant_oathkeeper",

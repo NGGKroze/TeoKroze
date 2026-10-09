@@ -183,7 +183,7 @@
     "rarity": "common",
     "deck": "main",
     "tags": [],
-    "text": "Once per turn: discard 1 card; inflict 600 damage to your opponent.",
+    "text": "Once per turn: discard 1 card; inflict 400 damage to your opponent.",
     "effects": [
       {
         "timing": "ignition",
@@ -201,7 +201,7 @@
           {
             "op": "damage",
             "target": "opponent",
-            "amount": 600
+            "amount": 400
           }
         ]
       }

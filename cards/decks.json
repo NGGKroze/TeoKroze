@@ -1,0 +1,64 @@
+{
+  "emberclaw": {
+    "name": "Emberclaw — агресия",
+    "blurb": "Бързо поле, директни щети, Volcarex като финишър.",
+    "main": {
+      "ember_imp": 3,
+      "emberclaw_whelp": 3,
+      "emberclaw_scout": 3,
+      "cindertail_fox": 3,
+      "ashmane_lion": 3,
+      "flare_raider": 2,
+      "scorchwing_hawk": 2,
+      "pyre_matriarch": 2,
+      "magma_warden": 1,
+      "volcarex": 1,
+      "ember_spark": 3,
+      "rekindle": 1,
+      "caldera_of_claws": 1,
+      "backdraft": 2,
+      "ash_veil": 1,
+      "scholars_gambit": 2,
+      "shatter_strike": 1,
+      "forge_of_unity": 1,
+      "cleansing_gale": 1,
+      "hollow_ward": 1,
+      "grave_call": 1,
+      "guild_courier": 1
+    },
+    "extra": [
+      "pyrovex_infernal"
+    ]
+  },
+  "iron_covenant": {
+    "name": "Iron Covenant — защита",
+    "blurb": "Стена от Defense юнити, Equip карти и Snares; печели бавно.",
+    "main": {
+      "ironwatch_recruit": 3,
+      "bulwark_sentry": 2,
+      "rune_smith": 3,
+      "pikewall_soldier": 3,
+      "shieldwall_captain": 2,
+      "gatekeeper_golem": 3,
+      "covenant_oathkeeper": 2,
+      "citadel_knight": 2,
+      "warden_last_wall": 1,
+      "ironclad_colossus": 1,
+      "forged_oath": 2,
+      "rune_plate": 3,
+      "bastion_field": 1,
+      "iron_reprisal": 2,
+      "bulwark_call": 2,
+      "shatter_strike": 1,
+      "forge_of_unity": 1,
+      "cleansing_gale": 1,
+      "giants_fall": 1,
+      "counterweight": 1,
+      "scholars_gambit": 1,
+      "wandering_mercenary": 1
+    },
+    "extra": [
+      "aegis_paragon"
+    ]
+  }
+}
