@@ -1,0 +1,73 @@
+{
+  "exact": {
+    "ACNE PDF Packing + Labels": "ACNE – опаковъчни листове и етикети",
+    "ACNE STUDIOS": "ACNE STUDIOS",
+    "PDF/XLSX Orders → editable Packing Lists + Excel Labels": "PDF/XLSX поръчки → редактируеми опаковъчни листове + Excel етикети",
+    "Local Python app · close this tab to stop the server": "Локална програма · затварянето на клиента спира сървъра",
+    "Drop Acne PO PDFs or existing Packing XLSX here": "Пуснете PDF на поръчки (PO) на Acne или готов опаковъчен лист XLSX тук",
+    "Upload one or multiple PDFs to create packing lists, or drop an existing Acne packing .xlsx to edit/regenerate labels.": "Качете един или няколко PDF файла, за да създадете опаковъчни листове, или пуснете готов Acne .xlsx, за да го редактирате/генерирате етикетите наново.",
+    "Export all orders ZIP": "Експорт на всички поръчки (ZIP)",
+    "No orders loaded yet.": "Още няма заредени поръчки.",
+    "Clear": "Изчисти",
+    "Ready.": "Готово.",
+    "Parsing files...": "Четат се файловете…",
+    "Upload/parse failed:": "Грешка при качване/четене:",
+    "Download packing XLSX": "Изтегли опаковъчния лист (XLSX)",
+    "Download labels XLSX": "Изтегли етикетите (XLSX)",
+    "Download both ZIP": "Изтегли и двата (ZIP)",
+    "Exporting all orders ZIP...": "Експортират се всички поръчки (ZIP)…",
+    "All orders exported.": "Всички поръчки са експортирани.",
+    "Export all failed:": "Експортът на всички не успя:",
+    "Export complete.": "Експортът приключи.",
+    "Export failed:": "Експортът не успя:",
+    "Delete order": "Изтрий поръчката",
+    "Unknown PO": "Неизвестен PO",
+    "PO #": "PO №",
+    "PO Ref": "PO реф.",
+    "Style # / Article": "Стил № / артикул",
+    "Internal Type": "Вътрешен тип",
+    "Destination": "Дестинация",
+    "Ex Factory": "Ex Factory",
+    "Shipment Date for labels": "Дата на пратката (за етикетите)",
+    "Season": "Сезон",
+    "Origin": "Произход",
+    "Carton draft": "Чернова на кашоните",
+    "Imported packing cartons": "Кашони от импортирания лист",
+    "One carton per color": "Един кашон на цвят",
+    "One carton per line": "Един кашон на ред",
+    "Product name": "Име на продукта",
+    "Ship To / destination address": "Адрес на получателя",
+    "+ Add line": "+ Добави ред",
+    "Qty:": "Бр.:",
+    "Legacy .xls files are not supported by the local parser. Please save the packing list as .xlsx and upload it again.": "Старият формат .xls не се поддържа. Запишете опаковъчния лист като .xlsx и го качете отново.",
+    "No readable PDF text was found. This may be a scanned PDF; install OCR/Tesseract support or send the PDF for parser tuning.": "Не е намерен четим текст в PDF. Може да е сканиран документ; нужен е OCR (Tesseract).",
+    "Could not find the Acne carton/box table header in this packing list.": "В опаковъчния лист не е намерено заглавието на таблицата с кашони на Acne.",
+    "Found a possible table header, but could not identify Style/Color/Size columns.": "Намерено е заглавие на таблица, но колоните Style/Color/Size не са разпознати.",
+    "No carton/box quantity rows were found in this packing list.": "В опаковъчния лист не са намерени редове с количества по кашони."
+  },
+  "patterns": [
+    [
+      "^Parsed (\\d+) file\\(s\\)\\.$",
+      "Прочетени файлове: $1."
+    ],
+    [
+      "^Exporting (.+?) for (.+?)\\.\\.\\.$",
+      "Експортира се $1 за $2…"
+    ],
+    [
+      "^Page (\\d+): no selectable text and optional OCR libraries are not available\\.$",
+      "Страница $1: няма селектируем текст и OCR не е наличен."
+    ],
+    [
+      "^Page (\\d+): optional OCR failed: (.*)$",
+      "Страница $1: OCR не успя: $2"
+    ],
+    [
+      "^(.+) · (\\d+) pcs$",
+      "$1 · $2 бр."
+    ]
+  ],
+  "skip": [
+    "#orders .pack-preview"
+  ]
+}

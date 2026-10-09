@@ -25,10 +25,19 @@ const CASES = {
   margiela:  [[F('FW_ Labels','ETIQUETTE COLIS.xlsx')]],
 };
 const STEPS = {
-  reformation: { pre: ['text=Labels from Excel PL (Legacy)'] },
-  jacquemus: { post: ['text=Generate Labels'] },
-  zadig: { pre: ['text=Готов PL'] },
+  reformation: { pre: ['#btn-tab-excel'] },
+  jacquemus: { post: ['#btn-generate, button:has-text("Generate Labels"), button:has-text("Генерирай етикети")'] },
+  zadig: { pre: ['#manualModeTab'] },
 };
+// THEME=1 -> вкарва и темата + превода (като обвивката), за да се види, че нищо не се чупи
+function lpsScripts(id) {
+  const rd = f => fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : {};
+  const c = rd(path.join(repo, 'runtime/i18n/common.bg.json')), m = rd(path.join(root, id, 'bg.json'));
+  const dict = { exact: { ...c.exact, ...m.exact }, patterns: [...(c.patterns || []), ...(m.patterns || [])], skip: [...new Set([...(c.skip || []), ...(m.skip || [])])] };
+  const css = fs.readFileSync(path.join(repo, 'runtime/lps-theme.css'), 'utf8') + (fs.existsSync(path.join(root, id, 'lps.css')) ? '\n' + fs.readFileSync(path.join(root, id, 'lps.css'), 'utf8') : '');
+  return [fs.readFileSync(path.join(repo, 'runtime/lps-theme.js'), 'utf8').replace('{{MODULE}}', JSON.stringify(id)).replace('{{CSS}}', JSON.stringify(css)),
+    fs.readFileSync(path.join(repo, 'runtime/lps-i18n.js'), 'utf8').replace('{{DICT}}', JSON.stringify(dict))];
+}
 const T = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.woff2': 'font/woff2', '.png': 'image/png' };
 const srv = http.createServer((q, r) => { const p = path.join(root, decodeURIComponent(q.url.split('?')[0])); if (!fs.existsSync(p) || fs.statSync(p).isDirectory()) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'Content-Type': T[path.extname(p)] || 'application/octet-stream' }); fs.createReadStream(p).pipe(r); }).listen(0);
 const b = await chromium.launch({ executablePath: process.env.CHROMIUM });
@@ -41,6 +50,7 @@ for (const [id, sets] of Object.entries(CASES)) {
     pg.on('console', m => { if (m.type() === 'error') errs.push('CONSOLE ' + m.text().slice(0, 160)); });
     pg.on('dialog', d => { errs.push('DIALOG ' + d.message().slice(0, 160)); d.dismiss().catch(() => {}); });
     pg.on('download', d => dl.push(d.suggestedFilename()));
+    if (process.env.THEME) for (const sc of lpsScripts(id)) await pg.addInitScript(sc);
     await pg.goto(`http://127.0.0.1:${srv.address().port}/${id}/index.html`); await pg.waitForTimeout(500);
     for (const sel of (STEPS[id]?.pre || [])) { try { await pg.click(sel, { timeout: 3000 }); await pg.waitForTimeout(400); } catch (e) { errs.push('PRECLICK ' + sel); } }
     const inputs = await pg.$$('input[type=file]');

@@ -1,0 +1,31 @@
+{
+  "exact": {
+    "Ysé Label Generator - Direct PDF Export": "Ysé – генератор на етикети (директен PDF)",
+    "Ysé Label Generator": "Ysé – генератор на етикети",
+    "Robust PDF Engine Enabled": "PDF модулът е активен",
+    "Import Packing List": "Качване на опаковъчен лист",
+    "Drag & drop an Excel file": "Плъзнете Excel файл",
+    "Supports .xlsx or .csv": "Поддържа .xlsx и .csv",
+    "File.xlsx": "Файл.xlsx",
+    "0 labels detected": "0 открити етикета",
+    "Download Labels": "Изтегляне на етикети",
+    "Click below to generate and directly download the PDF file for each INBSHIP.": "Натиснете по-долу, за да се генерира и изтегли директно PDF файл за всеки INBSHIP.",
+    "Waiting for Excel file...": "Очаква се Excel файл…",
+    "Generated labels will appear here.": "Генерираните етикети ще се покажат тук.",
+    "PDF Generation Error:": "Грешка при генериране на PDF:",
+    "An error occurred while generating the PDF. Please try again.": "Грешка при генериране на PDF. Опитайте отново.",
+    "Error reading Excel file.": "Грешка при четене на Excel файла.",
+    "Required columns (Reference, Quantity, Box number) not found.": "Не са намерени задължителните колони (Reference, Quantity, Box number).",
+    "No valid boxes were found in the file.": "Във файла не са намерени валидни кашони."
+  },
+  "patterns": [
+    [
+      "^(\\d+) labels generated across (\\d+) INBSHIP\\(s\\)\\.$",
+      "Генерирани са $1 етикета за $2 INBSHIP."
+    ],
+    [
+      "^(\\d+) labels detected$",
+      "$1 открити етикета"
+    ]
+  ]
+}

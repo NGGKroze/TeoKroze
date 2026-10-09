@@ -1,0 +1,56 @@
+{
+  "exact": {
+    "JACQUEMUS LABEL GENERATOR": "JACQUEMUS – ГЕНЕРАТОР НА ЕТИКЕТИ",
+    "Upload Packing List and Barcode files to generate vector PDF labels.": "Качете опаковъчния лист и файла с баркодове, за да получите векторни PDF етикети.",
+    "Start New Batch": "Нова партида",
+    "1. Packing List (Excel)": "1. Опаковъчен лист (Excel)",
+    "2. Barcode File (Excel)": "2. Файл с баркодове (Excel)",
+    "Drag & drop or click to upload": "Плъзнете или кликнете за качване",
+    "File selected": "Файлът е избран",
+    "Generate Labels": "Генерирай етикети",
+    "Export as Vector PDF": "Експорт като векторен PDF",
+    "Sync all colors & patterns to Label 1": "Приложи цветовете и шарките на всички етикети като на етикет 1",
+    "(Change the 1st label to auto-update the rest)": "(Променете 1-вия етикет и останалите се обновяват)",
+    "Live preview of labels will appear here.": "Прегледът на етикетите ще се покаже тук.",
+    "Please upload the Packing List Excel file.": "Качете Excel файла с опаковъчния лист.",
+    "Please upload the Barcode Excel file.": "Качете Excel файла с баркодовете.",
+    "Failed to extract data. Please ensure the Excel structures match the standard template format.": "Данните не могат да се извлекат. Проверете дали Excel структурите съответстват на стандартния шаблон.",
+    "Could not find table headers (CTN NO.) in Packing List.": "В опаковъчния лист не са намерени заглавия на таблицата (CTN NO.).",
+    "No dynamic size columns found between COLOR and QTY CTN.": "Не са намерени колони с размери между COLOR и QTY CTN.",
+    "Select Pattern": "Избор на шарка",
+    "Barcode generation failed for:": "Баркодът не може да се генерира за:",
+    "6.25% Gray (Dots)": "6.25% сиво (точки)",
+    "12.5% Gray (Dots)": "12.5% сиво (точки)",
+    "25% Gray (Dots)": "25% сиво (точки)",
+    "50% Gray (Dots)": "50% сиво (точки)",
+    "75% Gray (Dots)": "75% сиво (точки)",
+    "Thin Horizontal Stripe": "Тънка хоризонтална ивица",
+    "Thin Vertical Stripe": "Тънка вертикална ивица",
+    "Thick Horizontal Stripe": "Дебела хоризонтална ивица",
+    "Thick Vertical Stripe": "Дебела вертикална ивица",
+    "Thin Diagonal Stripe (/)": "Тънка диагонална ивица (/)",
+    "Thin Reverse Diagonal Stripe (\\)": "Тънка обратна диагонална ивица (\\)",
+    "Thick Diagonal Stripe (/)": "Дебела диагонална ивица (/)",
+    "Thick Reverse Diagonal Stripe (\\)": "Дебела обратна диагонална ивица (\\)",
+    "Thin Crosshatch": "Тънка мрежа",
+    "Thick Crosshatch": "Дебела мрежа",
+    "Thin Diagonal Crosshatch": "Тънка диагонална мрежа",
+    "Thick Diagonal Crosshatch": "Дебела диагонална мрежа",
+    "Checkerboard": "Шахматна дъска",
+    "Large Checkerboard": "Голяма шахматна дъска"
+  },
+  "patterns": [
+    [
+      "^Selected: (.+)$",
+      "Избран: $1"
+    ],
+    [
+      "^Failed to parse (.+)\\. Ensure it's a valid Excel or CSV file\\.$",
+      "$1 не може да бъде прочетен. Проверете дали е валиден Excel или CSV файл."
+    ]
+  ],
+  "skip": [
+    "#labels-container",
+    "#print-area"
+  ]
+}

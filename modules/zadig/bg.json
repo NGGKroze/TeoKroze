@@ -1,0 +1,12 @@
+{
+  "exact": {
+    "Could not detect PDF label color": "Не може да се разпознае цветът от PDF етикета",
+    "Auto by volume / standard A4": "Автоматично по обем / стандартен A4",
+    "Standard full A4 label": "Стандартен етикет на цял A4",
+    "Packing List Generator": "Генератор на опаковъчни листове",
+    "Smart packing — по примерните packing lists": "Умно опаковане — по примерните опаковъчни листове"
+  },
+  "skip": [
+    "#preview .label-page"
+  ]
+}

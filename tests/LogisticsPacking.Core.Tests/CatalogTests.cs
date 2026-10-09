@@ -172,3 +172,53 @@ public class ThemeTests
         Assert.Equal(1, System.Text.RegularExpressions.Regex.Matches(js, @"\{\{MODULE\}\}").Count);
     }
 }
+
+public class I18nTests
+{
+    [Fact]
+    public void MergesCommonAndModuleDictionaries()
+    {
+        using var t = new TempDir();
+        var dir = t.Module("modules", "m", """{"id":"m","name":"M"}""");
+        File.WriteAllText(Path.Combine(dir, "bg.json"), """{"exact":{"Hello":"Здравей","Clear":"Нулирай"},"patterns":[["^N (\\d+)$","Н $1"]],"skip":["#x"]}""");
+        var rt = Path.Combine(t.Path, "runtime"); Directory.CreateDirectory(Path.Combine(rt, "i18n"));
+        File.WriteAllText(Path.Combine(rt, "lps-i18n.js"), "var DICT = {{DICT}};");
+        File.WriteAllText(Path.Combine(rt, "i18n", "common.bg.json"), """{"exact":{"Clear":"Изчисти","Print":"Печат"},"skip":["#p"]}""");
+        var paths = new AppPaths(t.Path, Path.Combine(t.Path, "user"));
+        var module = ModuleCatalog.Load(Path.Combine(t.Path, "modules"), null).Modules.Single();
+        var js = ThemeInjector.BuildI18nScript(paths, module)!;
+        Assert.Contains("\"Hello\":\"", js.Replace("\\u0417", "")); // ключът е записан
+        Assert.Contains("Print", js);
+        Assert.DoesNotContain("{{", js);
+        // модулният речник има предимство над общия
+        Assert.DoesNotContain("\\u0418\\u0437\\u0447\\u0438\\u0441\\u0442\\u0438", js); // "Изчисти" е презаписано с "Нулирай"
+        Assert.Contains("#x", js); Assert.Contains("#p", js);
+    }
+
+    [Fact]
+    public void TranslationCanBeDisabledPerModule()
+    {
+        using var t = new TempDir();
+        t.Module("modules", "m", """{"id":"m","name":"M","translate":false}""");
+        var rt = Path.Combine(t.Path, "runtime"); Directory.CreateDirectory(rt);
+        File.WriteAllText(Path.Combine(rt, "lps-i18n.js"), "{{DICT}}");
+        var module = ModuleCatalog.Load(Path.Combine(t.Path, "modules"), null).Modules.Single();
+        Assert.Null(ThemeInjector.BuildI18nScript(new AppPaths(t.Path, t.Path), module));
+    }
+
+    [Fact]
+    public void AllRealDictionariesAreValidJson()
+    {
+        var dir = AppContext.BaseDirectory;
+        while (dir != null && !Directory.Exists(Path.Combine(dir, "modules"))) dir = Path.GetDirectoryName(dir);
+        var paths = new AppPaths(dir!, Path.Combine(Path.GetTempPath(), "lps-x"));
+        var catalog = ModuleCatalog.Load(paths);
+        foreach (var m in catalog.Modules)
+        {
+            var d = new I18nDictionary();
+            d.Merge(Path.Combine(m.Directory, "bg.json"));
+            Assert.True(d.Exact.Count > 0, $"{m.Id}: празен или липсващ bg.json");
+            foreach (var p in d.Patterns) System.Text.RegularExpressions.Regex.IsMatch("x", p[0]); // валидни регулярни изрази
+        }
+    }
+}

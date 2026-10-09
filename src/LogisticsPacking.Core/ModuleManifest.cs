@@ -18,6 +18,8 @@ public sealed class ModuleManifest
     public bool Enabled { get; init; } = true;
     /// <summary>false = модулът се показва със собствения си вид (без общата тема).</summary>
     public bool Theme { get; init; } = true;
+    /// <summary>false = без превод на български (модулът остава на оригиналния си език).</summary>
+    public bool Translate { get; init; } = true;
     public string Summary { get; init; } = "";
     public string Note { get; init; } = "";
     public List<string> Requires { get; init; } = new();

@@ -27,4 +27,48 @@ public static class ThemeInjector
             .Replace("{{MODULE}}", JsonSerializer.Serialize(module.Id))
             .Replace("{{CSS}}", JsonSerializer.Serialize(css));
     }
+
+    /// <summary>Скрипт за превода на български (runtime\lps-i18n.js + общия и модулния речник). null = изключен или няма речник.</summary>
+    public static string? BuildI18nScript(AppPaths paths, ModuleInfo module)
+    {
+        if (!module.Manifest.Translate) return null;
+        var jsPath = Path.Combine(paths.RuntimeDir, "lps-i18n.js");
+        if (!File.Exists(jsPath)) return null;
+
+        var dict = new I18nDictionary();
+        dict.Merge(Path.Combine(paths.RuntimeDir, "i18n", "common.bg.json"));
+        dict.Merge(Path.Combine(module.Directory, "bg.json"));
+        return File.ReadAllText(jsPath).Replace("{{DICT}}", dict.ToJson());
+    }
+}
+
+/// <summary>Речник "английски текст -> български" (точни съвпадения + шаблони) със скрити за превод области.</summary>
+public sealed class I18nDictionary
+{
+    public Dictionary<string, string> Exact { get; } = new(StringComparer.Ordinal);
+    public List<string[]> Patterns { get; } = new();
+    public List<string> Skip { get; } = new();
+
+    public void Merge(string path)
+    {
+        if (!File.Exists(path)) return;
+        using var doc = JsonDocument.Parse(File.ReadAllText(path), new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+        var root = doc.RootElement;
+        if (root.TryGetProperty("exact", out var ex))
+            foreach (var p in ex.EnumerateObject()) Exact[p.Name] = p.Value.GetString() ?? "";
+        if (root.TryGetProperty("patterns", out var pa))
+            foreach (var item in pa.EnumerateArray())
+            {
+                var parts = item.EnumerateArray().Select(x => x.GetString() ?? "").ToArray();
+                if (parts.Length >= 2) Patterns.Add(parts);
+            }
+        if (root.TryGetProperty("skip", out var sk))
+            foreach (var item in sk.EnumerateArray())
+            {
+                var v = item.GetString();
+                if (!string.IsNullOrWhiteSpace(v) && !Skip.Contains(v)) Skip.Add(v);
+            }
+    }
+
+    public string ToJson() => JsonSerializer.Serialize(new { exact = Exact, patterns = Patterns, skip = Skip });
 }

@@ -39,6 +39,12 @@ internal static class SettingsDialog
             IsOn = settings.UnifiedTheme,
         };
 
+        var bg = new ToggleSwitch
+        {
+            Header = "Език на клиентските екрани", OnContent = "Български", OffContent = "Оригинален (английски/френски)",
+            IsOn = settings.BulgarianUi,
+        };
+
         var userModules = new HyperlinkButton { Content = "Отвори папката с потребителски модули (поправки без нов инсталатор)" };
         userModules.Click += (_, _) =>
         {
@@ -52,6 +58,7 @@ internal static class SettingsDialog
         panel.Children.Add(row);
         panel.Children.Add(ask);
         panel.Children.Add(theme);
+        panel.Children.Add(bg);
         panel.Children.Add(userModules);
         panel.Children.Add(logs);
 
@@ -77,6 +84,7 @@ internal static class SettingsDialog
             settings.OutputDirectory = pathBox.Text.Trim();
             settings.AskWhereToSave = ask.IsOn;
             settings.UnifiedTheme = theme.IsOn;
+            settings.BulgarianUi = bg.IsOn;
             try { settings.Save(AppServices.Paths); }
             catch (Exception ex) { AppServices.Log("Запис на настройки: " + ex.Message); }
             onSaved();

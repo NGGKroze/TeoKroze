@@ -10,6 +10,8 @@ public sealed class AppSettings
     public bool AskWhereToSave { get; set; }
     /// <summary>Обща тема (мрамор/гранит) върху клиентските екрани. false = оригиналният им вид.</summary>
     public bool UnifiedTheme { get; set; } = true;
+    /// <summary>Превод на интерфейса на клиентските екрани на български.</summary>
+    public bool BulgarianUi { get; set; } = true;
 
     public string ResolveOutputDirectory()
     {

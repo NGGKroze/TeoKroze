@@ -1,0 +1,18 @@
+{
+  "exact": {
+    "Clear": "Изчисти",
+    "Reset": "Нулирай",
+    "Cancel": "Отказ",
+    "Close": "Затвори",
+    "Download": "Изтегли",
+    "Print": "Печат",
+    "Error": "Грешка",
+    "Ready": "Готово",
+    "Ready.": "Готово.",
+    "Loading...": "Зарежда се…",
+    "Browse Files": "Избери файлове",
+    "Choose files": "Избери файлове"
+  },
+  "patterns": [],
+  "skip": ["#preview-grid", "#previewContainer", "#pages-container", "#print-area", "#printArea", ".label-card", ".page-preview-wrapper", ".label-sheet", ".print-only", "[data-no-i18n]"]
+}
