@@ -5,13 +5,16 @@
     --lps-stone: #ece9e4; --lps-line: #d8d3c8; --lps-graphite: #1f2023; --lps-graphite-2: #2f3034;
     --lps-radius: 12px;
   }
-  html { background: #e8e5df !important; }
+  html { background: #ebe8e2 !important; }
   body {
     font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif !important;
     color: var(--lps-ink);
-    background: #ebe8e2 url("{{MARBLE}}") center top / cover fixed no-repeat !important;
+    background: #ebe8e2 !important;   /* плосък фон в клиентските екрани (мраморът е само в обвивката) */
   }
   h1, h2, h3, h4 { font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif !important; letter-spacing: -0.01em; }
+  /* Еднакви заглавия във всички клиенти */
+  h1 { font-size: 1.55rem !important; line-height: 1.25 !important; font-weight: 700 !important; }
+  h2 { font-size: 1.1rem !important; font-weight: 700 !important; }
   button, input, select, textarea { font-family: inherit; }
 
   /* Полета */
