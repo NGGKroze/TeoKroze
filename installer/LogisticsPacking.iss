@@ -26,6 +26,9 @@ Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 CloseApplications=yes
+CloseApplicationsFilter=LogisticsPacking.exe
+RestartApplications=no
+UsePreviousAppDir=yes
 
 [Languages]
 Name: "bulgarian"; MessagesFile: "compiler:Languages\Bulgarian.isl"
@@ -39,6 +42,14 @@ Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdi
 #ifexist "redist\MicrosoftEdgeWebView2RuntimeInstallerX64.exe"
 Source: "redist\MicrosoftEdgeWebView2RuntimeInstallerX64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: NeedsWebView2
 #endif
+
+[InstallDelete]
+; Нова версия = чиста замяна: старите модули, Python и ресурси се трият преди копирането,
+; за да не остават файлове от предишни версии. Данните на потребителя (%LOCALAPPDATA%\LogisticsPacking,
+; Документи\Logistics Packing) не се пипат.
+Type: filesandordirs; Name: "{app}\modules"
+Type: filesandordirs; Name: "{app}\runtime"
+Type: filesandordirs; Name: "{app}\Assets"
 
 [Icons]
 Name: "{group}\Logistics Packing Solution"; Filename: "{app}\LogisticsPacking.exe"

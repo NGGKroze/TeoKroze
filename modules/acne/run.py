@@ -1,4 +1,9 @@
 """Стартира ACNE (backend/app.py) като модул на Logistics Packing Solution."""
+import os
+import sys
+
+# Вграденият Python (embeddable) игнорира PYTHONPATH, затова общият помощник се добавя изрично.
+sys.path.insert(0, os.environ.get("TEOKROZE_RUNTIME") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "runtime"))
 import teokroze_sidecar
 from urllib.parse import urlparse
 

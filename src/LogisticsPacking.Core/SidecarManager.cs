@@ -71,6 +71,7 @@ public sealed class SidecarManager : IDisposable
             psi.Environment["TEOKROZE_DATA_DIR"] = dataDir;
             psi.Environment["PYTHONUTF8"] = "1";
             psi.Environment["PYTHONDONTWRITEBYTECODE"] = "1";
+            psi.Environment["TEOKROZE_RUNTIME"] = _paths.RuntimeDir;
             psi.Environment["PYTHONPATH"] = string.Join(Path.PathSeparator, new[] { _paths.RuntimeDir, module.Directory });
             var tess = PythonLocator.FindTesseractDir(_paths);
             if (tess != null)
