@@ -313,6 +313,25 @@ label.tg { display: inline-flex; gap: 6px; align-items: center; font-size: 13px;
   .leaf { animation-duration: .01s !important; }
 }
 
+
+.rc.canon .v { color: var(--lamp); } .pbtn.canon b { color: #f3c477; }
+.facs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.fac { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; }
+.fac .fh { display: flex; gap: 8px; align-items: baseline; } .fac .fh b { margin-left: auto; font-size: 17px; } .fac .fh em { font-style: normal; font-size: 11.5px; color: var(--lamp); }
+.fac .pbar { margin: 4px 0 5px; } .fac .note { display: block; line-height: 1.4; }
+.slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.slot { display: grid; grid-template-columns: 44px 1fr; grid-template-rows: auto auto; gap: 0 10px; text-align: left; align-items: center; padding: 8px 10px; background: var(--card); border: 1px solid var(--line2); border-radius: 6px; cursor: pointer; min-height: 62px; }
+.slot .si { grid-row: span 2; width: 44px; height: 44px; } .slot b { font-size: 13px; } .slot small { color: var(--muted); font-size: 11.5px; line-height: 1.3; }
+.slot.lock { opacity: .5; cursor: default; border-style: dashed; }
+.arts { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 8px; }
+.art { display: grid; grid-template-columns: 44px 1fr; gap: 10px; padding: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 4px; }
+.art.unk { opacity: .7; border-style: dashed; }
+.art.worn { border-color: var(--lamp); box-shadow: inset 0 0 0 1px var(--lamp-soft); }
+.art.r-u { border-left: 3px solid var(--good); } .art.r-r { border-left: 3px solid var(--depth); } .art.r-x { border-left: 3px solid var(--lamp); background-image: linear-gradient(120deg, var(--lamp-soft), transparent 55%); }
+.art .t { font-weight: 600; } .art .t em { font-style: normal; color: var(--lamp); margin-left: 6px; font-size: 12px; }
+.art .m { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.art .d { font-size: 12.5px; margin: 3px 0; } .art .q { font-size: 12.5px; color: var(--lamp); } .art .f { font-size: 12px; color: var(--muted); font-style: italic; margin: 2px 0 6px; }
+#minibar .curios { display: inline-flex; gap: 4px; }
 #duelask .btn, #minibar .btn { background: rgba(255,255,255,.1); color: #f3e6cc; border-color: rgba(255,255,255,.28); }
 #duelask .btn.pri { background: #b5652c; color: #fff4e0; border-color: #e0925a; }
 #duelask .note { color: #d3bfa0; max-width: 34ch; }
@@ -782,6 +801,7 @@ function newState() {
     ach: {}, achN: 0, lore: {}, loreNew: 0, endA: false, endB: false, stayed: false,
     auto: { tiers: true, tools: true, ups: true, meal: true, lex: true, eng: true, res: false, resAt: '1e3', fall: false, fallAt: '100', aeon: false, aeonAt: '10', mealPref: 'bread' },
     set: { notation: 'sci', confirm: true, motion: true, buy: 'max' },
+    inv: { arts: {}, eq: {}, cons: {}, forged: 0, found: 0, used: 0 }, canon: Z, canonLife: Z, canons: 0, cnUp: {},
     st: { time: 0, run: 0, fallT: 0, aeonT: 0, graceT: 0, clicks: 0, lifeL: Z, maxRunL: Z, nights: 0, fastRes: 1e9, lastRes: [] },
     last: Date.now(),
   };
@@ -798,7 +818,7 @@ const costQ = (c, g, h, n) => c + g * n + h * n * n;
 function baseMods() {
   return {
     all: 0, dyn: 0, post: 0, tier: [0, 0, 0, 0, 0, 0, 0, 0, 0], click: 0, clickPost: 0, cpps: 0, fcap: 20, fdecay: 1, night: 0,
-    frag: 0, chance: 0, perTen: 0, meal: 0, day: 1, exp: 1, mem: 0, depth: 0, aeon: 0, grace: 0, xp: 1, costG: 1,
+    frag: 0, chance: 0, perTen: 0, meal: 0, day: 1, exp: 1, mem: 0, depth: 0, aeon: 0, grace: 0, canon: 0, xp: 1, costG: 1,
     crit: 0, event: 1, floor: 1, relic: 1, engine: 0, entries: 0, rep: 1, memPow: 0.5, trialPow: 1, start: 1, achMul: 1, light: 1,
   };
 }
@@ -881,6 +901,7 @@ function computeMods(offline) {
   m.all += S.achN * lg(1.03) * m.achMul;
   if (S.res >= 1 && S.set) { /* memory passive shown in UI */ }
   horrorMods(m);
+  artMods(m);
   // night
   const light = tr === 't1' ? 0 : dayLight();
   m.light = light;
@@ -1349,6 +1370,9 @@ function deserialize(str) {
   return merge(base, o);
 }
 function simulate(sec, cb) {
+  const q0 = QUIET; QUIET = true; try { simulateInner(sec, cb); } finally { QUIET = q0; }
+}
+function simulateInner(sec, cb) {
   sec = Math.min(sec, 86400 * 7);
   const steps = Math.min(800, Math.max(1, Math.ceil(sec)));
   const dt = sec / steps;
@@ -1429,10 +1453,10 @@ function horrorState() {
 }
 const wardLvl = id => S.wards[id] || 0;
 function refL() { return Math.max(S.ppsL === undefined ? Z : S.ppsL, 1); }
-function spawnInterval() { const base = [0, 75, 65, 55, 48, 42, 36, 30][S.story.stage] || 30; return base * Math.pow(1.08, wardLvl('seal')) * (S.path === 'devourers' ? 0.67 : 1); }
+function spawnInterval() { const base = [0, 75, 65, 55, 48, 42, 36, 30][S.story.stage] || 30; return base * Math.pow(1.08, wardLvl('seal')) * (S.path === 'devourers' ? 0.67 : 1) * (hasQ('lull') ? 1.2 : 1); }
 function maxMon() { return Math.max(1, Math.min(6, 1 + Math.floor(S.story.stage / 1.5)) - (S.rites.r9 ? 2 : 0)); }
 function monHpL(type, boss) {
-  let L = refL() + lg(type.hp) + lg(3) * Math.max(0, S.story.stage - 1) + wardLvl('vigil') * lg(0.9);
+  let L = refL() + lg(type.hp) + lg(3) * Math.max(0, S.story.stage - 1) + wardLvl('vigil') * lg(0.9) - nameCut();
   if (boss) L += lg(8) + (S.rites.r1 ? lg(0.5) : 0);
   return L;
 }
@@ -1453,14 +1477,14 @@ function spawnMonster(boss) {
 }
 function clickDmgL() {
   let L = la(Math.max(clickValueL(), 0), refL() + lg(0.5));
-  L += wardLvl('recite') * lg(1.5) + (S.rites.r2 ? lg(3) : 0) + (S.path === 'lamplighters' ? lg(0.5) : 0);
+  L += echoHit() + wardLvl('recite') * lg(1.5) + (S.rites.r2 ? lg(3) : 0) + (S.path === 'lamplighters' ? lg(0.5) : 0);
   return L;
 }
 function wardDmgL() {
   const l = wardLvl('lamp'); if (!l) return Z;
-  return refL() + lg(0.02 * l) + (S.rites.r7 ? lg(5) : 0) + (S.path === 'lamplighters' ? lg(4) : 0);
+  return refL() + lg(0.02 * l) + (hasQ('mirror') ? lg2 : 0) + (S.rites.r7 ? lg(5) : 0) + (S.path === 'lamplighters' ? lg(4) : 0);
 }
-function bindRate() { return (0.003 + 0.002 * wardLvl('thread')) * (S.path === 'binders' ? 3 : 1); }
+function bindRate() { return (0.003 + 0.002 * wardLvl('thread')) * (1 + crv(fac('recall'), 14, 2)) * (S.path === 'binders' ? 3 : 1); }
 function inkGainL(m) {
   const t = MONS.find(x => x.id === m.k);
   return lg(t.ink) + lg(3) * Math.max(0, S.story.stage - 1) + wardLvl('gall') * lg(1.3) + (S.rites.r8 ? 1 : 0) + (S.path === 'scribes' ? lg(3) : 0) + (m.boss ? 1.3 : 0);
@@ -1478,6 +1502,7 @@ function killMon(m) {
   if (S.rites.r4) S.erasure = Math.max(0, S.erasure - 0.1);
   if (S.path === 'devourers') S.feast = Math.min(600, S.feast + 60);
   if (m.boss) { S.story.bosses[m.stg] = 1; }
+  onKillLoot(m);
   if (typeof onKill === 'function') onKill(m, g);
 }
 function hitMonster(m, mult) {
@@ -1524,7 +1549,7 @@ function horrorTick(dt, offline) {
   if (S.monT <= 0) { S.monT = spawnInterval() * (0.6 + Math.random() * 0.8); if (S.mon.length < maxMon()) spawnMonster(false); }
   let er = 0;
   for (const m of S.mon) { m.t += dt; if (m.d > m.arrive) m.d = Math.max(m.arrive, m.d - m.spd * dt); else er += m.er; }
-  const resist = Math.min(0.75, 0.05 * wardLvl('salt'));
+  const resist = Math.min(0.85, 0.05 * wardLvl('salt') + stillRes());
   const cap = S.path === 'binders' ? 0.35 : 0.9;
   S.erasure = Math.max(0, Math.min(cap, S.erasure + er * (1 - resist) * dt - bindRate() * dt));
   if (er > 0 && S.pages !== Z) {
@@ -2124,6 +2149,7 @@ function renderHud() {
   if (S.strat === 'frenzy') parts.push(`<span class="chip">Heat <b>×${(1 + S.heat).toFixed(2)}</b></span>`);
   if (S.trial) parts.push(`<span class="chip warn">Trial: ${TRIALS.find(t => t.id === S.trial).n}</span>`);
   horrorHud(parts);
+  if (S.story.stage >= 1) parts.push(`<span class="chip" data-tab="satchel" style="cursor:pointer">${esc(hall().n)}</span>`);
   if (S.carto.exp) parts.push(`<span class="chip">Expedition ${Math.floor(S.carto.exp.t / S.carto.exp.dur * 100)}%</span>`);
   const k = parts.join('');
   if (k !== hudKey) { hudKey = k; $('hud').innerHTML = k; }
@@ -2190,7 +2216,7 @@ function onPrestige(kind, auto) {
   if (kind === 'res') { pageNo = 1; volNo++; }
   presKey = ''; navKey = ''; if (!auto || Date.now() - lastAutoToast > 20000) { buildBody(); }
   if (auto && Date.now() - lastAutoToast > 20000) { lastAutoToast = Date.now(); toast('Automatic', kind === 'res' ? 'You slept and woke.' : kind === 'fall' ? 'You let go of the railing.' : 'An age passed.'); }
-  if (!auto) toast(kind === 'res' ? 'Morning' : kind === 'fall' ? 'The fall' : kind === 'aeon' ? 'An age passes' : 'Grace', kind === 'res' ? 'You wake in the same narrow bed, remembering everything.' : kind === 'fall' ? 'The floors rush up past you for a long, long time.' : kind === 'aeon' ? 'The shelves have not changed. You have.' : 'Something heavy is gone.');
+  if (!auto && kind !== 'canon') toast(kind === 'res' ? 'Morning' : kind === 'fall' ? 'The fall' : kind === 'aeon' ? 'An age passes' : 'Grace', kind === 'res' ? 'You wake in the same narrow bed, remembering everything.' : kind === 'fall' ? 'The floors rush up past you for a long, long time.' : kind === 'aeon' ? 'The shelves have not changed. You have.' : 'Something heavy is gone.');
   save();
 }
 function onEnding(k) {
@@ -2582,7 +2608,7 @@ function worldPrestige(kind) {
   if (kind === 'fall') { RD.mode = 'fall'; RD.fallT = 0; scene.flash = { c: '20,8,8', a: 0.7 }; scene.shake = 12; }
   else if (kind === 'res') { scene.fade = 1; RD.f = readerHome(); RD.mode = 'wake'; RD.wake = 0; RD.t = 0; RD.x = 300; scene.camX = 300; scene.camY = RD.f; }
   else if (kind === 'aeon') { scene.tl = 3; scene.flash = { c: '255,200,120', a: 0.7 }; RD.f = readerHome(); scene.camY = RD.f; RD.mode = 'wake'; RD.wake = 0; RD.t = 0; }
-  else if (kind === 'grace') { scene.rays = 3; scene.flash = { c: '255,250,235', a: 0.95 }; RD.f = readerHome(); scene.camY = RD.f; RD.mode = 'wake'; RD.wake = 0; RD.t = 0; }
+  else if (kind === 'grace' || kind === 'canon') { scene.rays = 3; scene.flash = { c: '255,250,235', a: 0.95 }; RD.f = readerHome(); scene.camY = RD.f; RD.mode = 'wake'; RD.wake = 0; RD.t = 0; }
 }
 function initWorld() {
   RD.f = readerHome(); RD.fy = RD.f; RD.x = 300; scene.camX = RD.x; scene.camY = RD.f; RD.mode = 'walk'; planNext();
@@ -2776,14 +2802,17 @@ function drawScene(now) {
     g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(rx, ry + 3 * s, 15 * s, 3.2 * s, 0, 0, 7); g.fill();
     drawPuppet(g, rx, ry, s * 1.22, { mode: RD.mode, ph: RD.ph, face: RD.face, flick: RD.flick, pull: RD.pull, shout: RD.shout, t: scene.t, wake: RD.wake, lantern: wardLvl('lamp') > 0 && RD.mode === 'fight', rot: RD.mode === 'fall' ? Math.sin(RD.fallT * 3) * 0.6 : 0 });
     drawVoices(g, ry);
+    drawAura(g, rx, ry, s, now);
   }
   for (let F = Fmin; F <= Fmax; F++) drawRailing(g, F);
   drawFallers(g, w, H, dt, motion);
   if (!MG.cur) for (const m of S.mon) drawMonster(g, m, now);
   drawHorror(g, w, H, now, dt, motion);
+  if (!MG.cur) drawHallFx(g, w, H, now, dt, motion);
   const vg = g.createRadialGradient(w / 2, H * 0.5, Math.min(w, H) * 0.3, w / 2, H * 0.5, Math.max(w, H) * 0.75);
   vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, `rgba(0,0,0,${(0.5 + (st >= 6 ? 0.1 * Math.sin(now / 420) + 0.1 : 0)).toFixed(3)})`); g.fillStyle = vg; g.fillRect(0, 0, w, H);
   if (MG.cur) miniDraw(g, w, H, now);
+  drawParts(g, dt);
   drawFx(g, w, H, now, dt, motion);
   g.restore();
 }
@@ -2918,10 +2947,10 @@ function monsterAt(x, y) {
 }
 let combo = 0, comboT = 0;
 function readAtMonster(m, cx, cy, px, py) {
-  const wp = monWeak(m, performance.now()), crit = px != null && Math.hypot(wp.x - px, wp.y - py) < 18 + monScreen(m).s * 0.12;
+  const wp = monWeak(m, performance.now()), crit = px != null && Math.hypot(wp.x - px, wp.y - py) < (18 + monScreen(m).s * 0.12) * insightRadius();
   if (performance.now() - comboT > 900) combo = 0;
   comboT = performance.now(); combo = Math.min(10, combo + 1);
-  const r = hitMonster(m, (crit ? lg(6) : 0) + lg(1 + 0.08 * combo)); if (!r) return;
+  const r = hitMonster(m, (crit ? lg(6) : 0) + lg(1 + 0.08 * combo * (1 + echoHit()))); if (!r) return;
   readerShout(RD.x + m.side * m.d); if (crit) RD.flick = 1;
   floatText(cx, cy, (crit ? 'WEAK ' : '') + '−' + fmt(r.d), crit, 'dmg');
   scene.shake = Math.max(scene.shake || 0, crit ? 5 : 2);
@@ -3036,7 +3065,7 @@ function bWards(el) {
   for (const m of S.mon) {
     const t = MONS.find(x => x.id === m.k); const bar = h('b'); const tx = h('div', { class: 'd num' });
     ml.append(h('div', { class: 'item mon-row', style: m.boss ? 'border-color:var(--danger)' : '' }, h('div', { class: 'nm' }, m.boss ? BOSSES[m.stg].n : t.n), tx,
-      h('div', { class: 'act' }, h('button', { class: 'btn ok', onclick: e => { const r = hitMonster(m); if (r) { floatText(e.clientX, e.clientY, '−' + fmt(r.d), false, 'dmg'); } refresh(); } }, 'Read aloud at it')), h('div', { class: 'pbar' }, bar)));
+      h('div', { class: 'act' }, m.boss && MINIS[m.stg] ? h('button', { class: 'btn pri', onclick: () => { if (MG.cur) return; if (MG.cd > 0) return toast('Duel', 'Catch your breath first.'); MG.dismissed[m.id] = 0; startMini(m); } }, 'Face it') : null, h('button', { class: 'btn ok', onclick: e => { const r = hitMonster(m); if (r) { floatText(e.clientX, e.clientY, '−' + fmt(r.d), false, 'dmg'); } refresh(); } }, 'Read aloud at it')), h('div', { class: 'pbar' }, bar)));
     up(() => { if (!S.mon.includes(m)) return; bar.style.width = pct(pw(m.hp - m.max)); tx.textContent = `${fmt(m.hp)} left · erasing ${(m.er * 100).toFixed(1)}%/s`; });
   }
   el.append(sect('On the shelves', null, ml));
@@ -3070,15 +3099,21 @@ function bWards(el) {
 const MG = { cur: null, cd: 0, dismissed: {} };
 const uOf = (w, h) => Math.max(0.7, Math.min(1.4, Math.min(w / 520, h / 380)));
 function miniPower() {
-  return { hearts: 3 + Math.floor(wardLvl('vigil') / 8) + (S.rites.r1 ? 1 : 0), time: 1 + Math.min(0.5, wardLvl('lamp') * 0.01), ease: 1 + Math.min(0.6, wardLvl('recite') * 0.02) };
+  return { hearts: 3 + Math.floor(wardLvl('vigil') / 8) + (S.rites.r1 ? 1 : 0), time: (1 + Math.min(0.5, wardLvl('lamp') * 0.01)) * (1 + crv(fac('stillness'), 15, 0.6)),
+    ease: Math.min(2, 1 + Math.min(0.6, wardLvl('recite') * 0.02) + crv(fac('insight'), 15, 0.4)), recall: duelPower().recall,
+    slow: (1 - crv(fac('stillness'), 25, 0.25)) * (hasQ('slowing') ? 0.85 : 1), assist: crv(fac('naming'), 15, 0.35), start: hasQ('opening') ? 0.2 : 0 };
 }
 function backdrop(g, w, h, a) {
   g.fillStyle = '#0a0706'; g.fillRect(0, 0, w, h);
   const tw = Math.max(w * 1.3, 700), th = tw * 136 / 960;
   for (let y = 0, i = 0; y < h; y += th, i++) g.drawImage(scene.tiles[(i + 1) % 3], -(tw - w) / 2, y, tw, th);
   g.fillStyle = `rgba(5,3,4,${a})`; g.fillRect(0, 0, w, h);
+  const tn = STAGES[S.story.stage] && STAGES[S.story.stage].tint; if (tn) { g.fillStyle = `rgba(${tn[0]},${tn[1]},${tn[2]},${Math.min(0.4, tn[3] * 1.5)})`; g.fillRect(0, 0, w, h); }
 }
-function hurt(c, n) { c.hearts -= n || 1; c.hurtT = 0.45; c.lostAny = true; scene.shake = Math.max(scene.shake, 7); scene.flash = { c: '160,20,14', a: 0.35 }; }
+function hurt(c, n) {
+  if (c.recall > 0) { c.recall--; c.hurtT = 0.2; scene.flash = { c: '150,130,230', a: 0.25 }; burst(scene.w / 2, scene.h * 0.7, '#b8a8e0', 14, 90); return; }
+  burst(scene.w / 2, scene.h * 0.75, '#e0503a', 12, 100);
+  c.hearts -= n || 1; c.hurtT = 0.45; c.lostAny = true; scene.shake = Math.max(scene.shake, 7); scene.flash = { c: '160,20,14', a: 0.35 }; }
 function avatarAt(g, x, y, s, now, mode, extra) { drawPuppet(g, x, y, s, Object.assign({ mode: mode || 'fight', ph: 0, face: 1, t: now / 1000 }, extra || {})); }
 function dist(ax, ay, bx, by) { return Math.hypot(ax - bx, ay - by); }
 const pick = a => a[(Math.random() * a.length) | 0];
@@ -3330,21 +3365,23 @@ const MINIS = [null,
 function startMini(m) {
   const def = MINIS[m.stg]; if (!def || MG.cur || !S.mon.includes(m)) return;
   const P = miniPower(), hearts = P.hearts + (def.extraHearts || 0);
-  MG.cur = { m, def, P, st: def.init(P, scene.w, scene.h), t: 0, hearts, maxHearts: hearts, prog: 0, hurtT: 0, result: null, over: 0, lostAny: false, time: def.time * P.time };
+  MG.cur = { m, def, P, st: def.init(P, scene.w, scene.h), t: 0, hearts, maxHearts: hearts, prog: 0, hurtT: 0, result: null, over: 0, lostAny: false, time: def.time * P.time, recall: P.recall, slow: P.slow, assist: P.assist, bonus: P.start, freeze: 0, lp: 0, lastP: null };
   const bar = $('minibar'); bar.innerHTML = '';
   const retreat = h('button', { class: 'btn mx', onclick: () => { MG.cd = 10; MG.dismissed[m.id] = 1; closeMini(); } }, 'Retreat');
-  bar.append(h('span', { class: 'mt' }, def.name), h('div', { class: 'mb' }, h('b', { style: 'width:0%' })), h('span', { class: 'hearts' }), h('span', { class: 'mt time' }), retreat);
+  bar.append(h('span', { class: 'mt' }, def.name), h('div', { class: 'mb' }, h('b', { style: 'width:0%' })), h('span', { class: 'hearts' }), h('span', { class: 'mt time' }), h('span', { class: 'curios' }), retreat);
+  refreshMiniCurios();
   $('stage').classList.add('mini'); bar.hidden = false; $('duelask').hidden = true; scene.flash = { c: '10,6,6', a: 0.6 };
 }
 function closeMini() { MG.cur = null; $('minibar').hidden = true; $('stage').classList.remove('mini'); presKey = ''; }
 function endMini(win) {
   const c = MG.cur; if (!c || c.result) return; c.result = win ? 'win' : 'lose'; c.over = 2;
   if (win) {
-    const g = inkGainL(c.m); S.ink = la(S.ink, g + lg(2)); S.inkLife = la(S.inkLife, g + lg(2));
+    const g = inkGainL(c.m) + lg(1 + echoInk()); S.ink = la(S.ink, g + lg(2)); S.inkLife = la(S.inkLife, g + lg(2));
     S.duels++; S.duelWins[c.m.stg] = 1; if (!c.lostAny) S.flawless++;
-    killMon(c.m); toast('Duel won', c.lostAny ? `${BOSSES[c.m.stg].n} comes apart. Bonus ink: ${fmt(g + lg(2))}.` : `Flawless. ${BOSSES[c.m.stg].n} comes apart. Bonus ink: ${fmt(g + lg(2))}.`, 6000);
+    killMon(c.m); if (hasQ('gilded')) { const a = pickArt(false); if (a) gainArt(a, 'The duel left a second find.'); }
+    toast('Duel won', c.lostAny ? `${BOSSES[c.m.stg].n} comes apart. Bonus ink: ${fmt(g + lg(2))}.` : `Flawless. ${BOSSES[c.m.stg].n} comes apart. Bonus ink: ${fmt(g + lg(2))}.`, 6000);
   } else {
-    c.m.hp = c.m.max; S.erasure = Math.min(0.9, S.erasure + 0.1); MG.cd = 25; MG.dismissed[c.m.id] = 0;
+    c.m.hp = c.m.max; S.erasure = Math.min(0.9, S.erasure + 0.1); MG.cd = hasQ('breath') ? 10 : 25; MG.dismissed[c.m.id] = 0;
     toast('Driven back', `${BOSSES[c.m.stg].n} shrugs you off and erases more of the shelf. You can try again shortly.`, 6000);
   }
 }
@@ -3352,13 +3389,17 @@ function updateMini(dt) {
   MG.cd = Math.max(0, MG.cd - dt);
   const c = MG.cur; if (!c) return;
   if (!c.result && !S.mon.includes(c.m)) { c.result = 'win'; c.over = 1.2; }
-  c.t += dt; c.hurtT = Math.max(0, c.hurtT - dt);
-  if (c.result) { c.over -= dt; if (c.over <= 0) closeMini(); return; }
-  c.def.update(c, dt, scene.w, scene.h);
+  c.hurtT = Math.max(0, c.hurtT - dt);
+  if (c.result) { c.t += dt; c.over -= dt; if (c.over <= 0) closeMini(); return; }
+  if (c.freeze > 0) { c.freeze -= dt; return; }
+  const sdt = dt * c.slow; c.t += sdt;
+  c.def.update(c, sdt, scene.w, scene.h);
+  c.prog = Math.min(1, c.prog * (1 + c.assist) + c.bonus);
+  if (c.prog > c.lp + 0.002) { c.lp = c.prog; const p = c.lastP || { x: scene.w / 2, y: scene.h * 0.6 }; burst(p.x, p.y, '#f6d38f', 8, 70); }
   c.time -= dt; if (c.prog >= 1) { c.prog = 1; endMini(true); } else if (c.hearts <= 0 || c.time <= 0) endMini(false);
   const bar = $('minibar'); if (bar.hidden) return;
   bar.querySelector('.mb b').style.width = pct(c.prog);
-  const hs = '♥'.repeat(Math.max(0, c.hearts)) + '<span style="opacity:.3">' + '♥'.repeat(Math.max(0, c.maxHearts - Math.max(0, c.hearts))) + '</span>';
+  const hs = '♥'.repeat(Math.max(0, c.hearts)) + '<span style="opacity:.3">' + '♥'.repeat(Math.max(0, c.maxHearts - Math.max(0, c.hearts))) + '</span>' + (c.recall > 0 ? '<span style="color:#b8a8e0;margin-left:8px">' + '◆'.repeat(c.recall) + '</span>' : '');
   const hEl = bar.querySelector('.hearts'); if (hEl._h !== hs) { hEl.innerHTML = hs; hEl._h = hs; }
   bar.querySelector('.time').textContent = Math.max(0, Math.ceil(c.time)) + 's';
 }
@@ -3371,7 +3412,7 @@ function miniDraw(g, w, h, now) {
   if (c.result) { g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0, 0, w, h); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = c.result === 'win' ? '#f6e0a0' : '#e08a72'; g.font = `${Math.round(34 * uOf(w, h))}px "IM Fell English", Georgia, serif`; g.fillText(c.result === 'win' ? (c.lostAny ? 'Banished' : 'Flawless') : 'Driven back', w / 2, h / 2); }
   g.restore();
 }
-function miniPointer(type, x, y, e) { const c = MG.cur; if (!c || c.result || !c.def.pointer) return; c.def.pointer(c, type, x, y, scene.w, scene.h); }
+function miniPointer(type, x, y, e) { const c = MG.cur; if (!c || c.result || !c.def.pointer) return; c.lastP = { x, y }; c.def.pointer(c, type, x, y, scene.w, scene.h); }
 function miniKey(e) { const c = MG.cur; if (!c || c.result) return false; if (e.key === 'Escape') return false; return c.def.key ? !!c.def.key(c, e) : false; }
 document.addEventListener('keyup', e => { const c = MG.cur; if (c && c.def.keyup) c.def.keyup(c, e); });
 // the invitation
@@ -3390,5 +3431,375 @@ for (let i = 1; i <= 7; i++) A('duel_s' + i, 'Duel: ' + BOSSES[i].n, 'Win the du
 A('duel_all', 'Seven Duels', 'Win a duel against each of the great ones', () => Object.keys(S.duelWins).length >= 7);
 A('flaw1', 'Steady Hands', 'Win a duel without losing a heart', () => S.flawless >= 1);
 A('flaw7', 'Unbroken', 'Win seven flawless duels', () => S.flawless >= 7);
+
+// ================= The Satchel: artifacts, faculties, curios =================
+// Nothing here is attack or defence. Artifacts raise faculties: ways of knowing, remembering and naming
+// that bend the duels, the monsters, and the reading itself.
+const FAC = {
+  insight: { n: 'Insight', c: 'var(--depth)', d: 'Sees where a thing is weak.' },
+  recall: { n: 'Remembrance', c: 'var(--memory)', d: 'Remembers mistakes before they are made.' },
+  naming: { n: 'Naming', c: 'var(--meaning)', d: 'A named thing is smaller.' },
+  stillness: { n: 'Stillness', c: 'var(--aeon)', d: 'Thickens time. Slows the great ones.' },
+  echo: { n: 'Echo', c: 'var(--danger)', d: 'What you say comes back.' },
+};
+const FACS = Object.keys(FAC);
+const SLOTS = [
+  { id: 'eye', n: 'Eye', un: () => true },
+  { id: 'tongue', n: 'Tongue', un: () => true },
+  { id: 'hand', n: 'Hand', un: () => true },
+  { id: 'pocket', n: 'Pocket', un: () => S.aeons > 0, lk: 'Opens after your first age' },
+  { id: 'margin', n: 'Margin', un: () => S.graces > 0, lk: 'Opens after grace' },
+  { id: 'colophon', n: 'Colophon', un: () => !!S.cnUp.cn2, lk: 'Opens in the Canon', any: true },
+];
+const RAR = { c: { n: 'Worn', w: 10, col: 'var(--muted)' }, u: { n: 'Annotated', w: 4, col: 'var(--good)' }, r: { n: 'Illuminated', w: 1.5, col: 'var(--depth)' }, x: { n: 'Forbidden', w: 0.4, col: 'var(--lamp)' } };
+const QUIRKS = {
+  lull: 'Monsters arrive 20% less often.', tithe: 'Each banishment pays a minute of reading.', mirror: 'Warding lamps burn twice as hard.',
+  cautious: 'One more forgiven mistake in every duel.', lucky: 'Artifacts and curios turn up half again as often.', dawn: 'Nights are brighter.',
+  opening: 'Duels begin a fifth finished.', slowing: 'The great ones move 15% slower in duels.', breath: 'Recover from a lost duel much sooner.',
+  gilded: 'A won duel yields a second find.', bargain: 'Binding costs 30% less ink.',
+};
+// [id, name, slot, rarity, chapter, faculties, quirk, flavour, boss-drop]
+const ARTS = [
+  ['a1', 'Reading Glass of Dust', 'eye', 'c', 1, { insight: 2 }, null, 'Everything looks slightly older through it.'],
+  ['a2', 'Spectacles With One Lens', 'eye', 'c', 1, { insight: 1.5, naming: 0.5 }, null, 'The missing lens is the one that lets you see yourself.'],
+  ['a3', 'A Third Margin', 'eye', 'u', 2, { insight: 3, stillness: 1 }, 'opening', 'A margin drawn on the air beside the page.'],
+  ['a4', 'The Lens That Forgets Faces', 'eye', 'r', 4, { insight: 5, recall: 2 }, 'cautious', 'It remembers only what you were looking for.'],
+  ['a5', 'Eyelid of the Index', 'eye', 'x', 6, { insight: 8, stillness: 2 }, 'slowing', 'It blinks. You did not.'],
+  ['a6', 'Chalk Whistle', 'tongue', 'c', 1, { naming: 2 }, null, 'One note. Everything with a name turns to look.'],
+  ['a7', 'Borrowed Voice', 'tongue', 'c', 1, { echo: 2 }, null, 'It was returned once. Nobody collected it.'],
+  ['a8', 'The Seventh Syllable', 'tongue', 'u', 3, { naming: 3, echo: 1.5 }, 'tithe', 'The other six are in the Index.'],
+  ['a9', 'The Unsaid Word', 'tongue', 'r', 5, { naming: 5, stillness: 2 }, 'lull', 'It does not need to be spoken. That is its power.'],
+  ['a10', 'Tongue of the Author', 'tongue', 'x', 7, { naming: 8, echo: 4 }, 'gilded', 'It speaks only in the past tense.'],
+  ['a11', 'Bone Folder', 'hand', 'c', 1, { echo: 2 }, null, 'Creases a page so it stays where you left it.'],
+  ['a12', 'Inkwell With No Bottom', 'hand', 'u', 2, { echo: 3, recall: 1 }, 'bargain', 'You never need to refill it. You just stop being able to see the floor of it.'],
+  ['a13', 'Needle-and-Thread of Mercy', 'hand', 'u', 4, { recall: 3, naming: 1.5 }, 'breath', 'It mends things that were not torn.'],
+  ['a14', 'Glove of Margins', 'hand', 'r', 5, { echo: 5, stillness: 1 }, 'mirror', 'Fits a hand that is mostly white.'],
+  ['a15', 'The Hand That Writes Back', 'hand', 'x', 7, { echo: 8, naming: 3 }, 'breath', 'It is warm. It is not yours.'],
+  ['a16', 'Pressed Violet', 'pocket', 'c', 1, { recall: 2 }, null, 'A flower from a garden you cannot place.'],
+  ['a17', 'Pocket Candle', 'pocket', 'c', 1, { stillness: 2 }, 'dawn', 'Lights itself when you stop expecting it to.'],
+  ['a18', 'Hourglass of Sand From No Beach', 'pocket', 'u', 3, { stillness: 3, recall: 1.5 }, null, 'The grains fall upward when nobody is looking.'],
+  ['a19', 'A Name You Almost Remember', 'pocket', 'r', 5, { recall: 5, naming: 2 }, 'lucky', 'It is on the tip of the tongue. It has been for years.'],
+  ['a20', 'Key to the Shelf That Is Not', 'pocket', 'x', 7, { recall: 7, stillness: 4 }, 'cautious', 'Opens nothing, which is more than most keys do.'],
+  ['a21', 'Folded Corner', 'margin', 'u', 2, { stillness: 3, insight: 1 }, null, 'A dog-ear that marks a page you have not read yet.'],
+  ['a22', 'Marginal Note in Your Own Hand', 'margin', 'r', 4, { recall: 4, insight: 3 }, 'tithe', 'It says: do not trust the next one.'],
+  ['a23', 'The White Between the Lines', 'margin', 'r', 6, { stillness: 6, recall: 1 }, 'lull', 'Not blank. Waiting.'],
+  ['a24', 'The Ninety-Sixth Symbol', 'margin', 'x', 7, { insight: 3, recall: 3, naming: 3, stillness: 3, echo: 3 }, 'opening', 'It is in no book. You are carrying it anyway.'],
+  // dropped only by the great ones
+  ['b1', 'Silverfish Bookmark', 'pocket', 'u', 1, { recall: 2.5, stillness: 1.5 }, 'slowing', 'The Queen left it between the pages as a courtesy.', 1],
+  ['b2', 'Dried Blot', 'eye', 'u', 2, { insight: 3, naming: 1.5 }, 'dawn', 'Held to the lamp it shows what the ink was hiding.', 2],
+  ['b3', 'Faceless Mask', 'tongue', 'r', 3, { naming: 4, recall: 2 }, 'cautious', 'Wear it and you will not be recognised, even by yourself.', 3],
+  ['b4', 'Severed Thread', 'hand', 'r', 4, { echo: 4, recall: 2 }, 'bargain', 'One end is still attached to something very far below.', 4],
+  ['b5', 'Widening Clip', 'margin', 'r', 5, { stillness: 5, insight: 2 }, 'breath', 'It holds the margins together. Barely.', 5],
+  ['b6', 'Alphabet Tooth', 'tongue', 'x', 6, { echo: 6, naming: 4 }, 'mirror', 'Engraved A to Z on the root.', 6],
+  ['b7', 'The Blank Quill', 'hand', 'x', 7, { echo: 5, insight: 5, naming: 3 }, 'gilded', 'It writes in the colour of the page, and the page believes it.', 7],
+].map(a => ({ id: a[0], n: a[1], slot: a[2], r: a[3], st: a[4], f: a[5], q: a[6], fl: a[7], boss: a[8] || 0 }));
+const ARTBY = {}; for (const a of ARTS) ARTBY[a.id] = a;
+const CURIOS = [
+  { id: 'ribbon', n: 'Ribbon Bookmark', d: 'In a duel: stops the clock and everything in it for six seconds.', w: 3 },
+  { id: 'slip', n: 'Blank Slip', d: 'In a duel: one more mistake is forgiven.', w: 4 },
+  { id: 'flower', n: 'Pressed Flower', d: 'In a duel: restores a lost heart.', w: 3 },
+  { id: 'needle', n: 'Silver Needle', d: 'In a duel: a quarter of the work is simply done.', w: 2 },
+  { id: 'salt', n: 'Pinch of Salt', d: 'Anywhere: mends 35% of the erasure at once.', w: 4 },
+];
+const HALLS = [
+  { n: 'The Gallery', s: 'stillness', d: 'Lamps and shelves. The Library as you first understood it.' },
+  { n: 'Hall of Silverfish', s: 'recall', d: 'Dry glue, chewed spines, a faint silver shimmer along the floor.' },
+  { n: 'Hall of Blots', s: 'insight', d: 'Ink gathers on the ceiling and lets go in its own time.' },
+  { n: 'Hall of Hollow Readers', s: 'naming', d: 'Pale figures stand very still at the shelves, reading nothing.' },
+  { n: 'Hall Below the Lamps', s: 'echo', d: 'The lamps do not reach here. Something else glints in the dark.' },
+  { n: 'The Widening Hall', s: 'stillness', d: 'White strips slide across the walls. The margins are growing.' },
+  { n: 'The Hall of the Index', s: 'naming', d: 'Letters rain down in alphabetical order. A is always first.' },
+  { n: 'The Unwritten Hall', s: 'insight', d: 'Parts of it flicker out as you look. Nothing was ever written here.' },
+];
+const hall = () => HALLS[Math.min(HALLS.length - 1, S.story.stage)];
+
+const CANON = [
+  ['cn1', 'First Edition', 0, 'Exponent ×1.2.', [['exp', 1.2]]],
+  ['cn2', 'Colophon', 0.3, 'A sixth Satchel slot that takes any artifact.', []],
+  ['cn3', 'Keep the Devotions', 0.6, 'Grace upgrades and prayers survive closing the Canon.', []],
+  ['cn4', 'Annotated Edition', 1, 'Artifacts can be annotated three levels higher.', []],
+  ['cn5', 'Second Printing', 1.5, 'Every faculty ×1.25.', []],
+  ['cn6', 'Errata', 2.5, 'Artifacts and curios turn up twice as often.', []],
+  ['cn7', 'Subscribers', 3.5, 'Exponent ×1.25.', [['exp', 1.25]]],
+  ['cn8', 'Definitive Edition', 5, 'Pages ×1e5000. Every duel forgives one more mistake.', [['all', 5000]]],
+].map(a => ({ id: a[0], n: a[1], c: a[2], d: a[3], e: a[4] }));
+const canCanon = () => S.runL >= 60000 && !S.trial && S.graces >= 5;
+const canonGainL = () => canCanon() ? fl(sc((S.runL - 60000) / 60000, 8, 0.5) + M.canon) : Z;
+function doCanon() {
+  if (!canCanon()) return false;
+  const g = canonGainL();
+  S.canon = la(S.canon, g); S.canonLife = la(S.canonLife, g); S.canons++;
+  S.grace = Z; S.st.graceT = 0;
+  if (!S.cnUp.cn3) { S.grUp = {}; S.prayer = 0; }
+  resetGrace(); return true;
+}
+function buyCanonUp(u) { if (S.cnUp[u.id] || S.canon < u.c) return false; S.canon = ls(S.canon, u.c); S.cnUp[u.id] = 1; FACV++; return true; }
+
+// ---- faculty maths ----
+let FACV = 1, facCache = null, facCacheV = -1;
+const crv = (x, k, cap) => cap * (1 - Math.exp(-x / k));
+const artCap = () => 9 + (S.cnUp.cn4 ? 3 : 0);
+const slotOpen = id => SLOTS.find(s => s.id === id).un();
+function facs() {
+  if (facCache && facCacheV === FACV) return facCache;
+  const raw = {}, cnt = {}; for (const f of FACS) { raw[f] = 0; cnt[f] = 0; }
+  const q = {};
+  for (const sl of SLOTS) {
+    const id = S.inv.eq[sl.id]; if (!id || !sl.un()) continue; const a = ARTBY[id], o = S.inv.arts[id]; if (!a || !o) continue;
+    const k = 1 + 0.25 * (o.lv - 1); let best = null, bv = 0;
+    for (const f in a.f) { raw[f] += a.f[f] * k; if (a.f[f] > bv) { bv = a.f[f]; best = f; } }
+    if (best) cnt[best]++;
+    if (a.q) q[a.q] = (q[a.q] || 0) + 1;
+  }
+  const conc = {};
+  for (const f of FACS) { const c = cnt[f]; conc[f] = c >= 4 ? 1 : c === 3 ? 0.5 : c === 2 ? 0.2 : 0; raw[f] *= (1 + conc[f]) * (S.cnUp.cn5 ? 1.25 : 1); }
+  facCache = { v: raw, q, conc, cnt }; facCacheV = FACV; return facCache;
+}
+const fac = f => facs().v[f] || 0;
+const hasQ = k => !!facs().q[k];
+const insightRadius = () => 1 + crv(fac('insight'), 12, 0.8);
+const nameCut = () => crv(fac('naming'), 15, 0.5);              // log10 off monster strength
+const echoInk = () => crv(fac('echo'), 12, 2);
+const echoHit = () => crv(fac('echo'), 10, 1.5);
+const stillRes = () => crv(fac('stillness'), 20, 0.3);
+function artMods(m) {
+  const f = facs().v; let tot = 0; for (const k of FACS) tot += f[k];
+  m.all += 0.1 * tot; m.frag += 0.02 * f.insight; m.mem += 0.02 * f.recall;
+  m.night += crv(f.stillness, 10, 0.25) + (hasQ('dawn') ? 0.15 : 0);
+  m.exp *= 1 + 0.002 * tot;
+  for (const u of CANON) if (S.cnUp[u.id]) effs(m, u.e);
+  m.exp *= 1 + 0.5 * lg(1 + Math.max(0, la(S.canon, 0)));
+  m.all += 20 * la(S.canon, 0);
+}
+const ownedN = () => Object.keys(S.inv.arts).length;
+
+// ---- finding things ----
+function dropMul() { return (hasQ('lucky') ? 1.5 : 1) * (S.cnUp.cn6 ? 2 : 1); }
+function pickArt(boss) {
+  const st = S.story.stage, hs = hall().s; let tot = 0; const pool = [];
+  for (const a of ARTS) {
+    if (a.boss || a.st > Math.max(1, st)) continue;
+    const w = RAR[a.r].w * (Object.keys(a.f).reduce((b, k) => a.f[k] > a.f[b] ? k : b) === hs ? 1.5 : 1) * (S.inv.arts[a.id] ? 1 : 2.5);
+    pool.push([a, w]); tot += w;
+  }
+  let x = Math.random() * tot; for (const [a, w] of pool) { x -= w; if (x <= 0) return a; } return pool[0] && pool[0][0];
+}
+let QUIET = false;
+function gainArt(a, how) {
+  const o = S.inv.arts[a.id], cap = artCap(); let res;
+  if (!o) { S.inv.arts[a.id] = { lv: 1 }; res = 'new'; if (!S.inv.eq[a.slot] && slotOpen(a.slot)) S.inv.eq[a.slot] = a.id; }
+  else if (o.lv < cap) { o.lv++; res = 'level'; } else { S.ink = la(S.ink, 1 + S.story.stage * 0.3); res = 'ink'; }
+  S.inv.found++; FACV++;
+  if (!QUIET) {
+    const R = RAR[a.r];
+    toast(res === 'new' ? 'Found: ' + R.n.toLowerCase() : 'Annotated again', res === 'new' ? `${a.n} (${a.slot}). ${how || ''}` : res === 'level' ? `${a.n} is now level ${o.lv}.` : `${a.n} cannot grow further. You keep the ink.`, 6500);
+    lootFx(a.r === 'x' ? 1 : a.r === 'r' ? 0.7 : 0.4, FAC[Object.keys(a.f)[0]].c);
+    navKey = ''; bodyKey = '';
+  }
+  return res;
+}
+function gainCurio(id) {
+  S.inv.cons[id] = (S.inv.cons[id] || 0) + 1;
+  if (!QUIET) { toast('Curio', CURIOS.find(c => c.id === id).n + '. ' + CURIOS.find(c => c.id === id).d, 5000); lootFx(0.3, 'var(--lamp)'); }
+}
+function rollCurio() { let t = 0; for (const c of CURIOS) t += c.w; let x = Math.random() * t; for (const c of CURIOS) { x -= c.w; if (x <= 0) return c.id; } return 'salt'; }
+function onKillLoot(m) {
+  const dm = dropMul();
+  if (m.boss) {
+    const ba = ARTS.find(a => a.boss === m.stg);
+    if (ba && !S.inv.arts[ba.id]) gainArt(ba, 'Left behind by ' + BOSSES[m.stg].n + '.');
+    else if (Math.random() < 0.6) { const a = pickArt(true); if (a) gainArt(a, 'Found in the wreckage.'); }
+    gainCurio(rollCurio()); return;
+  }
+  const st = S.story.stage;
+  if (Math.random() < (0.05 + 0.01 * st) * dm) { const a = pickArt(false); if (a) gainArt(a, 'It was under the shelf.'); }
+  else if (Math.random() < 0.09 * dm) gainCurio(rollCurio());
+  if (hasQ('tithe') && S.ppsL !== Z) S.pages = la(S.pages, S.ppsL + lg(60));
+}
+function forgeCostL() { return 0.9 + 0.35 * S.inv.forged - (hasQ('bargain') ? 0.15 : 0) + 0.25 * S.story.stage; }
+function forge() {
+  const c = forgeCostL(); if (S.ink < c) return false; S.ink = ls(S.ink, c); S.inv.forged++;
+  const a = pickArt(false); if (a) gainArt(a, 'Bound from ink and string.'); return true;
+}
+function annotCostL(a) { const o = S.inv.arts[a.id]; return 0.5 + 0.55 * o.lv + 0.3 * 'curx'.indexOf(a.r); }
+function annotate(a) { const o = S.inv.arts[a.id]; if (!o || o.lv >= artCap()) return false; const c = annotCostL(a); if (S.ink < c) return false; S.ink = ls(S.ink, c); o.lv++; FACV++; return true; }
+function equip(id) {
+  const a = ARTBY[id]; if (!S.inv.arts[id]) return;
+  for (const k in S.inv.eq) if (S.inv.eq[k] === id) delete S.inv.eq[k];
+  if (slotOpen(a.slot)) S.inv.eq[a.slot] = id;
+  else if (slotOpen('colophon')) S.inv.eq.colophon = id; else return toast('Satchel', 'That slot has not opened yet.');
+  FACV++;
+}
+function unequip(slot) { delete S.inv.eq[slot]; FACV++; }
+const equippedIn = id => Object.keys(S.inv.eq).find(k => S.inv.eq[k] === id);
+function useCurio(id) {
+  if (!(S.inv.cons[id] > 0)) return false;
+  const c = MG.cur;
+  if (id === 'salt') { if (S.erasure <= 0.001) return false; S.erasure = Math.max(0, S.erasure - 0.35); }
+  else {
+    if (!c || c.result) { toast('Curio', 'That is only of use in a duel.'); return false; }
+    if (id === 'ribbon') c.freeze = 6;
+    if (id === 'slip') c.recall++;
+    if (id === 'flower') { if (c.hearts >= c.maxHearts) return false; c.hearts++; }
+    if (id === 'needle') c.bonus += 0.25;
+  }
+  S.inv.cons[id]--; S.inv.used++; burst(scene.w / 2, scene.h / 2, '#f6d38f', 18); refreshMiniCurios(); return true;
+}
+
+// ---- particles and loot flashes ----
+const PARTS = [];
+function burst(x, y, col, n, spd) { for (let i = 0; i < n && PARTS.length < 160; i++) { const a = Math.random() * 6.283, v = (spd || 80) * (0.3 + Math.random()); PARTS.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 20, t: 0, life: 0.5 + Math.random() * 0.6, col, r: 1.5 + Math.random() * 2.2 }); } }
+function lootFx(k, col) { scene.flash = { c: '255,214,140', a: 0.25 + 0.3 * k }; scene.ripple = Math.max(scene.ripple, 0.6 * k + 0.2); if (scene.w) burst(w2x(RD.x), flY(RD.fy) - 30 * scene.s, '#ffd98c', 14 + Math.round(24 * k), 110); }
+function drawParts(g, dt) {
+  for (const p of PARTS) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 90 * dt; }
+  for (let i = PARTS.length - 1; i >= 0; i--) if (PARTS[i].t > PARTS[i].life) PARTS.splice(i, 1);
+  g.save(); g.globalCompositeOperation = 'lighter';
+  for (const p of PARTS) { g.globalAlpha = Math.max(0, 1 - p.t / p.life); g.fillStyle = p.col; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill(); }
+  g.restore();
+}
+const FACCOL = { insight: '#7fb2d3', recall: '#b8a8e0', naming: '#8fbfab', stillness: '#d0a275', echo: '#d9785f' };
+function drawAura(g, rx, ry, s, now) {
+  const eq = SLOTS.map(sl => S.inv.eq[sl.id] && sl.un() ? ARTBY[S.inv.eq[sl.id]] : null).filter(Boolean);
+  eq.forEach((a, i) => {
+    const f = Object.keys(a.f).reduce((b, k) => a.f[k] > a.f[b] ? k : b), t = now / 1000 * (0.7 + 0.15 * i) + i * 6.283 / eq.length;
+    const x = rx + Math.cos(t) * 24 * s, y = ry - 34 * s + Math.sin(t) * 12 * s;
+    g.globalAlpha = 0.85; g.fillStyle = FACCOL[f]; g.beginPath(); g.arc(x, y, (1.6 + (a.r === 'x' ? 1.4 : a.r === 'r' ? 0.8 : 0)) * s, 0, 7); g.fill();
+    g.globalAlpha = 0.25; g.beginPath(); g.arc(x, y, 5 * s, 0, 7); g.fill();
+  });
+  if (facs().v.echo > 3) { const p = (now / 1500) % 1; g.globalAlpha = (1 - p) * 0.25; g.strokeStyle = FACCOL.echo; g.lineWidth = 1.5; g.beginPath(); g.ellipse(rx, ry - 30 * s, (14 + p * 36) * s, (22 + p * 30) * s, 0, 0, 7); g.stroke(); }
+  g.globalAlpha = 1;
+}
+// ---- the halls: ambient life for each chapter ----
+const HP = [];
+function drawHallFx(g, w, H, now, dt, motion) {
+  const st = Math.min(7, S.story.stage), fy = flY(RD.fy), cap = 34;
+  if (motion && HP.length < cap && Math.random() < dt * (6 + st * 2)) {
+    const p = { x: Math.random() * w, y: Math.random() * H, vx: 0, vy: 0, t: 0, life: 4 + Math.random() * 5, a: 0.3 + Math.random() * 0.4, k: st, ch: String.fromCharCode(65 + (Math.random() * 26 | 0)) };
+    if (st === 0) { p.vy = -6 - Math.random() * 8; p.vx = (Math.random() - 0.5) * 6; }
+    else if (st === 1) { p.y = fy + 2 * scene.s; p.x = Math.random() < 0.5 ? -10 : w + 10; p.vx = (p.x < 0 ? 1 : -1) * (30 + Math.random() * 40); p.life = 12; }
+    else if (st === 2) { p.y = -8; p.vy = 40 + Math.random() * 50; p.life = 8; }
+    else if (st === 3) { p.y = fy - 24 * scene.s; p.x = Math.random() * w; p.vx = (Math.random() - 0.5) * 8; p.life = 7; }
+    else if (st === 4) { p.vx = (Math.random() - 0.5) * 3; p.life = 3 + Math.random() * 3; }
+    else if (st === 5) { p.x = -60; p.y = Math.random() * H; p.vx = 50 + Math.random() * 60; p.life = 9; }
+    else if (st === 6) { p.y = -12; p.vy = 50 + Math.random() * 40; p.life = 9; }
+    else { p.life = 1 + Math.random() * 2; }
+    HP.push(p);
+  }
+  g.save();
+  for (let i = HP.length - 1; i >= 0; i--) {
+    const p = HP[i]; p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.t > p.life || p.k !== st) { HP.splice(i, 1); continue; }
+    const f = Math.sin(Math.PI * p.t / p.life) * p.a;
+    if (st === 0) { g.fillStyle = `rgba(255,224,160,${(f * 0.6).toFixed(3)})`; g.beginPath(); g.arc(p.x, p.y, 1.4, 0, 7); g.fill(); }
+    else if (st === 1) { g.fillStyle = `rgba(216,222,214,${(f * 1.4).toFixed(3)})`; for (let j = 0; j < 4; j++) { g.beginPath(); g.ellipse(p.x - Math.sign(p.vx) * j * 3, p.y, 2.6 - j * 0.4, 1.3, 0, 0, 7); g.fill(); } }
+    else if (st === 2) { g.fillStyle = `rgba(4,2,10,${Math.min(0.9, f * 2).toFixed(3)})`; g.beginPath(); g.ellipse(p.x, p.y, 2.2, 4.5, 0, 0, 7); g.fill(); g.fillRect(p.x - 0.6, p.y - 30, 1.2, 28); }
+    else if (st === 3) { g.fillStyle = `rgba(230,226,212,${(f * 0.35).toFixed(3)})`; g.fillRect(p.x - 5, p.y, 10, 24 * scene.s); g.beginPath(); g.arc(p.x, p.y - 4, 5, 0, 7); g.fill(); }
+    else if (st === 4) { const fl = 0.5 + 0.5 * Math.sin(now / 90 + p.x); g.fillStyle = `rgba(230,70,40,${(f * fl).toFixed(3)})`; g.beginPath(); g.arc(p.x, p.y, 2, 0, 7); g.arc(p.x + 8, p.y, 2, 0, 7); g.fill(); }
+    else if (st === 5) { g.fillStyle = `rgba(250,248,240,${(f * 0.5).toFixed(3)})`; g.fillRect(p.x, p.y, 70, 2); }
+    else if (st === 6) { g.fillStyle = `rgba(250,240,220,${(f * 0.9).toFixed(3)})`; g.font = '16px "Courier Prime",monospace'; g.fillText(p.ch, p.x, p.y); }
+    else { g.fillStyle = `rgba(245,242,232,${(f * 0.5).toFixed(3)})`; g.fillRect(p.x, p.y, 40 + (i % 5) * 20, 14 + (i % 3) * 10); }
+  }
+  g.restore();
+}
+
+// ---- the Satchel tab ----
+function hashS(s) { let x = 7; for (let i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) >>> 0; return x; }
+function artIcon(a, size, locked) {
+  const f = Object.keys(a.f).reduce((b, k) => a.f[k] > a.f[b] ? k : b), colv = FAC[f].c, col = 'currentColor', rc = RAR[a.r].col, hs = hashS(a.id);
+  let sh = '';
+  switch (a.slot) {
+    case 'eye': sh = `<ellipse cx="24" cy="24" rx="15" ry="8" fill="none" stroke="${col}" stroke-width="2"/><circle cx="24" cy="24" r="${4 + hs % 3}" fill="${col}"/><circle cx="25.5" cy="22.5" r="1.3" style="fill:var(--card)"/>`; break;
+    case 'tongue': sh = `<path d="M24 9 C32 18 33 27 24 38 C15 27 16 18 24 9Z" fill="${col}" fill-opacity=".25" stroke="${col}" stroke-width="2"/><path d="M24 17 L24 33" stroke="${col}" stroke-width="1.4"/>`; break;
+    case 'hand': sh = `<rect x="14" y="22" width="20" height="14" rx="4" fill="${col}" fill-opacity=".25" stroke="${col}" stroke-width="2"/>` + [0, 1, 2, 3].map(i => `<rect x="${14.5 + i * 5}" y="${11 + (i % 2) * 2}" width="3.6" height="13" rx="1.8" fill="none" stroke="${col}" stroke-width="1.6"/>`).join(''); break;
+    case 'pocket': sh = `<circle cx="24" cy="28" r="10" fill="${col}" fill-opacity=".22" stroke="${col}" stroke-width="2"/><path d="M24 18 C24 12 30 10 30 14" fill="none" stroke="${col}" stroke-width="1.6"/><circle cx="24" cy="28" r="3" fill="${col}"/>`; break;
+    case 'margin': sh = `<path d="M14 10 V38 M34 10 V38" stroke="${col}" stroke-width="2"/><path d="M19 18 H29 M19 24 H29 M19 30 H26" stroke="${col}" stroke-width="1.4" opacity=".7"/>`; break;
+    default: sh = `<path d="M24 8 L28 20 L40 20 L30 28 L34 40 L24 32 L14 40 L18 28 L8 20 L20 20Z" fill="${col}" fill-opacity=".25" stroke="${col}" stroke-width="1.8"/>`;
+  }
+  let ticks = ''; for (let i = 0; i < (a.r === 'x' ? 8 : a.r === 'r' ? 5 : a.r === 'u' ? 3 : 0); i++) { const t = (hs % 7 + i) * 6.283 / 8; ticks += `<circle cx="${24 + Math.cos(t) * 21}" cy="${24 + Math.sin(t) * 21}" r="1.1" style="fill:${rc}"/>`; }
+  return `<svg viewBox="0 0 48 48" width="${size}" height="${size}" aria-hidden="true" style="color:${colv};${locked ? 'opacity:.25;filter:grayscale(1)' : ''}"><circle cx="24" cy="24" r="22.5" style="fill:var(--card2);stroke:${rc}" stroke-width="${a.r === 'x' ? 2.4 : 1.4}"/>${locked ? '<text x="24" y="31" text-anchor="middle" font-size="22" style="fill:var(--faint)">?</text>' : sh + ticks}</svg>`;
+}
+function facLine(f) {
+  const v = fac(f);
+  switch (f) {
+    case 'insight': return `Weak points ${(insightRadius()).toFixed(2)}× wider · duel windows +${(crv(v, 15, 0.4) * 100).toFixed(0)}% · fragments ×${pw(0.02 * v).toFixed(2)}`;
+    case 'recall': return `${duelPower().recall} forgiven mistakes per duel · memories ×${pw(0.02 * v).toFixed(2)} · mending +${(crv(v, 14, 2) * 100).toFixed(0)}%`;
+    case 'naming': return `Monsters ${(100 * (1 - pw(-nameCut()))).toFixed(0)}% weaker · duel goals ${(crv(v, 15, 0.35) * 100).toFixed(0)}% nearer`;
+    case 'stillness': return `Duels ${(crv(v, 15, 0.6) * 100).toFixed(0)}% longer · great ones ${(crv(v, 25, 0.25) * 100).toFixed(0)}% slower · erasure ${(stillRes() * 100).toFixed(0)}% slower`;
+    default: return `Reading aloud ×${pw(echoHit()).toFixed(2)} · combos build faster · duel ink ×${(1 + echoInk()).toFixed(2)}`;
+  }
+}
+function bSatchel(el) {
+  keyFn = () => ownedN() + '|' + JSON.stringify(S.inv.eq) + '|' + JSON.stringify(S.inv.cons) + '|' + S.story.stage + '|' + S.aeons + S.graces + '|' + Object.values(S.inv.arts).map(o => o.lv).join('');
+  el.append(sect('The Satchel', 'Nothing here sharpens a blade. These are ways of knowing: what you notice, what you remember, what you can name. Wear one artifact per slot. Matching schools resonate.',
+    h('div', { class: 'facs' }, FACS.map(f => {
+      const row = h('div', { class: 'fac' }), v = h('b', { class: 'num' }), l = h('span', { class: 'note' }), cn = h('em');
+      row.append(h('div', { class: 'fh' }, h('span', { style: `color:${FAC[f].c};font-weight:600` }, FAC[f].n), v, cn), h('div', { class: 'pbar' }, h('b', { style: `background:${FAC[f].c}` })), l);
+      up(() => { const x = fac(f); v.textContent = x.toFixed(1); row._b = row.querySelector('.pbar b'); row._b.style.width = pct(x / 40); l.textContent = FAC[f].d + ' ' + facLine(f); const c = facs().cnt[f]; cn.textContent = c >= 2 ? `resonance ×${(1 + facs().conc[f]).toFixed(1)}` : ''; });
+      return row;
+    }))));
+  const slots = h('div', { class: 'slots' });
+  for (const sl of SLOTS) {
+    const b = h('button', { class: 'slot', type: 'button', onclick: () => { if (S.inv.eq[sl.id]) { unequip(sl.id); refresh(); buildBody(); } } });
+    up(() => { const id = S.inv.eq[sl.id], a = id && ARTBY[id], o = a && S.inv.arts[id]; const html = !sl.un() ? `<div class="si"></div><b>${sl.n}</b><small>${sl.lk}</small>` : a ? `<div class="si">${artIcon(a, 40)}</div><b>${a.n}</b><small>${sl.n} · level ${o.lv}${a.q ? ' · ' + QUIRKS[a.q] : ''}</small>` : `<div class="si"></div><b>${sl.n}</b><small>empty</small>`; if (b._h !== html) { b._h = html; b.innerHTML = html; } b.classList.toggle('lock', !sl.un()); });
+    slots.append(b);
+  }
+  el.append(sect('Worn', 'Click a worn artifact to take it off.', slots));
+  const cl = h('div', { class: 'list' });
+  for (const c of CURIOS) {
+    const n = h('em', { class: 'num' });
+    cl.append(h('div', { class: 'item' }, h('div', { class: 'nm' }, c.n, n), h('div', { class: 'd' }, c.d), h('div', { class: 'act' }, buyBtn(() => 'Use', () => (S.inv.cons[c.id] || 0) > 0 && (c.id === 'salt' ? S.erasure > 0.001 : !!(MG.cur && !MG.cur.result)), () => useCurio(c.id)))));
+    up(() => { n.textContent = '×' + (S.inv.cons[c.id] || 0); });
+  }
+  el.append(sect('Curios', 'One-use oddments, found on the shelves and in what the great ones leave behind. During a duel they appear on the bar above the stage.', cl));
+  const fb = h('div', { class: 'row' }, buyBtn(() => `Bind an artifact<small class="num">${fmt(forgeCostL())} ink</small>`, () => S.ink >= forgeCostL(), forge), h('span', { class: 'note' }, 'Ink, string, and a reader who knows what they are doing. What comes out is whatever the current hall has to give.'));
+  el.append(sect('Binding', null, fb));
+  const grid = h('div', { class: 'arts' });
+  const order = ARTS.slice().sort((a, b) => SLOTS.findIndex(s => s.id === a.slot) - SLOTS.findIndex(s => s.id === b.slot) || 'curx'.indexOf(b.r) - 'curx'.indexOf(a.r));
+  for (const a of order) {
+    const o = S.inv.arts[a.id];
+    if (!o) { const vis = a.st <= Math.max(1, S.story.stage);
+      grid.append(h('div', { class: 'art unk' }, h('div', { html: artIcon(a, 44, true) }), h('div', null, h('div', { class: 't' }, '???'), h('div', { class: 'f' }, a.boss ? `Left behind by ${vis ? BOSSES[a.boss].n : 'one of the great ones'}.` : vis ? `${a.slot[0].toUpperCase() + a.slot.slice(1)} · ${RAR[a.r].n}. Somewhere on the shelves.` : 'Deeper down.')))); continue; }
+    const lv = h('em', { class: 'num' }), eqb = buyBtn(() => equippedIn(a.id) ? 'Take off' : 'Wear', () => true, () => { if (equippedIn(a.id)) unequip(equippedIn(a.id)); else equip(a.id); buildBody(); return true; });
+    const an = buyBtn(() => { const o2 = S.inv.arts[a.id]; return o2.lv >= artCap() ? 'Fully annotated' : `Annotate<small class="num">${fmt(annotCostL(a))} ink</small>`; }, () => S.inv.arts[a.id].lv < artCap() && S.ink >= annotCostL(a), () => annotate(a));
+    const fchips = Object.keys(a.f).map(k => `<span style="color:${FAC[k].c}">${FAC[k].n} <b class="num">${(a.f[k] * (1 + 0.25 * (o.lv - 1))).toFixed(1)}</b></span>`).join(' · ');
+    const card2 = h('div', { class: 'art r-' + a.r }, h('div', { html: artIcon(a, 44) }), h('div', { class: 'ab' }, h('div', { class: 't' }, a.n, lv), h('div', { class: 'm' }, `${a.slot} · ${RAR[a.r].n}`), h('div', { class: 'd', html: fchips }), a.q ? h('div', { class: 'q' }, QUIRKS[a.q]) : null, h('div', { class: 'f' }, a.fl), h('div', { class: 'row' }, eqb, an)));
+    up(() => { lv.textContent = 'lv ' + S.inv.arts[a.id].lv; card2.classList.toggle('worn', !!equippedIn(a.id)); });
+    grid.append(card2);
+  }
+  el.append(sect('Collection', 'Level 1 to 9. Finding the same artifact again annotates it for free.', h('p', { class: 'note num' }, `${ownedN()} / ${ARTS.length} found · ${S.inv.found} finds in all`), grid));
+  const hl = h('div', { class: 'milestones' });
+  HALLS.forEach((hh, i) => { const d = h('div', null, h('span', null, ROMAN[i] || '·'), h('span', null, `${i <= S.story.stage ? hh.n + ' — ' + hh.d + ' Favours ' + FAC[hh.s].n + '.' : '???'}`)); hl.append(d); up(() => d.classList.toggle('got', i <= S.story.stage)); });
+  el.append(sect('Halls', 'Each chapter of the Library is a different hall. What turns up on its shelves leans toward one faculty.', hl));
+}
+function bCanon(el) {
+  keyFn = () => CANON.map(u => S.cnUp[u.id] ? 1 : 0).join();
+  const info = h('p', { class: 'lead num' }), grid = h('div', { class: 'cards' });
+  el.append(sect('The Canon', 'Closing the Canon is the last thing a library does: it decides what counts. Everything below grace is let go. The Satchel, the achievements and your journal are not.', info, grid));
+  up(() => { info.innerHTML = `<b style="color:var(--lamp)">${fmt(S.canon)}</b> canon. Canon raises the exponent by ×${(1 + 0.5 * lg(1 + Math.max(0, la(S.canon, 0)))).toFixed(3)}. Closed ${S.canons} time${S.canons === 1 ? '' : 's'}.`; });
+  for (const u of CANON) grid.append(card({ title: u.n, desc: u.d, cost: () => u.c, unit: 'canon', owned: () => !!S.cnUp[u.id], can: () => S.canon >= u.c, buy: () => buyCanonUp(u) }));
+}
+// ---- duel hooks ----
+function duelPower() {
+  return { recall: Math.floor(crv(fac('recall'), 14, 5)) + (hasQ('cautious') ? 1 : 0) + (S.cnUp.cn8 ? 1 : 0) };
+}
+function refreshMiniCurios() {
+  const bar = $('minibar'), box = bar.querySelector('.curios'); if (!box) return; box.innerHTML = '';
+  for (const c of CURIOS) { if (c.id === 'salt' || !(S.inv.cons[c.id] > 0)) continue; box.append(h('button', { class: 'btn mx', title: c.d, onclick: () => useCurio(c.id) }, `${c.n.split(' ').pop()} ×${S.inv.cons[c.id]}`)); }
+}
+TABS.splice(TABS.findIndex(t => t.id === 'kiosk'), 0, { id: 'satchel', n: 'Satchel', show: () => S.story.stage >= 1 || ownedN() > 0, build: bSatchel });
+TABS.splice(TABS.findIndex(t => t.id === 'grace') + 1, 0, { id: 'canon', n: 'Canon', show: () => S.canons > 0 || S.graces >= 3, build: bCanon });
+RES_DEF.push(['canon', 'Canon', () => S.canons > 0, () => S.canon, () => canCanon() ? '+' + fmt(canonGainL()) : '']);
+PRESTIGE.push({ id: 'canon', cls: 'canon', title: 'Close the Canon', verb: 'canon', can: canCanon, gain: canonGainL, show: () => S.graces >= 5 || S.canons > 0, need: () => `Needs ${fmt(60000)} pages this morning`, prog: () => S.runL / 60000, act: () => { doCanon(); toast('The Canon', 'The Library decides what counts.'); },
+  text: () => 'Grace, its devotions and everything beneath it are let go. Artifacts, relics, trials and achievements remain.' });
+A('art1', 'First Find', 'Find an artifact', () => ownedN() >= 1);
+A('art8', 'A Full Satchel', 'Find eight different artifacts', () => ownedN() >= 8);
+A('art16', 'Curator', 'Find sixteen different artifacts', () => ownedN() >= 16);
+A('artall', 'Every Oddity', 'Find every artifact', () => ownedN() >= ARTS.length);
+A('artx', 'Forbidden Reading', 'Own a forbidden artifact', () => ARTS.some(a => a.r === 'x' && S.inv.arts[a.id]));
+A('artlv', 'Thoroughly Annotated', 'Annotate an artifact to level 9', () => Object.values(S.inv.arts).some(o => o.lv >= 9));
+A('conc', 'Resonance', 'Wear three artifacts of the same school', () => FACS.some(f => facs().cnt[f] >= 3));
+A('curio1', 'Spent Something', 'Use a curio', () => S.inv.used >= 1);
+A('canon1', 'The Canon Is Closed', 'Close the Canon', () => S.canons >= 1);
+
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 </script>
