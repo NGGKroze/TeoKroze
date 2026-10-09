@@ -54,16 +54,13 @@ try {
     $missing = @()
     if (-not (Test-Path (Join-Path $msbRoot 'Sdks\Microsoft.NET.Sdk\Sdk'))) { $missing += '.NET desktop build tools (Microsoft.VisualStudio.Workload.ManagedDesktopBuildTools)' }
     if (-not (Get-ChildItem (Join-Path $msbRoot 'Microsoft\VisualStudio') -Recurse -Filter 'Microsoft.Build.Packaging.Pri.Tasks.dll' -ErrorAction SilentlyContinue | Select-Object -First 1)) {
-        $missing += 'Universal Windows Platform build tools (Microsoft.VisualStudio.Workload.UniversalBuildTools)'
+        $missing += 'WinUI application development build tools (във VS 17.14 е заместил "Universal Windows Platform build tools")'
     }
     if ($missing.Count -gt 0) {
-        $vsPath = Split-Path $msbRoot
-        $setup = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\setup.exe'
         Write-Host ''
         Write-Host 'Във Visual Studio липсват нужните компоненти:' -ForegroundColor Yellow
         $missing | ForEach-Object { Write-Host "  - $_" -ForegroundColor Yellow }
-        Write-Host 'Visual Studio Installer -> Modify -> отметнете горните workloads -> Modify. Или от команден ред (като администратор):' -ForegroundColor Yellow
-        Write-Host "  `"$setup`" modify --installPath `"$vsPath`" --add Microsoft.VisualStudio.Workload.ManagedDesktopBuildTools --add Microsoft.VisualStudio.Workload.UniversalBuildTools --includeRecommended --passive --norestart" -ForegroundColor Cyan
+        Write-Host 'Visual Studio Installer -> Modify (на Build Tools 2022) -> отметнете горните workloads -> Modify.' -ForegroundColor Yellow
         throw 'Липсват компоненти на Visual Studio.'
     }
     $msbLog = Join-Path $PSScriptRoot 'dist\msbuild.log'
