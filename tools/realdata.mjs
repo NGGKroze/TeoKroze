@@ -9,7 +9,7 @@ const D = process.env.DATA; const out = process.argv[2]; const only = process.ar
 fs.mkdirSync(out, { recursive: true });
 const F = (...p) => path.join(D, ...p);
 const CASES = {
-  frankie:   [[F('THE FRANKIE SHOP - DONE','Raw Data','THE FRANKIE SHOP PL-TROUSERS EU.xls')]],
+  frankie:   [[F('THE FRANKIE SHOP - DONE','Raw Data','THE FRANKIE SHOP PL-TROUSERS EU.xls')], [F('THE FRANKIE SHOP - DONE','Raw Data','THE FRANKIE SHOP PL-TROUSERS US.xls')]],
   reformation:[[F('REFORMATION - DONE','PL _REFORMATION EU.xlsx')]],
   jacquemus: [[F('JACQUEMUS - Done','PACKING LIST.xlsx'), F('JACQUEMUS - Done','BARCODE FILE.xlsx')]],
   ganni:     [[F('GANNI - DONE','Packing List Example_Printed Stretch Cotton Open Collar Jacket EU.xlsx')]],
@@ -56,6 +56,7 @@ for (const [id, sets] of Object.entries(CASES)) {
     await pg.waitForTimeout(2500);
     const text = (await pg.evaluate(() => document.body.innerText)).replace(/\s+\n/g, '\n').slice(0, 700);
     await pg.screenshot({ path: `${out}/${id}${i}.png`, fullPage: false });
+    fs.writeFileSync(`${out}/${id}${i}.txt`, await pg.evaluate(() => document.body.innerText + '\n' + [...document.querySelectorAll('input,textarea,select')].map(e => e.value).join('\n')));
     console.log(`\n===== ${id}#${i}  files=${files.map(f => path.basename(f)).join(' + ')}\nerrors: ${errs.length ? '\n  ' + errs.join('\n  ') : 'none'}\ndownloads: ${dl.join(', ') || '-'}\n--- text:\n${text}`);
     await ctx.close();
   }
