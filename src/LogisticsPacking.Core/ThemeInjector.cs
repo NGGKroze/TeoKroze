@@ -28,6 +28,17 @@ public static class ThemeInjector
             .Replace("{{CSS}}", JsonSerializer.Serialize(css));
     }
 
+    /// <summary>Единната структура (runtime\lps-layout.js + modules/&lt;id&gt;/layout.json). null = без layout.json или изключено.</summary>
+    public static string? BuildLayoutScript(AppPaths paths, ModuleInfo module)
+    {
+        if (!module.Manifest.Layout) return null;
+        var jsPath = Path.Combine(paths.RuntimeDir, "lps-layout.js");
+        var cfgPath = Path.Combine(module.Directory, "layout.json");
+        if (!File.Exists(jsPath) || !File.Exists(cfgPath)) return null;
+        using var doc = JsonDocument.Parse(File.ReadAllText(cfgPath), new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+        return File.ReadAllText(jsPath).Replace("{{LAYOUT}}", doc.RootElement.GetRawText());
+    }
+
     /// <summary>Помощникът LPS.engine (runtime\lps-engine.js) - достъп до общия OCR/PDF engine от страниците.</summary>
     public static string? BuildEngineScript(AppPaths paths)
     {

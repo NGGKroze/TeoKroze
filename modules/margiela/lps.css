@@ -3,3 +3,7 @@
   html[data-lps="margiela"] { --accent:#2f3034; }
   html[data-lps="margiela"] button.primary { background:#2f3034; border-color:#2f3034; }
 }
+@media screen {
+  html[data-lps="margiela"] .app, html[data-lps="margiela"] .controls { max-width: none !important; box-shadow: none !important; border: 0 !important; background: transparent !important; padding: 0 !important; margin: 0 !important; }
+  html[data-lps="margiela"] .settings { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+}

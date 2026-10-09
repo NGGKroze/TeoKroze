@@ -1,0 +1,28 @@
+{
+  "title": "Longchamp – Excel етикети от опаковъчен лист",
+  "subtitle": "Опаковъчен лист (.xlsx) → Excel етикети по шаблона на Longchamp (4 на лист)",
+  "hide": [
+    "div.bg-blue-600.text-white.p-6"
+  ],
+  "side": [
+    {
+      "title": "1. Файл",
+      "move": [
+        "#dropZone"
+      ]
+    },
+    {
+      "card": false,
+      "move": [
+        "div.bg-gray-50.p-4.rounded-lg.border"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "sel": "#generateBtn",
+      "kind": "primary",
+      "side": "right"
+    }
+  ]
+}

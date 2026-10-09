@@ -1,0 +1,44 @@
+{
+  "title": "Dior – опаковъчен лист и етикети",
+  "subtitle": "OA + COMMESSA PDF → опаковъчен лист (XLSX) и етикети",
+  "hide": [
+    "#controls > h1"
+  ],
+  "side": [
+    {
+      "title": "1. Файлове",
+      "move": [
+        "#drop-zone",
+        "#status"
+      ]
+    },
+    {
+      "title": "2. Данни и настройки",
+      "move": [
+        "#pdf-panel > .grid"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "sel": "#rebuild-btn",
+      "kind": "secondary",
+      "side": "left"
+    },
+    {
+      "sel": "#download-xlsx-btn",
+      "kind": "primary",
+      "side": "right"
+    },
+    {
+      "sel": "#download-labels-xlsx-btn",
+      "kind": "primary",
+      "side": "right"
+    },
+    {
+      "sel": "#download-pdf-btn",
+      "kind": "secondary",
+      "side": "right"
+    }
+  ]
+}

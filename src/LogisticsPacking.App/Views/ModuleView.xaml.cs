@@ -119,6 +119,11 @@ public sealed partial class ModuleView : UserControl, IDisposable
             var themeScript = ThemeInjector.BuildScript(AppServices.Paths, _module);
             if (themeScript != null) _ = core.AddScriptToExecuteOnDocumentCreatedAsync(themeScript);
         }
+        if (AppServices.Settings.UnifiedLayout)
+        {
+            var layoutScript = ThemeInjector.BuildLayoutScript(AppServices.Paths, _module);
+            if (layoutScript != null) _ = core.AddScriptToExecuteOnDocumentCreatedAsync(layoutScript);
+        }
         if (AppServices.Settings.BulgarianUi)
         {
             var i18nScript = ThemeInjector.BuildI18nScript(AppServices.Paths, _module);

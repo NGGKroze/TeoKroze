@@ -1,0 +1,27 @@
+{
+  "title": "ERES – генератор на етикети",
+  "subtitle": "Опаковъчен лист (XLSX/CSV) → етикети A4 за печат",
+  "hide": [
+    "#controlPanel"
+  ],
+  "side": [
+    {
+      "title": "1. Файл",
+      "move": [
+        "#emptyState"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "sel": "#newBatchBtn",
+      "kind": "danger",
+      "side": "left"
+    },
+    {
+      "sel": "#printBtn",
+      "kind": "primary",
+      "side": "right"
+    }
+  ]
+}

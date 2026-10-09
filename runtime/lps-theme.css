@@ -55,3 +55,66 @@
     backdrop-filter: blur(6px);
   }
 }
+
+/* ===== Единна структура: док (заглавие + ляв панел + лента с действия) ===== */
+@media screen {
+  html.lps-docked body { display: block !important; margin: 0 !important; padding: 76px 24px 88px 424px !important; min-height: 100vh; }
+  html.lps-docked.lps-no-side body { padding-left: 24px !important; }
+  html.lps-docked.lps-no-bar body { padding-bottom: 24px !important; }
+  .lps-hidden { display: none !important; }
+
+  #lps-head { position: fixed; z-index: 40; top: 0; left: 0; right: 0; height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 0 24px; background: rgba(255,255,255,.94); border-bottom: 2px solid var(--lps-brass); box-shadow: 0 6px 20px rgba(31,32,35,.07); backdrop-filter: blur(6px); }
+  #lps-head h1 { margin: 0 !important; font-size: 20px !important; line-height: 1.2 !important; font-weight: 700 !important; color: var(--lps-ink) !important; text-transform: none !important; letter-spacing: -.01em !important; }
+  #lps-head p { margin: 2px 0 0 !important; font-size: 13px !important; color: var(--lps-ink-soft) !important; font-weight: 400 !important; }
+  .lps-head-right { display: flex; align-items: center; gap: 10px; }
+
+  #lps-side { position: fixed; z-index: 40; top: 64px; left: 0; bottom: 72px; width: 408px; overflow-y: auto; overflow-x: hidden; padding: 16px;
+    background: #e6e2da; border-right: 1px solid var(--lps-line); }
+  html.lps-no-bar #lps-side { bottom: 0; }
+  .lps-card { background: #fff; border: 1px solid var(--lps-line); border-radius: 14px; padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(31,32,35,.05); }
+  .lps-card > h2 { margin: 0 0 12px !important; font-size: 12px !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: .06em; color: var(--lps-ink-soft) !important; }
+  .lps-card > * { max-width: 100% !important; box-sizing: border-box; }
+  .lps-card > *:not(h2) + *:not(h2) { margin-top: 12px; }
+  /* вътре в лявата колона всичко е на една колона и се побира */
+  #lps-side .grid, #lps-side .row, #lps-side .row3, #lps-side .row6, #lps-side .two, #lps-side .field-grid { grid-template-columns: 1fr !important; }
+  #lps-side [class*="grid-cols-"]:not([class*="grid-cols-1"]) { grid-template-columns: 1fr 1fr !important; }
+  #lps-side .col-span-2, #lps-side [class*="col-span-"] { grid-column: auto !important; }
+  #lps-side input:not([type=checkbox]):not([type=radio]):not([type=file]), #lps-side select, #lps-side textarea { width: 100% !important; box-sizing: border-box; font-size: 14px !important; min-height: 40px; }
+  #lps-side label { font-size: 12px !important; font-weight: 600 !important; color: var(--lps-ink-soft) !important; text-transform: none !important; letter-spacing: 0 !important; }
+  #lps-side [class*="h-["] { height: auto !important; }
+  #lps-side [id*="drop"], #lps-side .drop, #lps-side .dropzone { min-height: 150px; }
+
+  #lps-bar { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; height: 72px; display: flex; align-items: center; gap: 12px; padding: 0 24px;
+    background: rgba(255,255,255,.96); border-top: 1px solid var(--lps-line); box-shadow: 0 -6px 20px rgba(31,32,35,.06); }
+  #lps-bar.lps-empty { display: none; }
+  #lps-bar .lps-spacer { flex: 1; }
+  .lps-bar-left, .lps-bar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .lps-btn { height: 44px !important; min-width: 120px; padding: 0 20px !important; border-radius: 12px !important; font-size: 14px !important; font-weight: 600 !important;
+    line-height: 1 !important; cursor: pointer; border: 1px solid #2f3034 !important; box-shadow: none !important; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; text-transform: none !important; letter-spacing: 0 !important; }
+  .lps-btn:disabled { opacity: .45 !important; cursor: not-allowed; }
+  .lps-btn.lps-primary { background: #2f3034 !important; color: #fff !important; }
+  .lps-btn.lps-primary:hover:not(:disabled) { background: #131416 !important; }
+  .lps-btn.lps-secondary { background: #fff !important; color: #2f3034 !important; }
+  .lps-btn.lps-secondary:hover:not(:disabled) { background: #f3f0ea !important; }
+  .lps-btn.lps-danger { background: #fff !important; color: #a83a32 !important; border-color: #a83a32 !important; }
+  .lps-btn.lps-danger:hover:not(:disabled) { background: #fbefee !important; }
+}
+@media print {
+  #lps-head, #lps-side, #lps-bar { display: none !important; }
+  html.lps-docked body { padding: 0 !important; }
+}
+@media screen {
+  .lps-bare > * { margin-bottom: 14px !important; max-width: 100% !important; }
+}
+@media screen { .lps-card.lps-collapsed { display: none !important; } }
+@media screen {
+  #lps-side [class*="span-"] { grid-column: auto !important; }
+  #lps-side .controls { grid-template-columns: 1fr 1fr !important; }
+  #lps-side .checkline, #lps-side .checkline.span-4 { grid-column: 1 / -1 !important; }
+}
+@media screen {
+  #lps-side h1, #lps-side h3, #lps-side .text-xl, #lps-side .text-2xl, #lps-side .text-3xl { font-size: 15px !important; line-height: 1.3 !important; }
+  #lps-side p, #lps-side .text-sm { font-size: 13px; }
+  #lps-side .rounded-\[2rem\], #lps-side .rounded-\[3rem\], #lps-side .rounded-3xl { border-radius: 14px !important; }
+}

@@ -1,0 +1,9 @@
+@media screen {
+  html[data-lps="ami"] #ui-wrapper { max-width: none !important; padding: 0 !important; } html[data-lps="ami"] #workspace { display: block !important; } html[data-lps="ami"] #lps-side textarea { min-height: 120px; }
+}
+@media screen {
+  html[data-lps="ami"] #lps-side #drop-zone { border-radius: 14px !important; padding: 14px !important; background: transparent !important; box-shadow: none !important; border: 0 !important; }
+  html[data-lps="ami"] #lps-side .rounded-\[2rem\] { border-radius: 14px !important; padding: 14px !important; }
+  html[data-lps="ami"] #lps-side textarea#pkl-paste { min-height: 160px !important; }
+  html[data-lps="ami"] #lps-side #generate-btn { width: 100%; padding: 0 !important; }
+}

@@ -5,3 +5,10 @@
   html[data-lps="asphalte"] .logo { background: linear-gradient(135deg,#2f3034,#131416) !important; }
   html[data-lps="asphalte"] .tab.active, html[data-lps="asphalte"] .rtab.active, html[data-lps="asphalte"] .lang-pill { background:#2f3034 !important; border-color:#2f3034 !important; }
 }
+@media screen {
+  html[data-lps="asphalte"] main { display: block !important; padding: 0 !important; max-width: none !important; }
+  html[data-lps="asphalte"] section.workspace { width: 100% !important; }
+  html[data-lps="asphalte"] #lps-side .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  html[data-lps="asphalte"] #lps-side .tab { flex: 1; min-width: 100px; }
+  html[data-lps="asphalte"] .primary-action { width: 100%; }
+}

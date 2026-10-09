@@ -1,0 +1,16 @@
+{
+  "title": "Zadig & Voltaire – опаковъчен лист и етикети",
+  "subtitle": "PDF поръчки или готов PL → Packing List (XLSX) и етикети за кашони",
+  "hide": [
+    "body > header"
+  ],
+  "side": [
+    {
+      "card": false,
+      "move": [
+        "main > .grid > section.card:first-child"
+      ]
+    }
+  ],
+  "actions": []
+}

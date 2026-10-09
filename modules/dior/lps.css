@@ -5,3 +5,10 @@
   html[data-lps="dior"] button.secondary { background:#46474d; }
   html[data-lps="dior"] button.ghost { background:#fff; color:#26272b; }
 }
+@media screen {
+  html[data-lps="dior"] #controls { background: transparent !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  html[data-lps="dior"] .panel { margin-top: 0 !important; border-top: 0 !important; padding-top: 0 !important; }
+}
+@media screen {
+  html[data-lps="dior"] #pages-container { align-items: flex-start !important; overflow-x: auto; }
+}

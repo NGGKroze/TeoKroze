@@ -5,3 +5,6 @@
   }
   html[data-lps="stella-suzie"] header.bg-brand-900 h1, html[data-lps="stella-suzie"] header.bg-brand-900 p, html[data-lps="stella-suzie"] header.bg-brand-900 i { color:#26272b !important; }
 }
+@media screen {
+  html[data-lps="stella-suzie"] main { max-width: none !important; padding: 0 !important; } html[data-lps="stella-suzie"] main > section { width: 100% !important; }
+}

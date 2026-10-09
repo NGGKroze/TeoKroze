@@ -3,12 +3,14 @@ import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_PATH);
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'modules');
+import { lpsScripts } from './lps_inject.mjs';
+const repo = path.join(path.dirname(fileURLToPath(import.meta.url)), '..'); const root = path.join(repo, 'modules');
 const T = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript' };
 const srv = http.createServer((q, r) => { const p = path.join(root, decodeURIComponent(q.url.split('?')[0])); if (!fs.existsSync(p) || fs.statSync(p).isDirectory()) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'Content-Type': T[path.extname(p)] || 'application/octet-stream' }); fs.createReadStream(p).pipe(r); }).listen(0);
 const b = await chromium.launch({ executablePath: process.env.CHROMIUM });
 const pg = await (await b.newContext({ acceptDownloads: true })).newPage();
 const errs = []; pg.on('pageerror', e => errs.push(String(e).slice(0, 150))); pg.on('dialog', d => d.accept());
+if (process.env.THEME) for (const sc of lpsScripts(repo, 'dior')) await pg.addInitScript(sc);
 await pg.goto(`http://127.0.0.1:${srv.address().port}/dior/index.html`); await pg.waitForTimeout(500);
 await pg.evaluate(() => {
   jobs = [mergeJob(null, { commessaNo: '99911', pap: 'PAP F', style: '283U640W0533', color: '542 Bleu marine', description: 'PANTALON', oaNo: '1264457',

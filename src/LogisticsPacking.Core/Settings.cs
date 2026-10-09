@@ -12,6 +12,8 @@ public sealed class AppSettings
     public bool UnifiedTheme { get; set; } = true;
     /// <summary>Превод на интерфейса на клиентските екрани на български.</summary>
     public bool BulgarianUi { get; set; } = true;
+    /// <summary>Единна структура на клиентските екрани (заглавие, ляв панел, лента с действия).</summary>
+    public bool UnifiedLayout { get; set; } = true;
 
     public string ResolveOutputDirectory()
     {

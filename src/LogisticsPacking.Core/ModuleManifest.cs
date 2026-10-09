@@ -20,6 +20,8 @@ public sealed class ModuleManifest
     public bool Theme { get; init; } = true;
     /// <summary>false = без превод на български (модулът остава на оригиналния си език).</summary>
     public bool Translate { get; init; } = true;
+    /// <summary>false = без единната структура (док) - модулът запазва собственото си оформление.</summary>
+    public bool Layout { get; init; } = true;
     public string Summary { get; init; } = "";
     public string Note { get; init; } = "";
     public List<string> Requires { get; init; } = new();

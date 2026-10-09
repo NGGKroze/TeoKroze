@@ -2,3 +2,6 @@
 @media screen {
   html[data-lps="frankie"] { --accent:#2f3034; }
 }
+@media screen {
+  html[data-lps="frankie"] main.app { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+}

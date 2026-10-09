@@ -15,3 +15,10 @@
   html[data-lps="loreal"] .text-violet-700, html[data-lps="loreal"] .text-violet-800, html[data-lps="loreal"] .text-violet-950, html[data-lps="loreal"] .text-cyan-800, html[data-lps="loreal"] .text-cyan-950, html[data-lps="loreal"] .text-fuchsia-950 { color:#2f3034 !important; }
   html[data-lps="loreal"] .accent-sky-700 { accent-color:#2f3034; }
 }
+@media screen {
+  html[data-lps="loreal"] main.max-w-6xl { max-width: none !important; padding: 0 !important; } html[data-lps="loreal"] section.bg-white.shadow-xl { box-shadow: none !important; background: transparent !important; } html[data-lps="loreal"] .p-8.space-y-8 { padding: 0 !important; }
+}
+@media screen {
+  html[data-lps="loreal"] #lps-side section.grid, html[data-lps="loreal"] #lps-side .grid { grid-template-columns: 1fr !important; }
+  html[data-lps="loreal"] #lps-side .space-y-8 > * + * { margin-top: 14px !important; }
+}

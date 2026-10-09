@@ -5,3 +5,6 @@
   html[data-lps="zadig"] header p { color:#5b5c62 !important; }
   html[data-lps="zadig"] .dropzone.drag { background:#f3ede0 !important; border-color:#b08d57 !important; }
 }
+@media screen {
+  html[data-lps="zadig"] main { max-width: none !important; padding: 0 !important; } html[data-lps="zadig"] main > .grid { display: block !important; } html[data-lps="zadig"] .lps-bare > section.card { width: 100% !important; }
+}

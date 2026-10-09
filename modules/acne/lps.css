@@ -10,3 +10,7 @@
   html[data-lps="acne"] .btn.blue { background:#2f3034 !important; }
   html[data-lps="acne"] .pack-preview th { background:#1f2023 !important; }
 }
+@media screen {
+  html[data-lps="acne"] main { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+  html[data-lps="acne"] section.panel:has(> .toolbar) { display: none !important; }
+}

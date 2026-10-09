@@ -222,3 +222,49 @@ public class I18nTests
         }
     }
 }
+
+public class LayoutTests
+{
+    [Fact]
+    public void BuildsLayoutScriptFromLayoutJson()
+    {
+        using var t = new TempDir();
+        var dir = t.Module("modules", "m", """{"id":"m","name":"M"}""");
+        File.WriteAllText(Path.Combine(dir, "layout.json"), """{"title":"T","side":[{"move":["#a"]}]}""");
+        var rt = Path.Combine(t.Path, "runtime"); Directory.CreateDirectory(rt);
+        File.WriteAllText(Path.Combine(rt, "lps-layout.js"), "var CFG = {{LAYOUT}};");
+        var module = ModuleCatalog.Load(Path.Combine(t.Path, "modules"), null).Modules.Single();
+        var js = ThemeInjector.BuildLayoutScript(new AppPaths(t.Path, t.Path), module)!;
+        Assert.Contains("\"title\":\"T\"", js.Replace(" ", ""));
+        Assert.DoesNotContain("{{", js);
+    }
+
+    [Fact]
+    public void LayoutCanBeDisabledOrMissing()
+    {
+        using var t = new TempDir();
+        var dir = t.Module("modules", "off", """{"id":"off","name":"X","layout":false}""");
+        File.WriteAllText(Path.Combine(dir, "layout.json"), "{}");
+        t.Module("modules", "none", """{"id":"none","name":"Y"}""");
+        var rt = Path.Combine(t.Path, "runtime"); Directory.CreateDirectory(rt);
+        File.WriteAllText(Path.Combine(rt, "lps-layout.js"), "{{LAYOUT}}");
+        var cat = ModuleCatalog.Load(Path.Combine(t.Path, "modules"), null);
+        var paths = new AppPaths(t.Path, t.Path);
+        Assert.Null(ThemeInjector.BuildLayoutScript(paths, cat.Find("off")!));
+        Assert.Null(ThemeInjector.BuildLayoutScript(paths, cat.Find("none")!));
+    }
+
+    [Fact]
+    public void AllRealLayoutFilesAreValidJson()
+    {
+        var dir = AppContext.BaseDirectory;
+        while (dir != null && !Directory.Exists(Path.Combine(dir, "modules"))) dir = Path.GetDirectoryName(dir);
+        var paths = new AppPaths(dir!, Path.Combine(Path.GetTempPath(), "lps-y"));
+        foreach (var m in ModuleCatalog.Load(paths).Modules)
+        {
+            var js = ThemeInjector.BuildLayoutScript(paths, m);
+            Assert.NotNull(js);
+            Assert.DoesNotContain("{{LAYOUT}}", js);
+        }
+    }
+}
