@@ -525,7 +525,28 @@
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(await file.arrayBuffer());
     const found = findPackingSheetAndHeader(wb);
-    if (!found) throw new Error(`No PL table header found in ${file.name}. Expected columns such as N° box, N° order, Ref/color, size, GENCOD, Quantity and Gross kg.`);
+    if (!found) {
+      const hint = [];
+      wb.eachSheet(ws => {
+        const rows = [];
+        ws.eachRow({ includeEmpty: false }, (row) => { if (rows.length < 60) rows.push(row.values.slice(1).map(v => (v && v.result !== undefined) ? v.result : (v && v.richText ? v.richText.map(x => x.text).join('') : v))); });
+        if (rows.some(r => r.some(c => /^hanging$/i.test(String(c || '').trim())))) hint.push('Лист „' + ws.name + '“: формат „Hanging“ (закачалки) - няма номера на кашони и бруто тегло; етикетите за такъв PL се правят ръчно.');
+        if (window.LPS && LPS.diag) {
+          const r = LPS.diag.analyze(rows, {
+            box: { label: 'N° box', header: [/^n°\s*box$/i, /^box$/i] },
+            order: { label: 'N° order', header: [/^n°\s*order$/i, /^order/i] },
+            ref: { label: 'Ref/color', header: [/ref(erence)?\s*\/?\s*colou?r/i] },
+            size: { label: 'size', header: [/^size$/i] },
+            gencod: { label: 'GENCOD', header: [/gencod|ean/i], type: 'ean' },
+            qty: { label: 'Quantity', header: [/^quantity$|^qty$/i] },
+            gross: { label: 'Gross kg', header: [/gross/i], required: false }
+          });
+          hint.push('Лист „' + ws.name + '“:'); r.lines.forEach(l => hint.push('  ' + l));
+        }
+      });
+      if (window.LPS && LPS.diag) LPS.diag.report('Kenzo: ' + file.name + ' - не е намерена таблица на packing list', hint);
+      throw new Error(`No PL table header found in ${file.name}. Expected columns such as N° box, N° order, Ref/color, size, GENCOD, Quantity and Gross kg.`);
+    }
     const {ws, row:headerRow, map} = found;
     const rawRows = [];
     let blanks = 0;

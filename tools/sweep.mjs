@@ -24,6 +24,8 @@ for (const c of spec) {
   const errs = [], dl = [];
   pg.on('pageerror', e => errs.push('PAGEERR ' + String(e).slice(0, 140))); pg.on('console', m => { if (m.type() === 'error' && !/404|favicon/.test(m.text())) errs.push('CONSOLE ' + m.text().slice(0, 140)); });
   pg.on('dialog', d => { errs.push('DIALOG ' + d.message().slice(0, 160)); d.dismiss().catch(() => {}); }); pg.on('download', d => dl.push(d.suggestedFilename()));
+  await pg.addInitScript({ path: path.join(repo, 'runtime', 'lps-engine.js') }); // LPS.diag както в програмата
+  await pg.evaluate(() => 0).catch(() => {});
   await pg.goto(url); await pg.waitForTimeout(600);
   try {
     for (const s of c.pre || []) { await pg.click(s, { timeout: 4000 }); await pg.waitForTimeout(300); }
@@ -35,6 +37,8 @@ for (const c of spec) {
   await pg.waitForTimeout(c.settle ?? 2500);
   const sel = c.preview || PREVIEW[c.module] || 'body';
   await pg.evaluate(() => document.querySelectorAll('input:not([type=file]):not([type=checkbox]),textarea,select').forEach(i => { const v = i.tagName === 'SELECT' ? (i.selectedOptions[0] || {}).text : i.value; const s = document.createElement('span'); s.textContent = v || ' '; i.replaceWith(s); })); // значенията на полетата да се виждат в текста
+  const diag = await pg.evaluate(() => { const d = document.getElementById('lps-diag'); return d ? d.innerText : ''; });
+  if (diag) errs.push('DIAG ' + diag.replace(/\s+/g, ' ').slice(0, 700));
   const info = await pg.evaluate(s => { const t = [...document.querySelectorAll(s)].map(e => e.innerText).join('\n'); const st = document.querySelector('#status, #statusBox, .status, #message, #log, #logMessages'); return { text: t.replace(/\n{2,}/g, '\n').slice(0, 1500), status: st ? st.innerText.slice(0, 300) : '', len: t.length }; }, sel);
   const f = `${OUT}/${c.module}_${++n}.txt`; fs.writeFileSync(f, await pg.evaluate(s => [...document.querySelectorAll(s)].map(e => e.innerText).join('\n'), sel));
   console.log(`\n##### [${c.module}] ${c.label || ''}  files=${(c.files || []).map(x => path.basename(x)).join(' + ')}\nerrors: ${errs.length ? '\n  ' + [...new Set(errs)].join('\n  ') : 'none'}${dl.length ? '\ndownloads: ' + dl.join(', ') : ''}\nstatus: ${info.status.replace(/\s+/g, ' ').slice(0, 220)}\npreview chars: ${info.len}  -> ${f}\n${c.show === false ? '' : info.text.split('\n').slice(0, c.lines ?? 8).join('\n')}`);
