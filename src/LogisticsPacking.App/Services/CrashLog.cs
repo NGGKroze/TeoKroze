@@ -23,6 +23,27 @@ internal static class CrashLog
         return list.ToArray();
     }
 
+    private static string FlagFile => Path.Combine(Path.GetDirectoryName(Primary) ?? Path.GetTempPath(), "starting.flag");
+
+    /// <summary>Отбелязва началото на стартиране. true = предишното не е стигнало до "стабилно" (срив) -> безопасен режим.</summary>
+    public static bool BeginAttempt()
+    {
+        try
+        {
+            var crashed = File.Exists(FlagFile);
+            Directory.CreateDirectory(Path.GetDirectoryName(FlagFile)!);
+            File.WriteAllText(FlagFile, DateTime.Now.ToString("O"));
+            return crashed;
+        }
+        catch (Exception) { return false; }
+    }
+
+    /// <summary>Стартирането е успешно (или програмата е затворена нормално).</summary>
+    public static void EndAttempt()
+    {
+        try { File.Delete(FlagFile); } catch (Exception) { }
+    }
+
     public static string Primary => Files.FirstOrDefault() ?? "";
 
     public static void Write(string message)

@@ -47,16 +47,8 @@
                                   Background="{StaticResource GraniteBrush}">
                                 <!-- Мащабът (потъване/повдигане) се прави от Motion.Press в кода -->
                                 <Border x:Name="TileGloss" Background="{StaticResource GlossBrush}" CornerRadius="14" IsHitTestVisible="False" />
-                                <Border x:Name="TileShine" Background="#22FFFFFF" CornerRadius="14" Opacity="0" IsHitTestVisible="False">
-                                    <Border.OpacityTransition>
-                                        <ScalarTransition Duration="0:0:0.18" />
-                                    </Border.OpacityTransition>
-                                </Border>
-                                <Border x:Name="TilePressShade" Background="#33000000" CornerRadius="14" Opacity="0" IsHitTestVisible="False">
-                                    <Border.OpacityTransition>
-                                        <ScalarTransition Duration="0:0:0.1" />
-                                    </Border.OpacityTransition>
-                                </Border>
+                                <Border x:Name="TileShine" Background="#22FFFFFF" CornerRadius="14" Opacity="0" IsHitTestVisible="False" />
+                                <Border x:Name="TilePressShade" Background="#33000000" CornerRadius="14" Opacity="0" IsHitTestVisible="False" />
                                 <ContentPresenter HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                                                   VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
                                 <VisualStateManager.VisualStateGroups>
