@@ -3,20 +3,20 @@
  "themes": [
   {
    "id": "granite",
-   "name": "Гранит",
-   "desc": "Светъл лъскав сив гранит",
+   "name": "Графитен гранит",
+   "desc": "Тъмен сив гранит със светли жилки",
    "wall": "wall_granite.jpg",
    "tile": "tile_granite.jpg",
    "shell": {
-    "ink": "#26272B",
-    "inkSoft": "#5B5C62",
-    "stoneText": "#F4F1EA",
-    "stoneSoft": "#C9C5BC",
-    "tileText": "#202125",
-    "tileSoft": "#44454B",
-    "brass": "#B08D57",
-    "tileBorder": "#8C8F96",
-    "bar": "#F01F2023",
+    "ink": "#E9EAEC",
+    "inkSoft": "#A5A8AE",
+    "stoneText": "#F1F1F2",
+    "stoneSoft": "#B5B8BE",
+    "tileText": "#F2F2F3",
+    "tileSoft": "#BFC2C8",
+    "brass": "#B9975B",
+    "tileBorder": "#55585F",
+    "bar": "#F0121316",
     "paper": "#F5F2EC"
    },
    "web": {
@@ -33,151 +33,8 @@
     "sel": "#d9c7a3",
     "thumb": "#b6b1a5"
    },
-   "mode": "light",
-   "gloss": 0.55
-  },
-  {
-   "id": "midnight",
-   "name": "Среднощно синьо",
-   "desc": "Тъмен синьо-лазурен камък",
-   "wall": "wall_midnight.jpg",
-   "tile": "tile_midnight.jpg",
-   "shell": {
-    "ink": "#EAF0FB",
-    "inkSoft": "#A9B8D6",
-    "stoneText": "#EEF3FC",
-    "stoneSoft": "#A9B8D6",
-    "tileText": "#F2F6FF",
-    "tileSoft": "#C3CFE8",
-    "brass": "#C7A96B",
-    "tileBorder": "#5C74A8",
-    "bar": "#F00B1530",
-    "paper": "#EEF1F8"
-   },
-   "web": {
-    "bg": "#e7ebf3",
-    "side": "#dde3ef",
-    "line": "#c9d2e4",
-    "ink": "#17213a",
-    "inkSoft": "#51607f",
-    "accent": "#1e3a6e",
-    "accentDark": "#0f2247",
-    "brass": "#b99a58",
-    "brassDark": "#8a6f35",
-    "soft": "#eef0f7",
-    "sel": "#b9c8ea",
-    "thumb": "#a7b3cf"
-   },
    "mode": "dark",
-   "gloss": 0.55
-  },
-  {
-   "id": "system",
-   "name": "Системна",
-   "desc": "Светла или тъмна автоматично, като Windows",
-   "auto": true,
-   "mode": "light",
-   "gloss": 0.0,
-   "wall": "wall_system-light.jpg",
-   "tile": "tile_system-light.jpg",
-   "shell": {
-    "ink": "#1B1B1B",
-    "inkSoft": "#5F5F5F",
-    "stoneText": "#1B1B1B",
-    "stoneSoft": "#5F5F5F",
-    "tileText": "#1B1B1B",
-    "tileSoft": "#5F5F5F",
-    "brass": "#0F6CBD",
-    "tileBorder": "#D1D1D1",
-    "bar": "#FFFFFFFF",
-    "paper": "#F5F5F5"
-   },
-   "web": {
-    "bg": "#f3f3f3",
-    "side": "#ececec",
-    "line": "#d6d6d6",
-    "ink": "#1b1b1b",
-    "inkSoft": "#5f5f5f",
-    "accent": "#0f6cbd",
-    "accentDark": "#0a4a82",
-    "brass": "#0f6cbd",
-    "brassDark": "#0a4a82",
-    "soft": "#eaf2fb",
-    "sel": "#bcd8f3",
-    "thumb": "#b5b5b5"
-   }
-  },
-  {
-   "id": "system-light",
-   "name": "Системна (светла)",
-   "desc": "Чист светъл вид като Windows",
-   "hidden": true,
-   "mode": "light",
-   "gloss": 0.0,
-   "wall": "wall_system-light.jpg",
-   "tile": "tile_system-light.jpg",
-   "shell": {
-    "ink": "#1B1B1B",
-    "inkSoft": "#5F5F5F",
-    "stoneText": "#1B1B1B",
-    "stoneSoft": "#5F5F5F",
-    "tileText": "#1B1B1B",
-    "tileSoft": "#5F5F5F",
-    "brass": "#0F6CBD",
-    "tileBorder": "#D1D1D1",
-    "bar": "#FFFFFFFF",
-    "paper": "#F5F5F5"
-   },
-   "web": {
-    "bg": "#f3f3f3",
-    "side": "#ececec",
-    "line": "#d6d6d6",
-    "ink": "#1b1b1b",
-    "inkSoft": "#5f5f5f",
-    "accent": "#0f6cbd",
-    "accentDark": "#0a4a82",
-    "brass": "#0f6cbd",
-    "brassDark": "#0a4a82",
-    "soft": "#eaf2fb",
-    "sel": "#bcd8f3",
-    "thumb": "#b5b5b5"
-   }
-  },
-  {
-   "id": "system-dark",
-   "name": "Системна (тъмна)",
-   "desc": "Чист тъмен вид като Windows",
-   "hidden": true,
-   "mode": "dark",
-   "gloss": 0.0,
-   "wall": "wall_system-dark.jpg",
-   "tile": "tile_system-dark.jpg",
-   "shell": {
-    "ink": "#F3F3F3",
-    "inkSoft": "#B3B3B3",
-    "stoneText": "#F3F3F3",
-    "stoneSoft": "#B3B3B3",
-    "tileText": "#F3F3F3",
-    "tileSoft": "#B3B3B3",
-    "brass": "#4CC2FF",
-    "tileBorder": "#3F3F3F",
-    "bar": "#FF181818",
-    "paper": "#F5F5F5"
-   },
-   "web": {
-    "bg": "#e3e5e9",
-    "side": "#d9dce2",
-    "line": "#c7ccd6",
-    "ink": "#1b1b1b",
-    "inkSoft": "#555b66",
-    "accent": "#0f6cbd",
-    "accentDark": "#0a4a82",
-    "brass": "#0f6cbd",
-    "brassDark": "#0a4a82",
-    "soft": "#e8eff8",
-    "sel": "#b5cff0",
-    "thumb": "#a9aeb9"
-   }
+   "gloss": 0.35
   }
  ]
 }

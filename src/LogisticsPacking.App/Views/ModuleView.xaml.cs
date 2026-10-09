@@ -30,6 +30,41 @@ public sealed partial class ModuleView : UserControl, IDisposable
         NameText.Text = variant == null ? module.Manifest.Name : $"{module.Manifest.Name} – {variant.Name}";
         SummaryText.Text = variant?.Summary ?? module.Manifest.Summary;
         BuildInfoFlyout();
+        Web.DragOver += OnWebDragOver;
+        Web.Drop += OnWebDrop;
+    }
+
+    // Резервен път за влачене на файлове от Explorer (ако WebView2 не го предаде сам): четем ги тук и ги даваме на страницата
+    private void OnWebDragOver(object sender, DragEventArgs e)
+    {
+        if (e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems))
+            e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Copy;
+    }
+
+    private async void OnWebDrop(object sender, DragEventArgs e)
+    {
+        try
+        {
+            if (Web.CoreWebView2 == null || !e.DataView.Contains(Windows.ApplicationModel.DataTransfer.StandardDataFormats.StorageItems)) return;
+            var pos = e.GetPosition(Web);
+            var deferral = e.GetDeferral();
+            var files = new List<object>();
+            foreach (var item in await e.DataView.GetStorageItemsAsync())
+            {
+                if (item is not Windows.Storage.StorageFile f) continue;
+                var props = await f.GetBasicPropertiesAsync();
+                if (props.Size > 150UL * 1024 * 1024) { AppServices.Log($"Влачен файл е твърде голям и е пропуснат: {f.Name}"); continue; }
+                var buf = await Windows.Storage.FileIO.ReadBufferAsync(f);
+                var bytes = new byte[buf.Length];
+                Windows.Storage.Streams.DataReader.FromBuffer(buf).ReadBytes(bytes);
+                files.Add(new { name = f.Name, type = f.ContentType, b64 = Convert.ToBase64String(bytes) });
+            }
+            deferral.Complete();
+            if (files.Count == 0) return;
+            var json = System.Text.Json.JsonSerializer.Serialize(new { cmd = "lps.drop", x = pos.X, y = pos.Y, files });
+            Web.CoreWebView2.PostWebMessageAsJson(json);
+        }
+        catch (Exception ex) { AppServices.Log("Drag & drop: " + ex.Message); }
     }
 
     private string HostName => _module.Id + ".lps.local";

@@ -123,4 +123,44 @@
     card.appendChild(h); card.appendChild(pre); card.appendChild(bar); box.appendChild(card); document.body.appendChild(box);
   }
   LPS.diag = { analyze: analyze, report: report };
+
+  /* ---- Резервен drag & drop ----
+     Ако WebView2 не предаде влаченето на файлове от Explorer (известен проблем при някои конфигурации), обвивката хваща
+     падането сама и праща файловете като съобщение {cmd:'lps.drop', x, y, files:[{name,type,b64}]}.
+     Тук ги превръщаме във File и симулираме drop върху елемента под курсора (или попълваме най-близкия input[type=file]). */
+  var lastNative = 0;
+  document.addEventListener('drop', function (e) { if (e.isTrusted) lastNative = Date.now(); }, true);
+  function b64ToFile(f) {
+    var bin = atob(f.b64), arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new File([arr], f.name, { type: f.type || '' });
+  }
+  function deliver(msg) {
+    var files = (msg.files || []).map(b64ToFile);
+    if (!files.length) return;
+    var dt = new DataTransfer();
+    files.forEach(function (f) { dt.items.add(f); });
+    var el = document.elementFromPoint(msg.x, msg.y) || document.body;
+    var init = { dataTransfer: dt, bubbles: true, cancelable: true, clientX: msg.x, clientY: msg.y };
+    var handled = false;
+    ['dragenter', 'dragover', 'drop'].forEach(function (type) {
+      var ev = new DragEvent(type, init);
+      el.dispatchEvent(ev);
+      if (type === 'drop' && ev.defaultPrevented) handled = true;
+    });
+    if (handled) return;
+    // никой не прихвана drop -> най-близкият файлов input
+    var node = el, input = null;
+    while (node && !input) {
+      input = node.querySelector && node.querySelector('input[type=file]');
+      node = node.parentElement;
+    }
+    input = input || document.querySelector('input[type=file]');
+    if (input) { try { input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { } }
+  }
+  if (wv) wv.addEventListener('message', function (e) {
+    var m = e.data;
+    if (!m || typeof m !== 'object' || m.cmd !== 'lps.drop') return;
+    setTimeout(function () { if (Date.now() - lastNative > 1200) deliver(m); }, 450);   // ако браузърът вече го е обработил - не го дублираме
+  });
 })();

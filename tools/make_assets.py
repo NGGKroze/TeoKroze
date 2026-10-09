@@ -114,14 +114,56 @@ def panelize(img, cols=3, rows=2, gap=6):
     return out
 
 
-# Тема: стена (мрамор/травертин, на пана) + плочка (гранит). Цветовете са RGB.
+def cracks(img, mains=9, seed=7):
+    """Тънки пукнатини като в тъмен мрамор: случайно лутане с разклонения, тъмна линия + бледа светла ивица до нея."""
+    r = np.random.default_rng(seed)
+    w, h = img.size
+    layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(layer)
+
+    def walk(x, y, ang, length, width, depth):
+        pts = [(x, y)]
+        step = float(r.uniform(5, 12))
+        for _ in range(int(length / step)):
+            ang += float(r.normal(0, 0.16))
+            x += np.cos(ang) * step
+            y += np.sin(ang) * step
+            pts.append((x, y))
+            if depth < 2 and r.random() < 0.03:
+                walk(x, y, ang + float(r.choice([-1, 1]) * r.uniform(0.5, 1.1)), length * 0.45, max(1, width - 1), depth + 1)
+        d.line([(px + 1, py + 1) for px, py in pts], fill=(120, 124, 132, 70), width=1)       # светла ивица
+        d.line(pts, fill=(6, 6, 8, 235), width=width)                                         # самата пукнатина
+        d.line(pts, fill=(0, 0, 0, 255), width=max(1, width - 1))
+
+    for _ in range(mains):
+        side = int(r.integers(0, 4))
+        x, y = (float(r.uniform(0, w)), 0.0) if side == 0 else (float(r.uniform(0, w)), float(h)) if side == 1 else (0.0, float(r.uniform(0, h))) if side == 2 else (float(w), float(r.uniform(0, h)))
+        ang = float(np.arctan2(h / 2 - y, w / 2 - x) + r.normal(0, 0.5))
+        walk(x, y, ang, float(r.uniform(0.6, 1.3)) * max(w, h), int(r.integers(3, 5)), 0)
+    layer = layer.filter(ImageFilter.GaussianBlur(1.1))
+    out = img.convert("RGBA")
+    out.alpha_composite(layer)
+    return out.convert("RGB")
+
+
+def dark_stone(w, h, base, seed):
+    """Тъмен графитен камък: облачни тонове, фина зрънцевост, пукнатини и мек отблясък."""
+    lum = 0.80 + 0.30 * (fbm(w, h, 260, 5) - 0.5) + (noise(w, h, 2) - 0.5) * 0.10 + (noise(w, h, 6) - 0.5) * 0.08
+    arr = np.array(base, np.float32)[None, None, :] * lum[..., None]
+    img = to_img(arr)
+    img = cracks(img, mains=max(3, int(w * h / 420000)), seed=seed)
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    streak = np.exp(-(((xx / w) * 0.8 + (yy / h) * 0.6 - 0.55) ** 2) / 0.02) * 0.07
+    vign = 1.0 - 0.22 * (((xx / w - 0.5) ** 2 + (yy / h - 0.5) ** 2) * 2)
+    out = np.asarray(img, dtype=np.float32) * vign[..., None] + (streak * 255)[..., None]
+    return to_img(out)
+
+
+# Единствена тема: тъмен сив гранит/мрамор с пукнатини (стена на пана + по-светли плочки)
 THEMES = {
     "granite": dict(
-        wall=lambda w, h: marble(w, h, (214, 210, 202), (246, 244, 240), (96, 98, 104), 0.55),
-        tile=lambda w, h: granite(w, h, (178, 180, 184), [((246, 246, 244), .30), ((82, 84, 90), .32), ((150, 138, 130), .20), ((40, 41, 45), .18)])),
-    "midnight": dict(
-        wall=lambda w, h: marble(w, h, (14, 24, 52), (36, 56, 106), (190, 205, 235), 0.50),
-        tile=lambda w, h: granite(w, h, (52, 76, 132), [((190, 205, 240), .32), ((14, 22, 48), .36), ((120, 140, 190), .20), ((226, 232, 248), .12)], 0.10, 0.20)),
+        wall=lambda w, h: dark_stone(w, h, (40, 41, 45), 11),
+        tile=lambda w, h: dark_stone(w, h, (58, 60, 65), 23)),
 }
 
 
@@ -147,10 +189,6 @@ if __name__ == "__main__":
     for name, th in THEMES.items():
         panelize(th["wall"](1920, 1200)).save(OUT / f"wall_{name}.jpg", quality=84)
         th["tile"](1024, 640).save(OUT / f"tile_{name}.jpg", quality=88)
-    # системните теми са плоски (само цвят)
-    for name, wall, tile in (("system-light", (243, 243, 243), (255, 255, 255)), ("system-dark", (32, 32, 32), (45, 45, 48))):
-        Image.new("RGB", (64, 64), wall).save(OUT / f"wall_{name}.jpg", quality=95)
-        Image.new("RGB", (64, 64), tile).save(OUT / f"tile_{name}.jpg", quality=95)
     ic = icon()
     ic.save(OUT / "app.png")
     ic.save(OUT / "app.ico", sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)])
