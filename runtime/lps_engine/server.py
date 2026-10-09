@@ -19,7 +19,7 @@ from . import __version__, lab, ocr, pdf
 
 MAX_BODY = 300 * 1024 * 1024
 LAB_DIR = Path(__file__).resolve().parent / "lab"
-DOCS = OrderedDict()   # кеш на отворените в лабораторията PDF-и (за рендиране на страници)
+DOCS = OrderedDict()   # кеш на отворените в анализа PDF-и (за рендиране на страници)
 MIME = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8"}
 # Разрешени са само страниците на програмата (https://<модул>.lps.local) и локалният сървис.
 ORIGIN_OK = re.compile(r"^(https://[a-z0-9_-]+\.lps\.local|http://127\.0\.0\.1(:\d+)?|http://localhost(:\d+)?)$")

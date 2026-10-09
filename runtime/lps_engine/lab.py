@@ -1,4 +1,4 @@
-"""Лаборатория: инспекция на файлове за подобряване на парсването (PDF с координати/OCR, Excel, CSV)."""
+"""Анализ: инспекция на файлове за подобряване на парсването (PDF с координати/OCR, Excel, CSV)."""
 import base64
 import csv
 import io
@@ -132,9 +132,9 @@ def header_candidates(rows):
 
 # ------------------------- Пакет за анализ -------------------------
 def save_package(out_dir: str, name: str, report: dict, file_b64: str = "", file_name: str = "") -> str:
-    """Записва ZIP (оригиналният файл + report.json) в <out_dir>\\Лаборатория и връща пътя."""
+    """Записва ZIP (оригиналният файл + report.json) в <out_dir>\\Анализ и връща пътя."""
     safe = re.sub(r"[^\w.-]+", "_", Path(name or "file").stem)[:60] or "file"
-    folder = Path(out_dir) / "Лаборатория"
+    folder = Path(out_dir) / "Анализ"
     folder.mkdir(parents=True, exist_ok=True)
     target = folder / f"{time.strftime('%Y%m%d_%H%M%S')}_{safe}.zip"
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as z:

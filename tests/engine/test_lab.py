@@ -1,4 +1,4 @@
-"""Тестове на лабораторията (lps_engine.lab): python -m unittest discover -s tests/engine"""
+"""Тестове на анализа (lps_engine.lab): python -m unittest discover -s tests/engine"""
 import io
 import json
 import sys
@@ -72,7 +72,7 @@ class LabTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             import base64
             path = lab.save_package(d, "my file.xlsx", {"a": 1}, base64.b64encode(b"DATA").decode(), "my file.xlsx")
-            self.assertIn("Лаборатория", path)
+            self.assertIn("Анализ", path)
             z = zipfile.ZipFile(path)
             self.assertEqual(json.loads(z.read("report.json")), {"a": 1})
             self.assertEqual(z.read("original/my file.xlsx"), b"DATA")
@@ -93,7 +93,7 @@ class LabHttpTests(unittest.TestCase):
 
     def test_lab_page_is_served(self):
         html = urllib.request.urlopen(f"http://127.0.0.1:{self.port}/lab").read().decode("utf-8")
-        self.assertIn("Лаборатория за файлове", html)
+        self.assertIn("Анализ на файлове", html)
 
     def test_pdf_flow_and_render(self):
         base = f"http://127.0.0.1:{self.port}"

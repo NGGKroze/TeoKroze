@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "id": "lab",
-  "name": "Лаборатория",
+  "name": "Анализ",
   "version": "1.0.0",
   "type": "engine",
   "entry": "/lab",

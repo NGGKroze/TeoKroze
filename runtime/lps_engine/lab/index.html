@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Лаборатория за файлове</title>
+<title>Анализ на файлове</title>
 <style>
   :root { --ink:#26272b; --soft:#5b5c62; --brass:#b08d57; --line:#d8d3c8; --bg:#ebe8e2; --graphite:#2f3034; }
   * { box-sizing: border-box; }
@@ -27,8 +27,12 @@
   table.t { border-collapse: collapse; font: 12px Consolas, monospace; } table.t td, table.t th { border: 1px solid #e2ddd2; padding: 3px 7px; white-space: nowrap; max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
   table.t th { background: #f0ece3; position: sticky; top: 0; } table.t td.rn { background: #f0ece3; color: var(--soft); text-align: right; }
   .scroll { overflow: auto; max-height: 70vh; border: 1px solid var(--line); border-radius: 10px; }
-  .pagewrap { position: relative; display: inline-block; border: 1px solid var(--line); background: #fff; }
-  .pagewrap img { display: block; } .box { position: absolute; border: 1px solid rgba(176,141,87,.9); background: rgba(176,141,87,.15); pointer-events: none; }
+  .zbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .zbar button { height: 34px; min-width: 38px; padding: 0 10px; } .zbar input[type=range] { width: 220px; accent-color: #2f3034; } .zbar .zv { min-width: 52px; text-align: center; font-weight: 600; }
+  .viewport { overflow: auto; height: 72vh; border: 1px solid var(--line); border-radius: 10px; background: #d9d5cc; cursor: grab; padding: 16px; }
+  .viewport.drag { cursor: grabbing; user-select: none; }
+  .pagewrap { position: relative; display: block; margin: 0 auto; border: 1px solid var(--line); background: #fff; box-shadow: 0 4px 18px rgba(0,0,0,.18); }
+  .pagewrap img { display: block; width: 100%; height: auto; image-rendering: auto; user-select: none; -webkit-user-drag: none; } .box { position: absolute; border: 1px solid rgba(176,141,87,.9); background: rgba(176,141,87,.15); pointer-events: none; }
   .hl { background: #fff1c2; } .warn { background: #fff4dc; border: 1px solid #ecd49a; padding: 8px 12px; border-radius: 10px; margin: 8px 0; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } @media (max-width: 1100px) { .grid2 { grid-template-columns: 1fr; } }
   .hidden { display: none !important; }
@@ -36,7 +40,7 @@
 </head>
 <body>
 <header>
-  <div><h1>Лаборатория за файлове</h1><p>Пуснете PDF, Excel или CSV и вижте как се „чете“ – за настройване и подобряване на парсването.</p></div>
+  <div><h1>Анализ на файлове</h1><p>Пуснете PDF, Excel или CSV и вижте как се „чете“ – за настройване и подобряване на парсването.</p></div>
   <div class="sp"></div>
   <button id="btnCopy" class="hidden">Копирай JSON</button>
   <button id="btnSave" class="primary hidden">Запази пакет за анализ</button>
@@ -108,7 +112,7 @@
     }).catch(function (e) { status('Грешка: ' + e.message, true); });
   }
   $('btnReparse').addEventListener('click', function () { if (state.kind === 'pdf') readPdf(); });
-  $('pageSel').addEventListener('change', function () { state.page = Number(this.value); renderPdf(); });
+  $('pageSel').addEventListener('change', function () { state.page = Number(this.value); Z.fitted = false; renderPdf(); });
   $('ytol').addEventListener('change', renderPdf);
 
   function regroup(words, tol) {
@@ -147,12 +151,72 @@
         return '<tr><td class="rn">' + (i + 1) + '</td><td>' + w[0].toFixed(1) + '</td><td>' + w[1].toFixed(1) + '</td><td>' + w[2].toFixed(1) + '</td><td>' + w[3].toFixed(1) + '</td><td>' + esc(w[4]) + '</td></tr>';
       }).join('') + '</table></div></div>';
     } else {
-      var dpi = 90, k = dpi / 72;
-      h = '<div class="card"><div class="pagewrap" id="pw"><img src="/api/lab/render?id=' + state.pdfId + '&page=' + (state.page + 1) + '&dpi=' + dpi + '" width="' + Math.round(p.width * k) + '">' +
-        p.words.map(function (w) { return '<div class="box" title="' + esc(w[4]) + '" style="left:' + (w[0] * k) + 'px;top:' + (w[1] * k) + 'px;width:' + ((w[2] - w[0]) * k) + 'px;height:' + ((w[3] - w[1]) * k) + 'px"></div>'; }).join('') + '</div></div>';
+      return renderPage(p);
     }
     $('pdfBody').innerHTML = h;
   }
+
+  // ---- Страница с рамки: мащабиране (бутони, плъзгач, ctrl+колело, двоен клик), влачене, винаги остро ----
+  var Z = { zoom: 1, boxes: true, timer: null };
+  var PX = 96 / 72;                                  // 1 pt = 1.333 px при 100%
+  function renderPage(p) {
+    var box = $('pdfBody');
+    box.innerHTML = '<div class="card"><div class="zbar">' +
+      '<button id="zOut" title="Намали (−)">−</button><input id="zRange" type="range" min="25" max="400" step="5"><button id="zIn" title="Увеличи (+)">+</button>' +
+      '<span class="zv" id="zVal"></span><button id="zFit">Побери</button><button id="z100">100%</button><button id="zW">По ширина</button>' +
+      '<label><input type="checkbox" id="zBoxes"' + (Z.boxes ? ' checked' : '') + '> Рамки на думите</label>' +
+      '<span class="meta">Ctrl + колелото мащабира около курсора · влачете за преместване · двоен клик = побери / 100%</span></div>' +
+      '<div class="viewport" id="vp"><div class="pagewrap" id="pw"><img id="pimg" alt="">' + p.words.map(function (w, i) {
+        return '<div class="box" data-i="' + i + '" title="' + esc(w[4]) + '"></div>'; }).join('') + '</div></div></div>';
+    var vp = $('vp'), pw = $('pw'), img = $('pimg');
+    function layout() {
+      var k = PX * Z.zoom;
+      pw.style.width = Math.round(p.width * k) + 'px'; pw.style.height = Math.round(p.height * k) + 'px';
+      var bs = pw.querySelectorAll('.box');
+      for (var i = 0; i < bs.length; i++) {
+        var w = p.words[i]; bs[i].style.display = Z.boxes ? '' : 'none';
+        bs[i].style.left = (w[0] * k) + 'px'; bs[i].style.top = (w[1] * k) + 'px'; bs[i].style.width = ((w[2] - w[0]) * k) + 'px'; bs[i].style.height = ((w[3] - w[1]) * k) + 'px';
+      }
+      $('zVal').textContent = Math.round(Z.zoom * 100) + '%'; $('zRange').value = Math.round(Z.zoom * 100);
+      clearTimeout(Z.timer);                          // остро изображение: ре-рендиране на сървъра с подходящ dpi (с кратко забавяне)
+      Z.timer = setTimeout(function () {
+        var dpi = Math.max(40, Math.min(450, Math.round(96 * Z.zoom * (window.devicePixelRatio || 1))));
+        img.src = '/api/lab/render?id=' + state.pdfId + '&page=' + (state.page + 1) + '&dpi=' + dpi;
+      }, 160);
+    }
+    function setZoom(z, cx, cy) {                     // cx,cy - точка във viewport, която остава на място
+      z = Math.max(0.25, Math.min(4, z));
+      var r = vp.getBoundingClientRect(); cx = cx == null ? r.width / 2 : cx; cy = cy == null ? r.height / 2 : cy;
+      var fx = (vp.scrollLeft + cx - pw.offsetLeft) / (pw.offsetWidth || 1), fy = (vp.scrollTop + cy - pw.offsetTop) / (pw.offsetHeight || 1);
+      Z.zoom = z; layout();
+      vp.scrollLeft = fx * pw.offsetWidth + pw.offsetLeft - cx; vp.scrollTop = fy * pw.offsetHeight + pw.offsetTop - cy;
+    }
+    function fit() { var r = vp.getBoundingClientRect(); return Math.min((r.width - 40) / (p.width * PX), (r.height - 40) / (p.height * PX)); }
+    function fitW() { var r = vp.getBoundingClientRect(); return (r.width - 40) / (p.width * PX); }
+    $('zIn').onclick = function () { setZoom(Z.zoom * 1.25); };
+    $('zOut').onclick = function () { setZoom(Z.zoom / 1.25); };
+    $('zRange').oninput = function () { setZoom(Number(this.value) / 100); };
+    $('zFit').onclick = function () { setZoom(fit()); };
+    $('zW').onclick = function () { setZoom(fitW()); };
+    $('z100').onclick = function () { setZoom(1); };
+    $('zBoxes').onchange = function () { Z.boxes = this.checked; layout(); };
+    vp.addEventListener('wheel', function (e) {
+      if (!(e.ctrlKey || e.metaKey)) return;          // обикновеното колело само превърта
+      e.preventDefault();
+      var r = vp.getBoundingClientRect(); setZoom(Z.zoom * Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
+    }, { passive: false });
+    vp.addEventListener('dblclick', function (e) { var r = vp.getBoundingClientRect(); setZoom(Math.abs(Z.zoom - 1) < 0.02 ? fit() : 1, e.clientX - r.left, e.clientY - r.top); });
+    var drag = null;
+    vp.addEventListener('mousedown', function (e) { if (e.button !== 0) return; drag = { x: e.clientX, y: e.clientY, l: vp.scrollLeft, t: vp.scrollTop }; vp.classList.add('drag'); });
+    window.addEventListener('mousemove', function (e) { if (!drag) return; vp.scrollLeft = drag.l - (e.clientX - drag.x); vp.scrollTop = drag.t - (e.clientY - drag.y); });
+    window.addEventListener('mouseup', function () { drag = null; vp.classList.remove('drag'); });
+    if (!Z.fitted || Z.page !== state.page) { Z.zoom = Math.min(1.5, Math.max(0.25, fitW())); Z.fitted = true; Z.page = state.page; }
+    layout();
+  }
+  document.addEventListener('keydown', function (e) {
+    if (state.view !== 'page' || !$('zIn') || /INPUT|SELECT|TEXTAREA/.test((e.target.tagName || ''))) return;
+    if (e.key === '+' || e.key === '=') $('zIn').click(); else if (e.key === '-') $('zOut').click(); else if (e.key === '0') $('z100').click();
+  });
 
   // ---- Таблици ----
   function readTable() {
