@@ -187,13 +187,18 @@ type RestoreInfo struct {
 	Unplaced   int            `json:"unplaced"`
 	Coords     []string       `json:"coords"`
 	SourceName string         `json:"source"`
+	Form       string         `json:"form"` // how they were added; "" = I notch with M19 (GBR)
 }
 
 func (r *RestoreInfo) Text() string {
 	if r == nil || (r.Restored == 0 && r.Unplaced == 0) {
 		return ""
 	}
-	s := fmt.Sprintf("Възстановени %d липсващи нотча от %s (като I-нотч с M19)", r.Restored, r.SourceName)
+	form := r.Form
+	if form == "" {
+		form = "като I-нотч с M19"
+	}
+	s := fmt.Sprintf("Възстановени %d липсващи нотча от %s (%s)", r.Restored, r.SourceName, form)
 	if len(r.ByPiece) > 0 {
 		var parts []string
 		for _, k := range sortedKeys(r.ByPiece) {
@@ -203,7 +208,7 @@ func (r *RestoreInfo) Text() string {
 	}
 	s += "."
 	if r.Unplaced > 0 {
-		s += fmt.Sprintf(" %d нотча от маркировката не можаха да се поставят (не лежат на контур в GBR).", r.Unplaced)
+		s += fmt.Sprintf(" %d нотча от маркировката не можаха да се поставят (не лежат на контур в файла – напр. детайли, които се режат като блок/правоъгълник).", r.Unplaced)
 	}
 	return s
 }
@@ -286,6 +291,15 @@ func RestoreMissing(gbr string, d *svgDrawing, segTol float64) (string, *Restore
 			g.front, g.contour = piece[:cs], append([]string(nil), piece[cs:]...)
 			g.sk, _ = skeletonFromContour(g.contour)
 			g.anchors = notchAnchors(g.contour)
+			// a notch at the very start of the contour is written before the knife
+			// goes down ("X..*M19*X..*M15*X..*M14"), i.e. in front of the contour
+			for i, t := range g.front {
+				if t == "M19" && i > 0 {
+					if p, ok := tokPt(g.front[i-1]); ok {
+						g.anchors = append(g.anchors, p)
+					}
+				}
+			}
 		}
 		pcs[k] = g
 	}

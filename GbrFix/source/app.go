@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const appVersion = "2.6"
+const appVersion = "2.7"
 
 const restoredTag = "_restored"
 
@@ -370,7 +370,7 @@ func (a *App) applyWatch() {
 
 // ---------------- file processing ----------------
 
-var gbrExts = map[string]bool{".gbr": true}
+var gbrExts = map[string]bool{".gbr": true, ".hpg": true, ".hpgl": true}
 
 func (a *App) candidate(p string) bool {
 	ext := strings.ToLower(filepath.Ext(p))
@@ -549,6 +549,10 @@ func writeAtomic(path, content string) error {
 
 func (a *App) convertFile(p string, raw []byte) {
 	s := string(raw)
+	if isHPGL(s) {
+		a.convertHPG(p, s)
+		return
+	}
 	if !strings.Contains(s, "*N") || !strings.Contains(s, "M1") {
 		return // not a cutter file
 	}
@@ -1002,6 +1006,10 @@ func (a *App) handler() http.Handler {
 			return
 		}
 		cfg := a.conf()
+		if isHPGL(raw) {
+			writeJSON(w, a.convertHPGManual(raw, name, r.URL.Query().Get("path")))
+			return
+		}
 		conv := Convert(raw, cfg.options())
 		srcName := "MRK файла"
 		plan := planOutputs(conv, cfg, func() *svgDrawing {
@@ -1078,7 +1086,7 @@ func (a *App) readInput(r *http.Request) (string, string, error) {
 	}
 	p := r.URL.Query().Get("path")
 	if ext := strings.ToLower(filepath.Ext(p)); !gbrExts[ext] && ext != ".mrk" && ext != ".pds" {
-		return "", "", fmt.Errorf("разрешени са само .GBR, .MRK и .PDS файлове")
+		return "", "", fmt.Errorf("разрешени са само .GBR, .HPG, .MRK и .PDS файлове")
 	}
 	b, err := readShared(p)
 	return string(b), filepath.Base(p), err

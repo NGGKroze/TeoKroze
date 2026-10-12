@@ -69,6 +69,9 @@ func readTok(t string) tokInfo {
 }
 
 func Simulate(raw string) *SimResult {
+	if isHPGL(raw) {
+		return hpgSim(raw)
+	}
 	toks := strings.Split(raw, "*")
 	res := &SimResult{MinX: 1 << 30, MinY: 1 << 30, MaxX: -(1 << 30), MaxY: -(1 << 30)}
 	var hdr []string

@@ -529,6 +529,10 @@ func (a *App) FindMarker(gbrPath, name, gbrContent string) MarkerMatch {
 	var m MarkerMatch
 	key := baseKey(name)
 	g := gbrBoxes(gbrContent)
+	hpg := isHPGL(gbrContent)
+	if hpg {
+		g = hpgBoxes(gbrContent)
+	}
 	var ref time.Time
 	if gbrPath != "" {
 		if st, err := os.Stat(gbrPath); err == nil {
@@ -545,10 +549,23 @@ func (a *App) FindMarker(gbrPath, name, gbrContent string) MarkerMatch {
 			return !strict // no drawing to compare: a marker with the right name is still taken
 		}
 		pos, size := matchScore(g, b)
-		if strict {
-			return pos >= 0.9 && len(g) >= 2
+		if hpg {
+			pos = hpgCoverage(g, b)
+			size = pos
 		}
-		return pos >= 0.9 || size >= 0.9
+		// pieces lie within 2 mm of the same place: a different marker (another size,
+		// another nesting) has almost none there. Pieces cut as a block in the GBR (a
+		// rectangle around several small pieces) do not match, so not all are needed.
+		if strict && hpg {
+			return pos >= 0.9 // nearly every marker piece has its outline in the HPG
+		}
+		if strict {
+			// most of the cut file's pieces are in the marker, and at least half of the
+			// marker's pieces are in the cut file
+			n := pos * float64(max(len(g), len(b)))
+			return len(g) >= 2 && n/float64(len(g)) >= 0.7 && n/float64(len(b)) >= 0.5
+		}
+		return pos >= 0.5 || size >= 0.9
 	}
 	statFile := func(p string) (markerFile, bool) {
 		st, err := os.Stat(p)

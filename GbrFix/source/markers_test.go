@@ -247,3 +247,21 @@ func BenchmarkIndex(b *testing.B) {
 		b.Logf("by name: %v", time.Since(t0))
 	}
 }
+
+// Small pieces cut as one block (a rectangle around them) in the GBR: the marker is still
+// recognised by the other pieces.
+func TestFindMarkerWithBlockCutPieces(t *testing.T) {
+	root := t.TempDir()
+	small := []rect{{2000, 100, 2400, 300}, {2000, 310, 2400, 510}}
+	mrkPcs := append(append([]rect{}, pcsA...), append(small, rect{100, 1000, 900, 1500})...)
+	gbrPcs := append(append([]rect{}, pcsA...), rect{1990, 90, 2410, 520}, rect{100, 1000, 900, 1500}) // block
+	gbr := write(t, filepath.Join(root, "cut", "renamed.GBR"), gbrOf(gbrPcs...))
+	mrk := write(t, filepath.Join(root, "srv", "Model.MRK"), mrkOf("", mrkPcs...))
+	write(t, filepath.Join(root, "srv", "Other.MRK"), mrkOf("", pcsB...))
+	cfg := defaultConfig()
+	cfg.MarkerDirs = []string{filepath.Join(root, "srv")}
+	a := testApp(t, cfg)
+	if m := a.FindMarker(gbr, "renamed.GBR", gbrOf(gbrPcs...)); m.MRK != mrk {
+		t.Fatalf("got %+v", m)
+	}
+}
