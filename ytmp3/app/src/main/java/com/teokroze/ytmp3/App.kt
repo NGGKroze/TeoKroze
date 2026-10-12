@@ -15,6 +15,11 @@ class App : Application() {
                 YoutubeDL.getInstance().init(this@App)
                 FFmpeg.getInstance().init(this@App)
                 DownloadState.ready.value = true
+                // YouTube changes often; keep yt-dlp fresh (nightly), ignore failures (offline etc.)
+                try {
+                    YoutubeDL.getInstance().updateYoutubeDL(this@App, YoutubeDL.UpdateChannel._NIGHTLY)
+                } catch (_: Exception) {
+                }
             } catch (e: Exception) {
                 DownloadState.status.value = "Грешка при стартиране: ${e.message}"
             }

@@ -13,6 +13,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.documentfile.provider.DocumentFile
 import com.yausername.youtubedl_android.YoutubeDL
+import com.yausername.youtubedl_android.YoutubeDLException
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +54,7 @@ class DownloadService : Service() {
             ?: error("Не е избрана папка")
         val tmp = File(cacheDir, "dl").apply { deleteRecursively(); mkdirs() }
 
-        val req = YoutubeDLRequest(url).apply {
+        fun buildRequest(client: String?) = YoutubeDLRequest(url).apply {
             addOption("--no-playlist")
             addOption("-x")
             if (prefs.format == "mp3") {
@@ -65,15 +66,35 @@ class DownloadService : Service() {
             addOption("-f", "bestaudio/best")
             addOption("--embed-metadata")
             addOption("--trim-filenames", "120")
+            addOption("--http-chunk-size", "10M")
+            addOption("--retries", "3")
+            if (client != null) addOption("--extractor-args", "youtube:player_client=$client")
             addOption("-o", "${tmp.absolutePath}/%(title)s.%(ext)s")
         }
 
-        DownloadState.status.value = "Сваля…"
-        YoutubeDL.getInstance().execute(req, "dl") { progress, _, line ->
-            if (progress >= 0) DownloadState.progress.value = progress / 100f
-            val text = if (progress >= 0) "Сваля… ${progress.toInt()}%" else line.trim().take(80)
-            updateNotification(text)
+        // YouTube answers 403 for some player clients; fall back to others.
+        val clients = listOf(null, "android_vr", "tv_simply", "web_safari", "mweb")
+        var lastError: Exception? = null
+        for ((i, client) in clients.withIndex()) {
+            DownloadState.status.value = if (i == 0) "Сваля…" else "Опит ${i + 1}/${clients.size} (${client})…"
+            try {
+                YoutubeDL.getInstance().execute(buildRequest(client), "dl") { progress, _, line ->
+                    if (progress >= 0) DownloadState.progress.value = progress / 100f
+                    val text = if (progress >= 0) "Сваля… ${progress.toInt()}%" else line.trim().take(80)
+                    updateNotification(text)
+                }
+                lastError = null
+                break
+            } catch (e: YoutubeDLException) {
+                lastError = e
+                val m = e.message.orEmpty()
+                val retryable = "403" in m || "Forbidden" in m || "Sign in" in m || "not available" in m ||
+                    "Requested format" in m || "player response" in m
+                if (!retryable) break
+                tmp.listFiles()?.forEach { it.delete() }
+            }
         }
+        lastError?.let { throw it }
 
         val files = tmp.listFiles { f -> f.isFile && !f.name.endsWith(".part") }.orEmpty()
         if (files.isEmpty()) error("Не е получен файл")

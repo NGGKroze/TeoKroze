@@ -128,7 +128,7 @@ private fun Screen(initialUrl: String) {
                     updateMsg = "Обновява…"
                     scope.launch {
                         updateMsg = withContext(Dispatchers.IO) {
-                            try { YoutubeDL.getInstance().updateYoutubeDL(ctx); "yt-dlp е обновен" }
+                            try { YoutubeDL.getInstance().updateYoutubeDL(ctx, YoutubeDL.UpdateChannel._NIGHTLY); "yt-dlp е обновен (nightly)" }
                             catch (e: Exception) { "Грешка при обновяване: ${e.message}" }
                         }
                     }
