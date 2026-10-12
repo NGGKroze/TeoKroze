@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="bg"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>English Tenses — помощник за начинаещи</title>
+<style>
+:root{--bg:#f3f6fc;--card:#fff;--soft:#f6f8fc;--text:#172033;--muted:#667085;--line:#e1e7f0;--blue:#3563e9;--blue2:#6a4fd6;--green:#15966b;--amber:#d98409;--red:#d64545;--shadow:0 10px 30px #172b4d14;--past:#d98409;--present:#15966b;--future:#3563e9}
+body.dark{--bg:#0d1524;--card:#141f33;--soft:#101a2c;--text:#eef3ff;--muted:#a4afc3;--line:#2a3850;--blue:#7595ff;--blue2:#9d86ff;--green:#43cda0;--amber:#ffb24a;--red:#ff7b7b;--shadow:0 12px 36px #0006;--past:#ffb24a;--present:#43cda0;--future:#7595ff}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 Inter,Segoe UI,Arial,sans-serif;transition:background .3s,color .3s}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.app{max-width:1360px;margin:auto;padding:16px}
+h1,h2,h3{margin:0}h2{font-size:24px}h3{font-size:17px;margin:20px 0 8px}
+.muted{color:var(--muted)}
+.eyebrow{color:var(--blue);font-size:12px;font-weight:850;letter-spacing:.09em;text-transform:uppercase}
+
+/* hero + hud */
+.hero{position:relative;overflow:hidden;padding:24px 28px;border-radius:24px;color:#fff;background:linear-gradient(125deg,#173d9b,#5167dc 55%,#7654cc);display:flex;align-items:center;justify-content:space-between;gap:18px;box-shadow:var(--shadow);flex-wrap:wrap}
+.hero:before,.hero:after{content:"";position:absolute;border-radius:50%;background:#ffffff14;animation:float 9s ease-in-out infinite}
+.hero:before{width:260px;height:260px;right:-60px;top:-110px}.hero:after{width:160px;height:160px;right:210px;bottom:-90px;animation-delay:-4s}
+.hero>*{position:relative;z-index:1}
+.hero h1{font-size:clamp(26px,4vw,42px);line-height:1.1}
+.hero p{margin:6px 0 0;opacity:.9}
+.hud{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.chip{background:#ffffff22;border:1px solid #ffffff44;border-radius:14px;padding:7px 12px;font-weight:750;font-size:14px;backdrop-filter:blur(4px)}
+.chip small{display:block;font-weight:500;opacity:.8;font-size:11px;line-height:1.1}
+.xpbar{height:6px;border-radius:9px;background:#ffffff33;margin-top:4px;overflow:hidden;min-width:90px}.xpbar i{display:block;height:100%;background:#fff;border-radius:9px;transition:width .6s}
+.ibtn{background:#ffffff22;border:1px solid #ffffff55;color:#fff;border-radius:12px;padding:9px 12px;font-weight:700;transition:.2s}.ibtn:hover{background:#ffffff40;transform:translateY(-1px)}
+
+/* nav */
+.tabs{display:flex;gap:8px;overflow:auto;padding:16px 2px 10px;position:sticky;top:0;z-index:20;background:linear-gradient(var(--bg) 80%,transparent);scrollbar-width:thin}
+.tab,.btn,.tTab,.pillbtn{border:1px solid var(--line);border-radius:12px;padding:9px 14px;font-weight:700;background:var(--card);transition:transform .15s,box-shadow .2s,background .2s,border-color .2s}
+.tab{white-space:nowrap}
+.tab:hover,.tTab:hover,.btn:hover,.pillbtn:hover{transform:translateY(-1px);box-shadow:0 6px 16px #172b4d1a}
+.tab.active,.tTab.active,.pillbtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn{background:var(--blue);color:#fff;border-color:transparent}
+.btn.ghost{background:var(--card);color:var(--text);border-color:var(--line)}
+.btn:disabled{opacity:.5;cursor:default;transform:none}
+
+/* layout */
+.page{display:none}.page.active{display:block;animation:fadeUp .45s both}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+.grid2,.grid3,.grid4{display:grid;gap:14px}.grid2{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:repeat(3,1fr)}.grid4{grid-template-columns:repeat(4,1fr)}
+.stack>*+*{margin-top:15px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.concept,.example,.diff,.quick,.stat{background:var(--soft);border:1px solid var(--line);border-radius:13px;padding:14px}
+.call{padding:13px 15px;border-radius:12px;background:#3563e917;border-left:4px solid var(--blue);margin:11px 0}
+.call.warn{background:#d9840919;border-color:var(--amber)}.call.good{background:#15966b18;border-color:var(--green)}.call.bad{background:#d6454514;border-color:var(--red)}
+.pill{display:inline-block;padding:4px 10px;border-radius:999px;background:var(--soft);border:1px solid var(--line);font-size:13px}
+.pillbtn{padding:6px 12px;font-size:14px;border-radius:999px}
+.wrong{color:var(--red);text-decoration:line-through}.right{color:var(--green);font-weight:750}
+.reveal>*{animation:fadeUp .5s both}.reveal>*:nth-child(2){animation-delay:.06s}.reveal>*:nth-child(3){animation-delay:.12s}.reveal>*:nth-child(4){animation-delay:.18s}.reveal>*:nth-child(5){animation-delay:.24s}
+
+/* home */
+.timecards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:15px 0}
+.time{color:#fff;border-radius:16px;padding:18px;min-height:120px;transition:transform .25s}.time:hover{transform:translateY(-4px) rotate(-.4deg)}
+.past{background:linear-gradient(135deg,#e09a29,#bc6d08)}.present{background:linear-gradient(135deg,#25ab80,#087c5b)}.future{background:linear-gradient(135deg,#4c7cf1,#3154ba)}
+.route{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.route div{padding:12px;background:var(--soft);border:1px solid var(--line);border-radius:12px;transition:transform .2s}.route div:hover{transform:scale(1.03)}.route b{display:block;color:var(--blue)}
+.stat b{display:block;font-size:28px;line-height:1.1}
+.ring{--p:0;width:74px;height:74px;border-radius:50%;background:conic-gradient(var(--blue) calc(var(--p)*1%),var(--line) 0);display:grid;place-items:center;transition:.6s}
+.ring span{width:56px;height:56px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-weight:800}
+.cycle .concept{cursor:default;transition:.25s}.cycle .concept.on{background:var(--blue);color:#fff;transform:scale(1.03)}.cycle .concept.on .muted{color:#ffffffcc}
+
+/* learn */
+.learn{display:grid;grid-template-columns:270px 1fr;gap:15px;align-items:start}
+.side{position:sticky;top:64px;max-height:calc(100vh - 80px);overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:17px;padding:12px;box-shadow:var(--shadow)}
+.group{margin:11px 7px 5px;font-size:12px;font-weight:800;text-transform:uppercase;color:var(--muted)}
+.tTab{display:block;width:100%;text-align:left;margin:4px 0;padding:8px 11px}.tTab small{float:right;opacity:.75}.tTab.done:after{content:" ✓";color:var(--green);font-weight:900}.tTab.active.done:after{color:#fff}
+.head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.formula{background:#15233d;color:#f0f5ff;border-radius:11px;padding:12px;font:15px Consolas,monospace;overflow:auto}
+.formula .aux{color:#ffd37a;font-weight:800}.formula .vb{color:#8fe0b8;font-weight:800}.formula .nt{color:#ff9a9a}
+.examples{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.example{display:flex;gap:9px;align-items:flex-start;transition:transform .2s,border-color .2s}.example:hover{transform:translateY(-2px);border-color:var(--blue)}
+.example b,.example span{display:block}.example span{color:var(--muted)}
+.say{border:1px solid var(--line);background:var(--card);border-radius:50%;width:32px;height:32px;flex:none;display:grid;place-items:center;padding:0}.say:hover{background:var(--blue);color:#fff}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);vertical-align:top}th{background:var(--soft)}
+.scroll{overflow:auto;border:1px solid var(--line);border-radius:12px;max-height:650px}.compare th{position:sticky;top:0;z-index:1}.compare small{display:block;color:var(--muted)}
+.why{display:flex;gap:12px}.why .ico{font-size:26px}
+.mistake{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--soft);margin:7px 0}.mistake .why2{color:var(--muted);flex-basis:100%;font-size:14px}
+.nav2{display:flex;justify-content:space-between;gap:8px;margin-top:20px}
+
+/* timeline */
+.tl{position:relative;height:112px;margin:10px 4px 6px}
+.tl-line{position:absolute;left:0;right:0;top:46px;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--past) 0 33%,var(--present) 33% 66%,var(--future) 66%);opacity:.35}
+.tl-now{position:absolute;left:50%;top:14px;bottom:14px;width:0;border-left:2px dashed var(--muted)}.tl-now span{position:absolute;top:-16px;left:-22px;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.08em}
+.tl-lab{position:absolute;bottom:-2px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.tl-span{position:absolute;top:38px;height:20px;width:0;border-radius:12px;opacity:.9;animation:grow .9s .25s cubic-bezier(.2,.8,.2,1) forwards}
+.tl-pt{position:absolute;top:36px;width:24px;height:24px;margin-left:-12px;border-radius:50%;border:3px solid var(--card);box-shadow:0 2px 8px #0004;animation:pop .5s var(--d,.3s) both cubic-bezier(.2,1.6,.4,1)}
+.tl-ref{position:absolute;top:34px;width:20px;height:20px;margin-left:-10px;margin-top:2px;transform:rotate(45deg);background:var(--card);border:3px solid var(--text);border-radius:4px;animation:pop .5s .6s both}
+.tl-ref+em,.tl-cap{position:absolute;font-style:normal;font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;transform:translateX(-50%);top:64px}
+.tl-link{position:absolute;top:47px;height:0;border-top:3px dashed var(--muted);width:0;opacity:.8;animation:grow .7s .5s forwards}
+.tl-span.past,.tl-pt.past{background:var(--past)}.tl-span.present,.tl-pt.present{background:var(--present)}.tl-span.future,.tl-pt.future{background:var(--future)}
+.tl-mini{height:62px;margin:6px 2px 0}.tl-mini .tl-line{top:30px}.tl-mini .tl-span{top:22px;height:16px}.tl-mini .tl-pt{top:21px;width:18px;height:18px;margin-left:-9px}.tl-mini .tl-ref{top:19px;width:14px;height:14px;margin-left:-7px}.tl-mini .tl-link{top:30px}.tl-mini .tl-now{top:4px;bottom:20px}.tl-mini .tl-now span{display:none}.tl-mini .tl-cap,.tl-mini .tl-ref+em{display:none}
+.tlcard{cursor:pointer;text-align:left;display:block;width:100%;transition:transform .2s,border-color .2s}.tlcard:hover{transform:translateY(-3px);border-color:var(--blue)}
+
+/* forms */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:4px;min-width:150px}.field label{font-size:13px;color:var(--muted);font-weight:700}
+select,input[type=text]{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:0}
+input[type=text]{width:100%;font-size:18px}
+.builder{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.output{margin-top:14px;padding:17px;background:#3563e914;border:1px solid #3563e944;border-radius:13px;animation:pop2 .35s}.output b{font-size:24px}
+.accordion details{border:1px solid var(--line);border-radius:12px;margin:8px 0;background:var(--card);transition:border-color .2s}.accordion details[open]{border-color:var(--blue)}
+.accordion summary{padding:13px 15px;font-weight:800;cursor:pointer}.accordion details>div{padding:0 15px 14px;animation:fadeUp .35s}
+
+/* wizard */
+.wiz{min-height:260px}.wopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:14px}
+.wopt{text-align:left;border:1px solid var(--line);border-radius:14px;padding:15px;background:var(--soft);transition:.2s;animation:fadeUp .4s both}.wopt:hover{border-color:var(--blue);transform:translateY(-3px);box-shadow:var(--shadow)}.wopt b{display:block;margin-bottom:2px}
+.crumbs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.result{border:2px solid var(--blue);border-radius:16px;padding:18px;background:var(--soft);animation:pop2 .45s}
+
+/* quiz */
+.quizLayout{display:grid;grid-template-columns:1fr 320px;gap:15px;align-items:start}
+.question{font-size:22px;font-weight:850;margin:14px 0}
+.hint{color:var(--muted);font-size:14px;margin:-6px 0 12px}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.answer{padding:13px;border-radius:12px;border:1px solid var(--line);background:var(--card);text-align:left;transition:.18s}.answer:hover:not(:disabled){border-color:var(--blue);transform:translateY(-2px)}
+.answer kbd{display:inline-block;min-width:20px;margin-right:6px;text-align:center;border-radius:5px;background:var(--soft);border:1px solid var(--line);font-size:12px}
+.answer.correct{border-color:var(--green);background:#15966b22;animation:pop2 .4s}.answer.wrong{border-color:var(--red);background:#d6454520;animation:shake .4s}
+.feedback{display:none;margin-top:12px;padding:13px;background:var(--soft);border-left:4px solid var(--blue);border-radius:10px;animation:fadeUp .3s}
+.feedback.ok{border-color:var(--green)}.feedback.no{border-color:var(--red)}
+.score{font-size:38px;font-weight:850;line-height:1.1}
+.progress{height:10px;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:var(--soft)}.progress div{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--blue2));transition:width .6s}
+.cat{margin:8px 0;font-size:13px}.cat .progress{height:7px;margin-top:3px}
+.typeRow{display:flex;gap:8px}
+.input-ok{border-color:var(--green)!important;background:#15966b18!important}.input-no{border-color:var(--red)!important;animation:shake .4s}
+.big{font-size:54px;font-weight:900;background:linear-gradient(90deg,var(--blue),var(--blue2));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* tiles / sentence */
+.tokens{display:flex;gap:8px;flex-wrap:wrap;min-height:46px;padding:10px;border:2px dashed var(--line);border-radius:12px;margin:10px 0}
+.tok{padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:700;animation:pop2 .25s}.tok:hover{border-color:var(--blue);transform:translateY(-2px)}
+
+/* cards */
+.verbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.verb{padding:9px;background:var(--soft);border:1px solid var(--line);border-radius:10px;font-size:14px}.verb.known{border-color:var(--green)}
+.flip{perspective:900px;height:200px;max-width:420px;margin:12px auto}
+.flip .in{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d;cursor:pointer}.flip.on .in{transform:rotateY(180deg)}
+.flip .f{position:absolute;inset:0;backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:20px;border:1px solid var(--line);background:linear-gradient(135deg,var(--soft),var(--card));box-shadow:var(--shadow);text-align:center}
+.flip .f b{font-size:34px}.flip .back{transform:rotateY(180deg);background:linear-gradient(135deg,#3563e91a,#6a4fd61a)}
+.quickGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.footer{text-align:center;color:var(--muted);padding:20px;font-size:13px}
+
+/* confetti */
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:99}
+.confetti i{position:absolute;top:-12px;width:9px;height:14px;border-radius:2px;animation:fall 1.6s var(--d) ease-in forwards}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:none}}
+@keyframes pop2{from{transform:scale(.96);opacity:.4}to{transform:none;opacity:1}}
+@keyframes grow{to{width:var(--w)}}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes float{50%{transform:translateY(16px)}}
+@keyframes fall{to{transform:translateY(105vh) rotate(var(--r));opacity:.7}}
+.tl-pt{transform-origin:center}.tl-ref{transform-origin:center}
+
+@media(max-width:1000px){.learn{grid-template-columns:1fr}.side{position:static;max-height:none}.tenseList{display:flex;overflow:auto;gap:5px}.group{display:none}.tTab{width:auto;white-space:nowrap}.grid4{grid-template-columns:repeat(2,1fr)}.quizLayout{grid-template-columns:1fr}}
+@media(max-width:780px){.grid2,.grid3,.timecards,.quickGrid{grid-template-columns:1fr}.route,.builder{grid-template-columns:1fr 1fr}.examples,.answers{grid-template-columns:1fr}}
+@media(max-width:520px){.app{padding:9px}.hero,.panel{padding:16px}.route,.builder,.grid4{grid-template-columns:1fr}th,td{padding:8px;font-size:13px}.typeRow{flex-direction:column}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}.confetti{display:none}}
+</style></head><body>
+<div class="app">
+<header class="hero">
+ <div><div style="font-size:12px;font-weight:800;letter-spacing:.1em">ENGLISH TENSES · A1–B1</div><h1>Разбери времената,<br>вместо да ги зубриш.</h1><p>Какво е · защо е · как се образува · упражнявай докато стане навик.</p></div>
+ <div class="hud">
+  <div class="chip" title="Точки опит"><span id="hLvl">Ниво 1</span><small><span id="hXp">0</span> XP</small><div class="xpbar"><i id="hBar"></i></div></div>
+  <div class="chip" title="Дни подред с упражнения">🔥 <span id="hDays">0</span><small>дни подред</small></div>
+  <button class="ibtn" id="dark">☾ Тъмен</button>
+  <button class="ibtn" id="reset">Нулирай</button>
+ </div>
+</header>
+<nav class="tabs" role="tablist">
+ <button class="tab active" data-page="home">🏠 Начало</button>
+ <button class="tab" data-page="learn">📘 Уроци</button>
+ <button class="tab" data-page="wizard">🧭 Кое време?</button>
+ <button class="tab" data-page="timeline">⏳ Времева линия</button>
+ <button class="tab" data-page="compare">⚖️ Сравнение</button>
+ <button class="tab" data-page="persons">👥 I ↔ He</button>
+ <button class="tab" data-page="quiz">🎯 Тестове</button>
+ <button class="tab" data-page="builder">🧩 Сглоби</button>
+ <button class="tab" data-page="exceptions">⚠️ Изключения</button>
+ <button class="tab" data-page="verbs">🃏 Глаголи</button>
+ <button class="tab" data-page="quick">⚡ Справка</button>
+</nav>
+<main>
+<section id="home" class="page active">
+ <div class="grid2">
+  <div class="panel reveal"><div class="eyebrow">Започни от смисъла</div><h2>Само два въпроса</h2>
+   <div class="call"><b>1. Кога?</b> Минало, настояще или бъдеще.</div>
+   <div class="call"><b>2. Как виждам действието?</b> Факт, процес, резултат или продължителност.</div>
+   <p class="muted">Преводът на български невинаги съвпада с английското време. Търси смисъла, не само дума-сигнал.</p>
+   <div class="row"><button class="btn" data-go="wizard">🧭 Помогни ми да избера време</button><button class="btn ghost" data-go="learn">Към уроците</button></div></div>
+  <div class="panel reveal"><div class="eyebrow">Четири гледни точки</div><h2>Simple → Perfect Continuous</h2>
+   <div class="route"><div><b>Simple</b>факт / събитие</div><div><b>Continuous</b>процес</div><div><b>Perfect</b>резултат</div><div><b>Perfect Continuous</b>продължителност</div></div>
+   <div class="call good"><b>Ред за начинаещ:</b> Present Simple → Present Continuous → Past Simple → will / going to → Present Perfect.</div></div>
+ </div>
+ <div class="timecards">
+  <div class="time past"><h3>Минало</h3>Преди „сега“.<br><small>yesterday · ago · last…</small></div>
+  <div class="time present"><h3>Настояще</h3>Сега, по принцип или с резултат сега.<br><small>now · usually · already</small></div>
+  <div class="time future"><h3>Бъдеще</h3>След „сега“.<br><small>tomorrow · next… · by…</small></div>
+ </div>
+ <div class="grid2">
+  <div class="panel"><h2>Твоят напредък</h2>
+   <div class="row" style="margin-top:12px;gap:18px">
+    <div class="ring" id="ringL"><span id="ringLt">0/13</span></div><div><b>Уроци</b><br><span class="muted">прегледани и упражнени</span></div>
+    <div class="ring" id="ringA"><span id="ringAt">0%</span></div><div><b>Точност</b><br><span class="muted">във всички тестове</span></div>
+   </div>
+   <div class="call good" id="advice" style="margin-top:16px"></div></div>
+  <div class="panel"><h2>Едно действие, четири значения</h2><div class="grid2 cycle" id="cycle">
+   <div class="concept"><b>I work.</b><br><span class="muted">Работя — факт/навик.</span></div><div class="concept"><b>I am working.</b><br><span class="muted">Работя в момента.</span></div>
+   <div class="concept"><b>I have worked.</b><br><span class="muted">Работил съм — резултат.</span></div><div class="concept"><b>I have been working.</b><br><span class="muted">Работя от известно време.</span></div></div></div>
+ </div>
+</section>
+
+<section id="learn" class="page"><div class="learn"><aside class="side"><div id="tenseTabs" class="tenseList"></div></aside><div id="tenseContent"></div></div></section>
+
+<section id="wizard" class="page"><div class="panel wiz"><div class="eyebrow">Помощник</div><h2>Кое време да избера?</h2><div class="muted">Отговори на 2–3 въпроса и ще получиш време, формула и пример.</div><div id="wizBody"></div></div></section>
+
+<section id="timeline" class="page"><div class="panel"><div class="eyebrow">Всички времена на една ос</div><h2>Времева линия</h2><p class="muted">Пунктираната линия е „сега“. Ромбът е опорният момент, към който гледа времето. Натисни карта за урок.</p><div id="tlGrid" class="grid3"></div></div></section>
+
+<section id="compare" class="page"><div class="panel"><div class="eyebrow">Един глагол във всички времена</div><h2>Как се променя изречението?</h2><p class="muted">Сравни структурата с I и He. Допълненията помагат значението да звучи естествено.</p>
+ <div class="toolbar"><div class="field"><label>Глагол</label><select id="cmpVerb"></select></div><div class="field"><label>Период</label><select id="cmpPeriod"><option value="all">Всички</option><option value="present">Сегашни</option><option value="past">Минали</option><option value="future">Бъдещи</option></select></div></div>
+ <div class="scroll" style="margin-top:12px"><table class="compare"><thead><tr><th>Време</th><th>I</th><th>He</th><th>Смисъл</th></tr></thead><tbody id="cmpBody"></tbody></table></div></div></section>
+
+<section id="persons" class="page"><div class="panel"><div class="eyebrow">Лице и число</div><h2>I и He — къде наистина има разлика?</h2>
+ <div class="call good"><b>Главната разлика</b> е в Present Simple и помощните глаголи <i>be</i> и <i>have</i>. При will, did и had формата е еднаква.</div>
+ <div class="grid3"><div class="diff"><h3>Present Simple</h3><b>I work.</b><br><b>He work<span style="color:var(--red)">s</span>.</b><p class="muted">-s/-es само при he/she/it.</p></div><div class="diff"><h3>Be</h3><b>I am ↔ He is</b><p class="muted">You/we/they are. В минало: I/he was; you/we/they were.</p></div><div class="diff"><h3>Have</h3><b>I have ↔ He has</b><p class="muted">I have worked, но He has worked.</p></div></div>
+ <div class="scroll" style="margin-top:14px"><table><thead><tr><th>Конструкция</th><th>I</th><th>He</th><th>Правило</th></tr></thead><tbody>
+ <tr><td>Present Simple +</td><td>I work.</td><td>He works.</td><td>-s при he/she/it</td></tr>
+ <tr><td>Present Simple −</td><td>I don't work.</td><td>He doesn't work.</td><td>не <span class="wrong">doesn't works</span></td></tr>
+ <tr><td>Present Simple ?</td><td>Do I work?</td><td>Does he work?</td><td>след does → V1</td></tr>
+ <tr><td>Present Continuous</td><td>I am working.</td><td>He is working.</td><td>am ↔ is</td></tr>
+ <tr><td>Past Simple</td><td>I worked.</td><td>He worked.</td><td>еднакво</td></tr>
+ <tr><td>Past Continuous</td><td>I was working.</td><td>He was working.</td><td>I/he → was</td></tr>
+ <tr><td>Present Perfect</td><td>I have worked.</td><td>He has worked.</td><td>have ↔ has</td></tr>
+ <tr><td>Past Perfect</td><td>I had worked.</td><td>He had worked.</td><td>еднакво</td></tr>
+ <tr><td>Future</td><td>I will work.</td><td>He will work.</td><td>еднакво</td></tr></tbody></table></div>
+ <div class="call warn"><b>Защо има -s?</b> Това е останала историческа лична форма. Повечето други окончания са изчезнали от съвременния английски.</div></div></section>
+
+<section id="quiz" class="page"><div class="quizLayout">
+ <div class="panel"><div class="eyebrow">Безкрайна практика</div><h2>Тестове с обяснение</h2>
+  <div id="quizCats" class="row" style="margin:10px 0"></div>
+  <div class="row"><button class="btn ghost" id="startTest">▶ Тест от 10 въпроса</button><span class="pill" id="quizMeta"></span></div>
+  <div id="quizQuestion" class="question"></div><div id="quizHint" class="hint"></div><div id="quizAnswers"></div>
+  <div id="feedback" class="feedback"></div>
+  <div class="row" style="margin-top:13px"><button class="btn" id="next">Следващ →</button><span class="muted" style="font-size:13px">Клавиши: 1–4 избор · Enter следващ</span></div></div>
+ <aside class="panel"><h3 style="margin-top:0">Прогрес</h3><div class="score"><span id="score">0</span>/<span id="attempts">0</span></div><p class="muted" style="margin:0 0 8px">верни / общо</p>
+  <div class="progress"><div id="bar"></div></div><p><b id="percent">0%</b> успеваемост</p><p id="streak">Поредица: 0</p>
+  <h3>По категории</h3><div id="catStats"></div></aside></div></section>
+
+<section id="builder" class="page"><div class="stack">
+ <div class="panel"><div class="eyebrow">Работилница</div><h2>Сглоби изречение</h2>
+  <div class="builder"><div class="field"><label>Време</label><select id="bTense"></select></div><div class="field"><label>Подлог</label><select id="bSubject"></select></div><div class="field"><label>Глагол</label><select id="bVerb"></select></div><div class="field"><label>Вид</label><select id="bType"><option value="pos">Положително</option><option value="neg">Отрицателно</option><option value="q">Въпрос</option></select></div></div>
+  <div id="buildOut" class="output"></div></div>
+ <div class="panel"><div class="eyebrow">Игра</div><h2>Подреди думите</h2><p class="muted">Натисни думите в правилния ред. Натисни дума от изречението, за да я върнеш.</p>
+  <div id="orderPrompt" style="font-weight:800;font-size:18px"></div><div id="orderBuilt" class="tokens"></div><div id="orderPool" class="tokens" style="border-style:solid"></div>
+  <div class="row"><button class="btn" id="orderCheck">Провери</button><button class="btn ghost" id="orderNext">Друго изречение</button></div><div id="orderFb" class="feedback"></div></div>
+</div></section>
+
+<section id="exceptions" class="page"><div class="stack">
+ <div class="panel"><div class="eyebrow">Инструмент</div><h2>Правописна машина</h2><p class="muted">Въведи глагол (V1) и виж -s, -ing и -ed форма с правилото.</p>
+  <div class="typeRow"><input type="text" id="spIn" placeholder="напр. study, stop, make, go…" autocomplete="off"></div><div id="spOut" style="margin-top:12px"></div></div>
+ <div class="panel"><div class="eyebrow">Капани и логика</div><h2>Изключения — и защо се случват</h2><div class="accordion">
+ <details open><summary>1. He works, но He doesn't work</summary><div><p>Does вече носи знака за трето лице, затова главният глагол е V1.</p><div class="call"><span class="right">Does he work?</span> · <span class="wrong">Does he works?</span></div></div></details>
+ <details><summary>2. -s, -es и -ies</summary><div><ul><li>work → works, play → plays</li><li>watch → watches, go → goes — -es улеснява произношението</li><li>study → studies, но play → plays — съгласна + y става -ies</li><li>have → has — исторически запазена неправилна форма</li></ul></div></details>
+ <details><summary>3. Правопис при -ing</summary><div><ul><li>make → making — крайното немо e отпада</li><li>run → running — удвояване след кратка ударена гласна</li><li>lie → lying; see → seeing</li></ul></div></details>
+ <details><summary>4. Правопис и произношение на -ed</summary><div><ul><li>live → lived; study → studied; play → played; stop → stopped</li><li>worked /t/, played /d/, wanted /ɪd/ — буквите са еднакви, звукът зависи от края на глагола.</li></ul></div></details>
+ <details><summary>5. Защо know обикновено не е Continuous?</summary><div><p>Know, believe, understand, want, need, own, like, love, hate, belong описват състояние, не процес.</p><div class="call"><span class="right">I know.</span> · <span class="wrong">I am knowing.</span></div><p>Значението може да промени правилото: I think you are right (мнение), но I am thinking about it (процес). I have a car (притежание), но I am having lunch (действие).</p></div></details>
+ <details><summary>6. Present Perfect или Past Simple?</summary><div><p><b>I saw him yesterday</b> — конкретен завършен момент. <b>I have seen him before</b> — опит без точен момент и връзка със сега.</p><p class="wrong">I have seen him yesterday.</p></div></details>
+ <details><summary>7. След when/if/as soon as не използваме will</summary><div><p>В подчиненото изречение за време/условие използваме Present Simple.</p><div class="call"><span class="right">I will call when I arrive.</span> · <span class="wrong">when I will arrive</span></div></div></details>
+ <details><summary>8. Been или gone?</summary><div><p>He has <b>gone</b> to London = още е там/пътува. He has <b>been</b> to London = бил е и се е върнал.</p></div></details>
+ <details><summary>9. For или since?</summary><div><p><b>For</b> + колко дълго: for two hours, for a year. <b>Since</b> + от кога: since 8 o’clock, since 2019.</p><div class="call"><span class="right">I have lived here for 5 years / since 2019.</span></div></div></details>
+ <details><summary>10. Already, yet и still</summary><div><ul><li><b>already</b> — вече (положително): I have already eaten.</li><li><b>yet</b> — още/вече (отрицание и въпрос, в края): I haven’t eaten yet. Have you eaten yet?</li><li><b>still</b> — все още (процес продължава): I am still eating.</li></ul></div></details>
+ </div></div>
+ <div class="panel"><div class="eyebrow">Български капани</div><h2>Как мислим на български — и как е на английски</h2><div class="scroll"><table><thead><tr><th>Български</th><th>English</th><th>Защо</th></tr></thead><tbody id="trapBody"></tbody></table></div></div>
+</div></section>
+
+<section id="verbs" class="page"><div class="stack">
+ <div class="panel"><div class="eyebrow">Флашкарти</div><h2>Неправилни глаголи</h2>
+  <p class="muted">Виж V1 и се опитай да си спомниш V2 и V3. Натисни картата, за да я обърнеш.</p>
+  <div class="row"><button class="pillbtn active" id="fcAll">Всички</button><button class="pillbtn" id="fcUnk">Само неизвестните</button><span class="pill" id="fcMeta"></span></div>
+  <div class="flip" id="fcCard"><div class="in"><div class="f"><b id="fcFront"></b><span class="muted" id="fcBg"></span></div><div class="f back"><b id="fcBack"></b><span class="muted">V2 · V3</span></div></div></div>
+  <div class="row" style="justify-content:center"><button class="btn ghost" id="fcNo">Не знам ✗</button><button class="btn" id="fcYes">Знам ✓</button></div></div>
+ <div class="panel"><h2>Всички неправилни глаголи</h2><div id="verbGrid" class="verbs" style="margin-top:12px"></div></div>
+</div></section>
+
+<section id="quick" class="page"><div class="panel"><div class="eyebrow">Един поглед</div><h2>Бърза справка</h2><div id="quickGrid" class="quickGrid" style="margin-top:12px"></div></div></section>
+</main>
+<footer class="footer">Работи офлайн. Резултатите и настройките се пазят в браузъра.</footer>
+</div>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+<script>
+// ===== ДАННИ =====
+// Глаголи: [V1, V2, V3, V-ing, V-s, значение]
+const V={work:['work','worked','worked','working','works','работя'],go:['go','went','gone','going','goes','отивам'],write:['write','wrote','written','writing','writes','пиша'],eat:['eat','ate','eaten','eating','eats','ям'],study:['study','studied','studied','studying','studies','уча'],watch:['watch','watched','watched','watching','watches','гледам'],run:['run','ran','run','running','runs','тичам'],see:['see','saw','seen','seeing','sees','виждам'],play:['play','played','played','playing','plays','играя'],speak:['speak','spoke','spoken','speaking','speaks','говоря'],take:['take','took','taken','taking','takes','вземам'],make:['make','made','made','making','makes','правя'],stop:['stop','stopped','stopped','stopping','stops','спирам'],cook:['cook','cooked','cooked','cooking','cooks','готвя']};
+
+// Неправилни глаголи: [V1, V2, V3, значение]
+const IRR=[['be','was/were','been','съм'],['become','became','become','ставам'],['begin','began','begun','започвам'],['break','broke','broken','чупя'],['bring','brought','brought','донасям'],['build','built','built','строя'],['buy','bought','bought','купувам'],['catch','caught','caught','хващам'],['choose','chose','chosen','избирам'],['come','came','come','идвам'],['cost','cost','cost','струвам'],['cut','cut','cut','режа'],['do','did','done','правя'],['draw','drew','drawn','рисувам'],['drink','drank','drunk','пия'],['drive','drove','driven','карам'],['eat','ate','eaten','ям'],['fall','fell','fallen','падам'],['feel','felt','felt','чувствам'],['find','found','found','намирам'],['fly','flew','flown','летя'],['forget','forgot','forgotten','забравям'],['get','got','got','получавам'],['give','gave','given','давам'],['go','went','gone','отивам'],['have','had','had','имам'],['hear','heard','heard','чувам'],['keep','kept','kept','пазя'],['know','knew','known','знам'],['leave','left','left','тръгвам'],['lend','lent','lent','давам назаем'],['lose','lost','lost','губя'],['make','made','made','правя'],['meet','met','met','срещам'],['pay','paid','paid','плащам'],['put','put','put','слагам'],['read','read','read','чета'],['run','ran','run','тичам'],['say','said','said','казвам'],['see','saw','seen','виждам'],['sell','sold','sold','продавам'],['send','sent','sent','изпращам'],['sit','sat','sat','седя'],['sleep','slept','slept','спя'],['speak','spoke','spoken','говоря'],['spend','spent','spent','харча'],['swim','swam','swum','плувам'],['take','took','taken','вземам'],['teach','taught','taught','преподавам'],['tell','told','told','разказвам'],['think','thought','thought','мисля'],['understand','understood','understood','разбирам'],['wear','wore','worn','нося (дреха)'],['win','won','won','печеля'],['write','wrote','written','пиша']];
+
+// Времена. tl = времева линия: s=отсечки [от,до], p=точки, ref=опорен момент, link=пунктир [от,до]
+const T=[
+{id:'ps',period:'present',level:1,name:'Present Simple',bg:'Сегашно просто',short:'факт или навик',
+ formula:'I/You/We/They + V1 · He/She/It + V-s',neg:'do/does not + V1',q:'Do/Does + subject + V1?',
+ uses:['навик или повторение','факт или общовалидна истина','разписание'],signals:['always','usually','often','every day','never'],
+ examples:[['I drink coffee every morning.','Пия кафе всяка сутрин.'],['He works in Ruse.','Той работи в Русе.'],['Water boils at 100°C.','Водата кипи при 100°C.'],['Does she speak English?','Тя говори ли английски?']],
+ note:'-s е само при he/she/it. След does глаголът е V1, защото does вече носи окончанието.',
+ why:'Английският е изгубил почти всички лични окончания (не казва „работя / работиш / работи“ с различни форми). Остава само -s при he/she/it. Времето е „основното“, защото описва неща, които не са вързани за конкретен момент: навици, факти, разписания.',
+ tl:{p:[20,35,50,65,80],cap:'повтаря се по принцип',c:'present'},
+ more:[['The train leaves at 6:15.','Влакът тръгва в 6:15.'],['I don’t like spicy food.','Не обичам лютива храна.'],['She never eats meat.','Тя никога не яде месо.'],['What time does the shop open?','В колко часа отваря магазинът?']],
+ mistakes:[['He work every day.','He works every day.','Трето лице, единствено число → -s.'],['Does he works here?','Does he work here?','Does вече носи -s, главният глагол е V1.']],
+ vs:'Present Simple = по принцип („I work in Sofia“). Present Continuous = сега/временно („I am working in Sofia this month“).',
+ prac:[['She ___ tea every morning.',['drink','drinks','is drinking','drank'],1,'every morning → навик; she → -s.'],['___ he play football?',['Do','Does','Is','Has'],1,'He → Does.'],['Water ___ at 100°C.',['boil','boils','is boiling','boiled'],1,'Общовалиден факт → Present Simple.']]},
+{id:'pc',period:'present',level:1,name:'Present Continuous',bg:'Сегашно продължително',short:'процес точно сега',
+ formula:'am/is/are + V-ing',neg:'am/is/are not + V-ing',q:'Am/Is/Are + subject + V-ing?',
+ uses:['действие точно сега','временна ситуация','уговорено близко бъдеще'],signals:['now','at the moment','currently','this week'],
+ examples:[['I am reading now.','Чета в момента.'],['He is working from home this week.','Тази седмица той работи от вкъщи.'],['We are meeting Anna tomorrow.','Утре се срещаме с Анна.'],['Are you listening?','Слушаш ли?']],
+ note:'Know, want, believe и други глаголи за състояние обикновено не са в Continuous.',
+ why:'Нужен е начин да се покаже, че действието е „в хода си“, а не просто факт. Затова be показва кога (сега), а -ing показва, че действието тече и не е завършено.',
+ tl:{s:[[42,58]],cap:'тече около „сега“',c:'present'},
+ more:[['Please be quiet. The baby is sleeping.','Тихо, бебето спи.'],['I’m not working today.','Днес не работя.'],['They are building a new bridge.','Строят нов мост.'],['Why are you laughing?','Защо се смееш?']],
+ mistakes:[['I am knowing the answer.','I know the answer.','Know е състояние, не процес.'],['He is work now.','He is working now.','След am/is/are → V-ing.']],
+ vs:'„I live in Varna“ = постоянно. „I’m living in Varna for now“ = временно.',
+ prac:[['Be quiet! The baby ___.',['sleeps','is sleeping','slept','has slept'],1,'Процес в момента → Present Continuous.'],['Right now, they ___ dinner.',['have','are having','has','having'],1,'Have dinner е действие (не притежание), затова може да е Continuous.'],['I ___ the answer.',['am knowing','know','knows','are knowing'],1,'Know = състояние → Present Simple.']]},
+{id:'pp',period:'present',level:2,name:'Present Perfect',bg:'Сегашно перфектно',short:'минало + резултат сега',
+ formula:'have/has + V3',neg:'have/has not + V3',q:'Have/Has + subject + V3?',
+ uses:['резултатът е важен сега','житейски опит без точен момент','скорошно действие'],signals:['already','just','yet','ever','so far'],
+ examples:[['I have lost my keys.','Изгубил съм ключовете си.'],['He has visited Rome twice.','Той е посещавал Рим два пъти.'],['Have you ever tried sushi?','Опитвал ли си суши?'],['She has just arrived.','Тя току-що пристигна.']],
+ note:'Не използвай конкретен завършен момент като yesterday; тогава избери Past Simple.',
+ why:'Подобно на българското „съм работил“, английският свързва миналото със сега. Не е важно КОГА се е случило, а че резултатът или опитът е жив днес. Затова времето се нарича „перфектно“ – завършено, но с връзка към настоящето.',
+ tl:{p:[30],link:[30,50],ref:50,refLab:'сега (резултат)',c:'present'},
+ more:[['I have never been to Japan.','Никога не съм бил в Япония.'],['Has the bus come yet?','Дойде ли автобусът вече?'],['We have lived here since 2019.','Живеем тук от 2019.'],['She hasn’t called me today.','Днес не ми се е обаждала.']],
+ mistakes:[['I have seen him yesterday.','I saw him yesterday.','Yesterday е точен момент → Past Simple.'],['She has went home.','She has gone home.','След have/has → V3 (gone).']],
+ vs:'Past Simple затваря миналото („I lost my keys yesterday“). Present Perfect го държи отворено до сега („I have lost my keys“ – още ги нямам).',
+ prac:[['I ___ my phone. I can’t find it.',['lost','have lost','was losing','lose'],1,'Минало с резултат сега → Present Perfect.'],['She ___ to Paris three times.',['has been','was','is','have been'],0,'Опит, без точен момент; she → has.'],['I ___ him yesterday.',['have seen','saw','has seen','see'],1,'Yesterday → Past Simple.']]},
+{id:'ppc',period:'present',level:3,name:'Present Perfect Continuous',bg:'Сегашно перфектно продължително',short:'продължава до сега',
+ formula:'have/has been + V-ing',neg:'have/has not been + V-ing',q:'Have/Has + subject + been + V-ing?',
+ uses:['започнало е по-рано и още продължава','важно е колко дълго','скорошен процес с видим резултат'],signals:['for','since','all day','lately'],
+ examples:[['I have been waiting for an hour.','Чакам от един час.'],['He has been working since eight.','Работи от осем.'],['It has been raining.','Валяло е / още вали.'],['Have you been studying?','Учил ли си напоследък?']],
+ note:'For = период; since = начална точка. При know: I have known him, не have been knowing.',
+ why:'Българският казва „чакам от час“ (сегашно време). Английският не може – трябва да покаже, че чакането е започнало в миналото и стига до сега. Затова Perfect (връзка със сега) + Continuous (процес, продължителност).',
+ tl:{s:[[22,50]],ref:50,refLab:'сега',c:'present'},
+ more:[['How long have you been learning English?','От колко време учиш английски?'],['My eyes hurt. I’ve been reading all day.','Очите ме болят. Чета цял ден.'],['It has been snowing since morning.','Вали сняг от сутринта.'],['They haven’t been sleeping well.','Напоследък не спят добре.']],
+ mistakes:[['I am working here since 2020.','I have been working here since 2020.','Since/for + период до сега → Perfect, не Present.'],['I have been knowing him for years.','I have known him for years.','Know е състояние.']],
+ vs:'PP = резултат („I have painted the room“ – готово). PPC = процес („I have been painting the room“ – може още да не е готово).',
+ prac:[['He ___ for two hours.',['is waiting','has been waiting','waited','waits'],1,'For two hours + още продължава → PPC.'],['How long ___ you ___ here?',['are / working','have / been working','did / work','do / work'],1,'How long + до сега → have been working.'],['She is tired. She ___.',['has been running','runs','ran','will run'],0,'Скорошен процес с видим резултат.']]},
+{id:'pas',period:'past',level:1,name:'Past Simple',bg:'Минало просто',short:'завършено минало',
+ formula:'V2 / V-ed',neg:'did not + V1',q:'Did + subject + V1?',
+ uses:['завършено действие в миналото','поредица от събития','минал навик'],signals:['yesterday','last week','ago','in 2020'],
+ examples:[['I called her yesterday.','Обадих ѝ се вчера.'],['He went home at eight.','Прибра се в осем.'],['We opened the door and walked in.','Отворихме и влязохме.'],['Did you see him?','Видя ли го?']],
+ note:'След did/didn’t винаги използвай V1: Did he go? Не Did he went?',
+ why:'Завършеното минало има нужда от прост маркер: -ed (правилни глаголи) или стара форма (неправилни). Миналото е „поето“ от did във въпросите и отрицанията, затова главният глагол се връща към V1.',
+ tl:{p:[25],cap:'приключило',c:'past'},
+ more:[['I was born in 1998.','Роден съм през 1998.'],['She didn’t come to the party.','Тя не дойде на партито.'],['When did you arrive?','Кога пристигна?'],['He studied hard and passed the exam.','Учи упорито и взе изпита.']],
+ mistakes:[['Did you went there?','Did you go there?','Did носи миналото → V1.'],['I didn’t saw him.','I didn’t see him.','След didn’t → V1.']],
+ vs:'Past Simple + точно време (yesterday, in 2010). Present Perfect – без точно време и с връзка към сега.',
+ prac:[['We ___ to Rome last year.',['went','have gone','go','were going'],0,'Last year = точно време → Past Simple.'],['___ you call her yesterday?',['Do','Did','Have','Were'],1,'Въпрос в Past Simple → Did.'],['I ___ the film. It was boring.',['didn’t liked','didn’t like','not liked','don’t liked'],1,'След didn’t → V1.']]},
+{id:'pac',period:'past',level:2,name:'Past Continuous',bg:'Минало продължително',short:'процес в минал момент',
+ formula:'was/were + V-ing',neg:'was/were not + V-ing',q:'Was/Were + subject + V-ing?',
+ uses:['процес в конкретен минал момент','фон на кратко действие','две паралелни действия'],signals:['while','when','at 8 yesterday'],
+ examples:[['I was sleeping at eleven.','Спях в единайсет.'],['He was cooking when I called.','Готвеше, когато се обадих.'],['While I was reading, she was writing.','Аз четях, а тя пишеше.'],['Were they waiting?','Чакаха ли?']],
+ note:'I/he/she/it → was; you/we/they → were. Прекъсващото действие е Past Simple.',
+ why:'Когато разказваме история, ни трябва „фон“ (какво се е случвало) и „събития“ (какво се е случило). Past Continuous рисува фона, а Past Simple – събитията върху него.',
+ tl:{s:[[15,42]],p:[30],ptc:'event',cap:'процес, прекъснат от събитие',c:'past'},
+ more:[['It was raining when we left.','Валеше, когато тръгнахме.'],['What were you doing at 9?','Какво правеше в 9?'],['I was walking home when I saw an accident.','Прибирах се пеша, когато видях катастрофа.'],['They weren’t listening.','Не слушаха.']],
+ mistakes:[['I was watch TV.','I was watching TV.','След was/were → V-ing.'],['When he called, I slept.','When he called, I was sleeping.','Процес, прекъснат от събитие → Past Continuous.']],
+ vs:'Past Simple = събитие („I opened the door“). Past Continuous = процес около него („I was opening the door when…“).',
+ prac:[['She ___ when the phone rang.',['cooked','was cooking','has cooked','cooks'],1,'Процес, прекъснат от събитие.'],['At 8 yesterday, we ___ dinner.',['were having','had been','have','are having'],0,'Конкретен минал момент → процес.'],['They ___ football when it started to rain.',['played','were playing','have played','play'],1,'Фоново действие + кратко събитие.']]},
+{id:'pap',period:'past',level:3,name:'Past Perfect',bg:'Минало перфектно',short:'по-ранно минало',
+ formula:'had + V3',neg:'had not + V3',q:'Had + subject + V3?',
+ uses:['завършило преди друго минало действие','причина за минала ситуация'],signals:['before','after','already','by the time'],
+ examples:[['She had left before I arrived.','Беше тръгнала преди да пристигна.'],['I had finished when he called.','Бях приключил, когато се обади.'],['He was tired because he had not slept.','Беше уморен, защото не беше спал.'],['Had you met before?','Бяхте ли се срещали?']],
+ note:'Had е еднакво за всички лица. Фокусът е „по-миналото“ действие.',
+ why:'Когато разказваш в минало и трябва да се върнеш още по-назад, ти трябва втори минал слой. Had + V3 е „минало в миналото“ – като Present Perfect, преместен назад във времето.',
+ tl:{p:[12],ref:32,refLab:'минал момент',link:[12,32],c:'past'},
+ more:[['When I got home, the film had started.','Когато се прибрах, филмът беше започнал.'],['She said she had seen it.','Каза, че го е видяла.'],['I had never flown before that trip.','Никога не бях летял преди това пътуване.'],['After he had eaten, he left.','След като беше ял, си тръгна.']],
+ mistakes:[['He had went away.','He had gone away.','След had → V3.'],['After he left, I had arrived.','After he had left, I arrived.','Had отива при по-ранното действие.']],
+ vs:'Present Perfect гледа от СЕГА назад. Past Perfect гледа от МИНАЛ момент назад.',
+ prac:[['When we arrived, the train ___.',['left','had left','leaves','was left'],1,'Влакът е тръгнал ПРЕДИ да пристигнем.'],['She was sad because she ___ her job.',['lost','had lost','loses','has lost'],1,'Причина, случила се по-рано.'],['I ___ never ___ sushi before last night.',['had / eaten','have / ate','was / eating','did / eat'],0,'Never before + минал момент → had + V3.']]},
+{id:'papc',period:'past',level:3,name:'Past Perfect Continuous',bg:'Минало перфектно продължително',short:'продължителност преди минало',
+ formula:'had been + V-ing',neg:'had not been + V-ing',q:'Had + subject + been + V-ing?',
+ uses:['продължителност до минал момент','причина с продължителен характер'],signals:['for','since','before'],
+ examples:[['I had been waiting for an hour.','Бях чакал един час.'],['He was tired because he had been running.','Беше уморен, защото беше тичал.'],['They had been living there since 2010.','Живееха там от 2010 г.'],['Had she been crying?','Беше ли плакала?']],
+ note:'Спрямо Past Perfect тук фокусът е продължителният процес, не само резултатът.',
+ why:'Същото като Present Perfect Continuous, но „преместено“ в миналото: процесът е траел до някакъв минал момент и често обяснява какво виждаме тогава (умора, мокра земя).',
+ tl:{s:[[5,32]],ref:32,refLab:'минал момент',c:'past'},
+ more:[['She was exhausted. She had been working all night.','Беше изтощена. Беше работила цяла нощ.'],['How long had you been waiting?','От колко време чакахте?'],['The ground was wet. It had been raining.','Земята беше мокра. Беше валяло.'],['He had been smoking for years before he quit.','Беше пушил с години, преди да откаже.']],
+ mistakes:[['I had been knowing her.','I had known her.','Know е състояние.'],['He had been work.','He had been working.','been + V-ing.']],
+ vs:'Past Perfect = резултат („had finished“). PPC = процес/продължителност („had been working“).',
+ prac:[['His hands were dirty. He ___ the car.',['had been fixing','fixes','was fix','has fixed'],0,'Процес, който обяснява видим резултат в миналото.'],['They ___ for an hour when the bus came.',['had been waiting','have waited','were wait','waits'],0,'For an hour + минал момент.'],['How long ___ she ___ before she called?',['had / been crying','has / cried','did / cry','was / cry'],0,'Продължителност преди минал момент.']]},
+{id:'fs',period:'future',level:1,name:'Future Simple (will)',bg:'Бъдеще с will',short:'решение, обещание, прогноза',
+ formula:'will + V1',neg:'will not (won’t) + V1',q:'Will + subject + V1?',
+ uses:['спонтанно решение','обещание или предложение','лична прогноза'],signals:['I think','probably','tomorrow'],
+ examples:[['I will help you.','Ще ти помогна.'],['I think it will rain.','Мисля, че ще вали.'],['Will you open the window?','Ще отвориш ли прозореца?'],['She will probably agree.','Вероятно ще се съгласи.']],
+ note:'Will е еднакво за всички лица. За предварителен план използвай going to.',
+ why:'Will е модален глагол, затова няма -s и няма to. Идва от „искам/желая“ – оттам идеята за воля: решавам сега, обещавам, предполагам.',
+ tl:{p:[76],cap:'ще се случи',c:'future'},
+ more:[['I’ll carry your bag.','Ще ти нося чантата.'],['I won’t tell anyone.','Няма да кажа на никого.'],['Perhaps it will be sunny.','Може би ще е слънчево.'],['Shall we start?','Да започваме ли?']],
+ mistakes:[['I will to go.','I will go.','Will + V1 – без to.'],['If it will rain, we stay.','If it rains, we will stay.','След if/when → Present Simple.']],
+ vs:'will = решавам сега / мисля. going to = вече реших / виждам знаци.',
+ prac:[['There’s someone at the door. I ___ it.',['will open','am going to open','open','opened'],0,'Спонтанно решение → will.'],['I think Bulgaria ___ win.',['will','is','does','has'],0,'Мнение/прогноза → will.'],['I promise I ___ late.',['won’t be','don’t be','not will be','am not'],0,'Обещание → will (won’t).']]},
+{id:'going',period:'future',level:1,name:'Be going to',bg:'Бъдеще с going to',short:'план или видимо доказателство',
+ formula:'am/is/are going to + V1',neg:'am/is/are not going to + V1',q:'Am/Is/Are + subject + going to + V1?',
+ uses:['предварително взет план','прогноза по видимо доказателство'],signals:['plan','look!','tonight'],
+ examples:[['I am going to study tonight.','Ще уча тази вечер.'],['He is going to buy a car.','Ще купи кола.'],['Look! It is going to rain.','Виж! Ще завали.'],['Are you going to call her?','Ще ѝ се обадиш ли?']],
+ note:'Това е конструкция, не отделно време. Променя се be: am/is/are.',
+ why:'Буквално „отивам към“ действие: планът вече е в движение. Затова е естествен избор за намерения и за ситуации, в които вече виждаме, че нещо идва (черни облаци).',
+ tl:{p:[74],link:[50,74],ref:50,refLab:'решението е взето',c:'future'},
+ more:[['We’re going to have a baby.','Ще имаме бебе.'],['What are you going to do?','Какво ще правиш?'],['Watch out! You’re going to fall.','Внимавай! Ще паднеш.'],['I’m not going to say anything.','Няма да кажа нищо.']],
+ mistakes:[['I going to call.','I am going to call.','Нужен е be: am/is/are.'],['He is going to goes.','He is going to go.','След to → V1.']],
+ vs:'Going to: планът съществува вече. Will: решението се взема в момента на говорене.',
+ prac:[['Look at the clouds! It ___ rain.',['will','is going to','rains','rained'],1,'Видимо доказателство → going to.'],['I ___ visit my aunt this weekend. I booked the tickets.',['will','am going to','visit','visited'],1,'Вече планирано → going to.'],['___ you ___ to apply?',['Are / going','Do / go','Will / going','Is / going'],0,'Are you going to + V1?']]},
+{id:'fc',period:'future',level:2,name:'Future Continuous',bg:'Бъдеще продължително',short:'процес в бъдещ момент',
+ formula:'will be + V-ing',neg:'will not be + V-ing',q:'Will + subject + be + V-ing?',
+ uses:['процес в бъдещ момент','очакван ход на събитията','учтив въпрос за план'],signals:['at this time tomorrow','at 8 tomorrow'],
+ examples:[['At eight, I will be working.','В осем ще работя.'],['He will be travelling next week.','Ще пътува следващата седмица.'],['Will you be using the car?','Ще използваш ли колата?'],['We will be flying tomorrow.','Утре ще летим.']],
+ note:'Еднакво за всички лица; акцентът е върху процеса около бъдещ момент.',
+ why:'Като „снимка на бъдещето“: поставяш се в бъдещ момент и описваш какво ще тече тогава. Идеално е и за учтиви въпроси („Will you be using the car?“), защото не звучи като молба.',
+ tl:{s:[[66,88]],ref:77,refLab:'бъдещ момент',c:'future'},
+ more:[['This time next week, I’ll be lying on a beach.','По това време следващата седмица ще лежа на плаж.'],['Will you be coming to the party?','Ще дойдеш ли на партито?'],['Don’t call at 7. I’ll be driving.','Не звъни в 7. Ще карам.'],['She’ll be waiting for you at the station.','Ще те чака на гарата.']],
+ mistakes:[['I will working.','I will be working.','Will + be + V-ing.'],['I will be knowing.','I will know.','Know е състояние.']],
+ vs:'Future Simple = решение/факт. Future Continuous = какво ще тече в момент X.',
+ prac:[['At 10 tomorrow, I ___ in a meeting.',['will be sitting','sit','will have sat','sat'],0,'Процес в конкретен бъдещ момент.'],['Don’t phone at 8. We ___ dinner.',['will have','will be having','had','have had'],1,'Ще сме по средата на вечерята.'],['This time next month, she ___ in Spain.',['will be living','lives','lived','has lived'],0,'This time next month → процес в бъдещ момент.']]},
+{id:'fp',period:'future',level:3,name:'Future Perfect',bg:'Бъдеще перфектно',short:'завършено до бъдещ момент',
+ formula:'will have + V3',neg:'will not have + V3',q:'Will + subject + have + V3?',
+ uses:['ще е завършило до бъдеща точка','предположение за завършеност'],signals:['by','by then','by Friday'],
+ examples:[['By Friday, I will have finished.','До петък ще съм приключил.'],['He will have arrived by six.','До шест ще е пристигнал.'],['Will you have completed it?','Ще си го завършил ли?'],['They will have left before noon.','Ще са тръгнали преди обяд.']],
+ note:'By = не по-късно от. Until подчертава продължаване до момента.',
+ why:'Гледаш назад от бъдещ момент: „до тогава вече ще е готово“. Има вградена идея за краен срок, затова често върви с by.',
+ tl:{p:[66],ref:86,refLab:'краен срок',link:[66,86],c:'future'},
+ more:[['By 2030, I will have saved enough money.','До 2030 ще съм спестил достатъчно.'],['She will have left by the time you arrive.','Ще е тръгнала, докато пристигнеш.'],['Will you have finished by six?','Ще си приключил ли до шест?'],['We won’t have finished by Friday.','Няма да сме приключили до петък.']],
+ mistakes:[['I will have finish.','I will have finished.','Will have + V3.'],['By Monday I finish it.','By Monday I will have finished it.','Краен срок в бъдещето → Future Perfect.']],
+ vs:'Future Simple: ще го направя. Future Perfect: до момент X вече ще съм го направил.',
+ prac:[['By next June, he ___ his degree.',['will finish','will have finished','finishes','has finished'],1,'By + бъдещ момент → Future Perfect.'],['I ___ the report by 5.',['will have written','write','wrote','am writing'],0,'Краен срок → завършеност.'],['___ they ___ before we arrive?',['Will / have left','Do / leave','Are / leaving','Did / leave'],0,'Will they have left…?']]},
+{id:'fpc',period:'future',level:3,name:'Future Perfect Continuous',bg:'Бъдеще перфектно продължително',short:'продължителност до бъдеще',
+ formula:'will have been + V-ing',neg:'will not have been + V-ing',q:'Will + subject + have been + V-ing?',
+ uses:['колко дълго ще продължава до бъдещ момент'],signals:['for','by then','by next year'],
+ examples:[['By noon, I will have been working for five hours.','До обяд ще съм работил пет часа.'],['He will have been living here for a year.','Ще е живял тук една година.'],['Will they have been waiting long?','Ще са чакали ли дълго?'],['We will have been travelling all day.','Ще сме пътували цял ден.']],
+ note:'Рядко в разговор; използва се, когато продължителността е най-важна.',
+ why:'Най-„тежката“ форма: комбинира всичко – бъдеще, перфект и процес. Използва се, когато искаш да кажеш колко дълго ще е траело нещо до бъдеща точка („до юни ще уча пет години“).',
+ tl:{s:[[56,86]],ref:86,refLab:'бъдещ момент',c:'future'},
+ more:[['In May, I will have been working here for ten years.','През май ще са десет години, откакто работя тук.'],['How long will you have been driving by then?','От колко време ще караш дотогава?'],['By tonight, she’ll have been travelling for 20 hours.','До довечера ще пътува вече 20 часа.'],['They’ll have been dating for five years.','Ще са излизали пет години.']],
+ mistakes:[['I will have been work.','I will have been working.','Will have been + V-ing.'],['By then I will be working for 5 years.','By then I will have been working for 5 years.','Продължителност до бъдещ момент.']],
+ vs:'Future Perfect: завършено. Future Perfect Continuous: колко време ще е продължавало.',
+ prac:[['By June, I ___ here for 5 years.',['will have been working','will work','work','have worked'],0,'For 5 years до бъдеща точка.'],['By 9, he ___ for six hours.',['will have been driving','will drive','drives','drove'],0,'Колко дълго до момент в бъдещето.'],['How long ___ you ___ by then?',['will / have been studying','do / study','did / study','are / studying'],0,'How long + by then.']]}
+];
+const TN=Object.fromEntries(T.map(t=>[t.id,t]));
+const PERIODS=[['present','Сегашни'],['past','Минали'],['future','Бъдещи']];
+const SUBJ=['I','You','He','She','It','We','They'];
+const TAIL={ppc:'for two hours',pas:'yesterday',pac:'at eight',pap:'before noon',papc:'for two hours',fs:'tomorrow',going:'tomorrow',fc:'at eight',fp:'by Friday',fpc:'for two hours'};
+
+// ===== ТЕСТОВЕ =====
+// [категория, въпрос, [варианти], индекс на верния, обяснение]
+const QS=[
+['време','I ___ to work every day.',['go','am going','went','have gone'],0,'Every day → навик → Present Simple.'],
+['време','Look! It ___.',['rains','is raining','rained','has rained'],1,'Look! → процес сега → Present Continuous.'],
+['време','We ___ that film yesterday.',['see','have seen','saw','are seeing'],2,'Yesterday → конкретно минало → Past Simple.'],
+['време','I cannot open the door. I ___ my keys.',['lost yesterday','have lost','am losing','will lose'],1,'Минало действие с резултат сега → Present Perfect.'],
+['време','At 9 last night, I ___ TV.',['watched','was watching','have watched','will watch'],1,'Процес в минал момент → Past Continuous.'],
+['време','By Friday, she ___ the report.',['will have finished','will finished','has finish','is finish'],0,'By Friday → завършено до бъдеща точка → Future Perfect.'],
+['време','The phone is ringing. I ___ it!',['answer yesterday','will answer','answered','have answer'],1,'Спонтанно решение → will.'],
+['време','She ___ for two hours and is still studying.',['studied','has been studying','will study','is study'],1,'Продължава до сега → Present Perfect Continuous.'],
+['време','She ___ in London since 2015.',['lived','has lived','lives','will live'],1,'Since 2015 + още живее → Present Perfect.'],
+['време','When I arrived, they ___ already left.',['have','had','were','did'],1,'Тръгнали са преди да пристигна → Past Perfect.'],
+['време','Next year, I ___ to university. I have already applied.',['will go','am going to go','go','went'],1,'Вече взето решение → going to.'],
+['време','Be quiet! The students ___ an exam.',['take','are taking','took','have taken'],1,'Процес в момента.'],
+['време','I ___ coffee. I prefer tea.',['don’t drink','am not drinking','didn’t drink','haven’t drunk'],0,'Общо предпочитание → Present Simple.'],
+['време','How long ___ you ___ English?',['do / learn','have / been learning','did / learn','will / learn'],1,'How long + продължава до сега.'],
+['време','He was tired because he ___ all night.',['worked','had been working','works','is working'],1,'Процес преди минал момент, обяснява умората.'],
+['време','This time tomorrow, I ___ on a plane.',['will sit','will be sitting','sit','sat'],1,'Процес в бъдещ момент → Future Continuous.'],
+['време','By 2030, they ___ here for 20 years.',['will live','will have been living','live','have lived'],1,'Продължителност до бъдеща точка.'],
+['време','I ___ my homework yet.',['didn’t finish','haven’t finished','don’t finish','am not finishing'],1,'Yet → Present Perfect.'],
+['време','The sun ___ in the east.',['rises','is rising','rose','has risen'],0,'Общовалиден факт.'],
+['време','While I ___ dinner, the lights went out.',['cooked','was cooking','cook','have cooked'],1,'Процес, прекъснат от събитие.'],
+['форма','Избери правилното.',['He work every day.','He works every day.','He working every day.','He does works.'],1,'He в положително Present Simple → works.'],
+['форма','Правилен въпрос:',['Does he works here?','Do he work here?','Does he work here?','Is he work here?'],2,'Does носи -s; главният глагол е V1.'],
+['форма','Правилно отрицание:',['He doesn’t goes.','He don’t go.','He doesn’t go.','He isn’t go.'],2,'След doesn’t → V1 go.'],
+['форма','I ___ working now.',['is','are','am','be'],2,'С I използваме am.'],
+['форма','He ___ already finished.',['have','has','is','does'],1,'Present Perfect с he → has.'],
+['форма','Did she ___ yesterday?',['went','go','gone','going'],1,'След did → V1 go.'],
+['форма','They ___ sleeping at midnight.',['was','were','did','have'],1,'You/we/they → were.'],
+['форма','He has ___ the email.',['wrote','write','written','writing'],2,'След has → V3 written.'],
+['форма','___ you ever ___ to Italy?',['Did / go','Have / been','Are / being','Do / went'],1,'Опит → Have you ever been…?'],
+['форма','She ___ a doctor. (професия)',['are','is','am','be'],1,'She → is.'],
+['форма','We ___ not going to the party.',['is','am','are','do'],2,'We → are.'],
+['форма','Правилно:',['I will to help you.','I will help you.','I will helping you.','I will helps you.'],1,'Will + V1, без to и без -s.'],
+['грешка','Кое е грешно?',['I saw him yesterday.','I have seen him before.','I have seen him yesterday.','I have just seen him.'],2,'Present Perfect не върви с yesterday.'],
+['грешка','Кое е грешно?',['I know the answer.','I am thinking about it.','I am knowing the answer.','I understand you.'],2,'Know е състояние, не процес.'],
+['грешка','Кое е грешно?',['I will call when I arrive.','I will call when I will arrive.','If it rains, we will stay.','She will help if she can.'],1,'След when/if за бъдеще → Present Simple.'],
+['грешка','Кое е грешно?',['She studies.','He watches.','He studys.','It goes.'],2,'study → studies.'],
+['грешка','Кое е грешно?',['running','writing','makeing','seeing'],2,'make → making; крайното e отпада.'],
+['грешка','Кое е грешно?',['I had left.','Had she finished?','He had went.','They had waited.'],2,'След had → V3: gone.'],
+['грешка','Кое е грешно?',['She doesn’t like tea.','Does she likes tea?','Do you like tea?','They don’t like tea.'],1,'След does → V1: like.'],
+['грешка','Кое е грешно?',['I have been to Rome twice.','I have gone to Rome last year.','I went to Rome last year.','I’ve never been to Rome.'],1,'Last year → Past Simple.'],
+['грешка','Кое е грешно?',['I am living here since 2018.','I have lived here since 2018.','I have been living here since 2018.','I lived here in 2018.'],0,'Since + до сега → Perfect.'],
+['грешка','Кое е грешно?',['He can swim.','He cans swim.','He can’t swim.','Can he swim?'],1,'Модалните глаголи нямат -s.'],
+['грешка','Кое е грешно?',['stopped','planned','visitted','played'],2,'visit → visited (ударението не е на последната сричка).'],
+['грешка','Кое е грешно?',['She was reading when he came.','She were reading when he came.','He had left before she came.','They were waiting.'],1,'She → was, не were.'],
+['превод','„Той работи всеки ден.“',['He is working every day.','He works every day.','He worked tomorrow.','He has work.'],1,'Навик → Present Simple; he → works.'],
+['превод','„В момента пиша.“',['I write yesterday.','I am writing now.','I have wrote.','I will writing.'],1,'Процес сега → am + V-ing.'],
+['превод','„Тя вече е тръгнала.“',['She already leaves.','She has already left.','She is leave.','She did left.'],1,'Резултат сега → has + V3.'],
+['превод','„Вчера отидохме в София.“',['We have gone yesterday.','We went to Sofia yesterday.','We go yesterday.','We are going yesterday.'],1,'Yesterday → Past Simple; go → went.'],
+['превод','„До петък ще съм приключил.“',['I finish by Friday.','I will have finished by Friday.','I have finished tomorrow.','I will be finish.'],1,'Future Perfect → will have + V3.'],
+['превод','„Работя от два часа.“',['I work two hours ago.','I have been working for two hours.','I was work.','I will working.'],1,'Продължава до сега → Present Perfect Continuous.'],
+['превод','„Когато пристигнах, той спеше.“',['When I arrived, he was sleeping.','He has slept when I arrive.','He will sleep yesterday.','He sleeping.'],0,'Минал процес + кратко действие.'],
+['превод','„Ще ти помогна.“ (решение сега)',['I am helping yesterday.','I will help you.','I have help you.','I helped tomorrow.'],1,'Спонтанно решение → will.'],
+['превод','„Никога не съм бил в Париж.“',['I never was in Paris.','I have never been to Paris.','I never go to Paris.','I didn’t been in Paris.'],1,'Опит до сега → Present Perfect.'],
+['превод','„Ще вали — виж облаците!“',['It will rain — look at the clouds!','It is going to rain — look at the clouds!','It rains — look!','It rained — look!'],1,'Видимо доказателство → going to.'],
+['превод','„Бях изморен, защото бях работил цял ден.“',['I was tired because I worked all day.','I was tired because I had been working all day.','I am tired because I work.','I was tired because I will work.'],1,'Процес преди минал момент → Past Perfect Continuous.'],
+['превод','„Живея тук от 2019.“',['I live here since 2019.','I have lived here since 2019.','I am living here from 2019.','I lived here since 2019.'],1,'Since + до сега → Present Perfect.'],
+['превод','„Утре в осем ще спя.“',['I will be sleeping at eight tomorrow.','I sleep at eight yesterday.','I have slept tomorrow.','I will slept.'],0,'Процес в бъдещ момент → Future Continuous.']
+];
+
+// Попълни: [въпрос, [приети отговори], обяснение]
+const WRITE=[
+['He ___ (go) to school every day.',['goes'],'He → -es след o.'],
+['She ___ (study) English now. (Present Continuous)',['is studying'],'is + V-ing; y се запазва пред -ing.'],
+['We ___ (see) that film last week.',['saw'],'Last week → Past Simple; see → saw.'],
+['I ___ (never / be) to Spain. (Present Perfect)',['have never been','haven’t been'],'have + V3 (been).'],
+['They ___ (play) tennis when it started to rain. (Past Continuous)',['were playing'],'were + V-ing.'],
+['By Friday, I ___ (finish) the project. (Future Perfect)',['will have finished'],'will have + V3.'],
+['___ she ___ (like) coffee? (Present Simple)',['does like','does she like'],'Does + she + V1.'],
+['He ___ (not / eat) meat. (Present Simple)',['doesn’t eat','does not eat'],'doesn’t + V1.'],
+['When we arrived, the film ___ (already / start). (Past Perfect)',['had already started','had started'],'had + V3.'],
+['This time tomorrow, I ___ (fly) to Rome. (Future Continuous)',['will be flying'],'will be + V-ing.'],
+['I ___ (wait) for an hour. (Present Perfect Continuous)',['have been waiting'],'have been + V-ing.'],
+['Look at the sky! It ___ (rain). (going to)',['is going to rain'],'is going to + V1.'],
+['What time ___ you ___ (get up) yesterday?',['did get up','did you get up'],'Did + you + V1.'],
+['The baby ___ (sleep) now.',['is sleeping'],'Процес сега.'],
+['She ___ (live) here since 2020.',['has lived','has been living'],'Since + до сега.']
+];
+
+// Български → English (капани)
+const BGTRAP=[
+['Работя тук от 2 години.','I have been working here for two years.','БГ: сегашно. EN: до сега → Perfect (Continuous).'],
+['Като дойда, ще ти кажа.','When I come, I will tell you.','БГ: „ще дойда“ не е нужно. EN: след when → Present Simple.'],
+['Вчера го видях.','I saw him yesterday.','Точно време → Past Simple.'],
+['Вече го бях видял.','I had already seen him.','Минало в миналото → Past Perfect.'],
+['Утре ще пътувам с влак (билетът е купен).','I’m travelling by train tomorrow. / I’m going to travel…','Предварителен план.'],
+['Мисля, че ще вали.','I think it will rain.','Мнение → will.'],
+['Не съм ял от сутринта.','I haven’t eaten since morning.','Since → Present Perfect.'],
+['Бил съм в Лондон. (още съм там?)','I have been to London. / He has gone to London.','Been = върнал се; gone = още е там.']
+];
+
+// Правопис на -s / -ing / -ed
+const DOUBLE=['begin','prefer','admit','forget','occur','refer','control','regret','permit','commit','quit','equip','upset','forgot'];
+function spellS(w){
+  if(w==='have')return['has','неправилно: have → has'];
+  if(w==='do')return['does','-es след o'];
+  if(w==='go')return['goes','-es след o'];
+  if(/(s|x|z|ch|sh)$/.test(w))return[w+'es','-es след s, x, z, ch, sh (иначе произношението е трудно)'];
+  if(/[^aeiou]y$/.test(w))return[w.slice(0,-1)+'ies','съгласна + y → -ies'];
+  return[w+'s','просто добавяме -s'];
+}
+function isCVC(w){return /^[^aeiou]*[aeiou][^aeiouwxy]$/.test(w)||DOUBLE.includes(w)}
+function spellIng(w){
+  if(w==='be')return['being','специален случай'];
+  if(/ie$/.test(w))return[w.slice(0,-2)+'ying','-ie → -ying'];
+  if(/[^aeiouy]e$/.test(w)&&!/ee$/.test(w))return[w.slice(0,-1)+'ing','крайното немо e отпада'];
+  if(isCVC(w))return[w+w.slice(-1)+'ing','кратка гласна + една съгласна → удвояваме съгласната'];
+  return[w+'ing','просто добавяме -ing'];
+}
+function spellEd(w){
+  const ir=IRR.find(x=>x[0]===w);
+  if(ir)return[ir[1],'неправилен глагол – учи се наизуст',''];
+  let f,why;
+  if(/e$/.test(w)){f=w+'d';why='глаголът свършва на e → само -d'}
+  else if(/[^aeiou]y$/.test(w)){f=w.slice(0,-1)+'ied';why='съгласна + y → -ied'}
+  else if(isCVC(w)){f=w+w.slice(-1)+'ed';why='кратка гласна + една съгласна → удвояваме'}
+  else{f=w+'ed';why='просто добавяме -ed'}
+  const b=w.replace(/e$/,'');
+  const snd=/[td]$/.test(w)?'/ɪd/ – като в wanted':/(p|k|f|s|x|c|ch|sh|th)$/.test(b)?'/t/ – като в worked':'/d/ – като в played';
+  return[f,why,snd];
+}
+// ===== ПОМОЩНИ =====
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const PNAME={past:'Минало',present:'Настояще',future:'Бъдеще'};
+
+// ===== СЪСТОЯНИЕ =====
+const KEY='tensesV2';
+const DEF={xp:0,score:0,attempts:0,streak:0,best:0,cats:{},mistakes:[],seen:{},prac:{},known:{},dark:null,last:'ps',day:'',days:0};
+let S;
+try{S={...DEF,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){S={...DEF}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const dayStr=d=>d.toISOString().slice(0,10);
+function touchDay(){const t=dayStr(new Date());if(S.day===t)return;const y=dayStr(new Date(Date.now()-864e5));S.days=S.day===y?S.days+1:1;S.day=t}
+function addXP(n){S.xp+=n;touchDay();save();hud()}
+function hud(){
+  const lvl=Math.floor(S.xp/100)+1;
+  $('hLvl').textContent='Ниво '+lvl;$('hXp').textContent=S.xp;$('hBar').style.width=(S.xp%100)+'%';
+  const ok=S.day===dayStr(new Date())||S.day===dayStr(new Date(Date.now()-864e5));
+  $('hDays').textContent=ok?S.days:0;
+  const done=T.filter(t=>S.prac[t.id]>=2).length,acc=S.attempts?Math.round(S.score/S.attempts*100):0;
+  $('ringL').style.setProperty('--p',done/T.length*100);$('ringLt').textContent=done+'/'+T.length;
+  $('ringA').style.setProperty('--p',acc);$('ringAt').textContent=acc+'%';
+  let adv='Започни с урока Present Simple, после пробвай тест.';
+  const cs=Object.entries(S.cats).filter(([,v])=>v[1]>=3).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1]);
+  const nextT=T.find(t=>!S.seen[t.id]);
+  if(cs.length&&cs[0][1][0]/cs[0][1][1]<.8)adv=`Най-слаба е категорията „${cs[0][0]}“ (${Math.round(cs[0][1][0]/cs[0][1][1]*100)}%). Пробвай я в Тестове.`;
+  else if(nextT)adv=`Следващ урок: ${nextT.name}.`;
+  else if(S.attempts)adv='Браво! Продължи с „Образувай“ и „Моите грешки“, за да затвърдиш.';
+  $('advice').textContent=adv;
+  document.querySelectorAll('.tTab').forEach(b=>b.classList.toggle('done',S.prac[b.dataset.id]>=2));
+}
+function confetti(n=40){
+  const c=$('confetti'),cols=['#3563e9','#15966b','#d98409','#d64545','#6a4fd6'];
+  for(let i=0;i<n;i++){const e=document.createElement('i');e.style.cssText=`left:${Math.random()*100}%;background:${rnd(cols)};--d:${Math.random()*.5}s;--r:${Math.random()*720-360}deg`;c.appendChild(e);setTimeout(()=>e.remove(),2300)}
+}
+function speak(t){try{const u=new SpeechSynthesisUtterance(t);u.lang='en-GB';u.rate=.9;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+const canSpeak='speechSynthesis' in window;
+const sayBtn=t=>canSpeak?`<button class="say" data-say="${esc(t)}" aria-label="Чуй" title="Чуй">🔊</button>`:'';
+document.addEventListener('click',e=>{const b=e.target.closest('[data-say]');if(b)speak(b.dataset.say)});
+
+// ===== НАВИГАЦИЯ =====
+function go(page){
+  document.querySelectorAll('.tab[data-page]').forEach(x=>{x.classList.toggle('active',x.dataset.page===page);x.setAttribute('aria-selected',x.dataset.page===page)});
+  document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===page));
+  scrollTo(0,0);if(history.replaceState)history.replaceState(null,'','#'+page);
+}
+document.querySelectorAll('.tab[data-page]').forEach(b=>b.onclick=()=>go(b.dataset.page));
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)go(g.dataset.go);const t=e.target.closest('[data-tense]');if(t){go('learn');showTense(t.dataset.tense)}});
+
+// ===== ГЕНЕРАТОР НА ИЗРЕЧЕНИЯ =====
+const be=(s,p=false)=>p?(['You','We','They'].includes(s)?'were':'was'):(s==='I'?'am':['He','She','It'].includes(s)?'is':'are');
+const hv=s=>['He','She','It'].includes(s)?'has':'have';
+const subj=s=>s==='I'?'I':s.toLowerCase();
+function sent(id,s,v,type='pos'){
+  const [v1,v2,v3,ing,vs]=v,third=['He','She','It'].includes(s),tail=TAIL[id]?' '+TAIL[id]:'';
+  const q=(a,r)=>a[0].toUpperCase()+a.slice(1)+' '+subj(s)+' '+r+'?';
+  const fin=(a,r)=>type==='pos'?`${s} ${a} ${r}${tail}.`:type==='neg'?`${s} ${a} not ${r}${tail}.`:q(a,r+tail);
+  switch(id){
+    case 'ps':return type==='pos'?`${s} ${third?vs:v1}.`:type==='neg'?`${s} ${third?"doesn't":"don't"} ${v1}.`:q(third?'does':'do',v1);
+    case 'pc':return fin(be(s),ing);
+    case 'pp':return fin(hv(s),v3);
+    case 'ppc':return fin(hv(s),`been ${ing}`);
+    case 'pas':return type==='pos'?`${s} ${v2}${tail}.`:type==='neg'?`${s} didn't ${v1}${tail}.`:q('did',v1+tail);
+    case 'pac':return fin(be(s,true),ing);
+    case 'pap':return fin('had',v3);
+    case 'papc':return fin('had',`been ${ing}`);
+    case 'fs':return type==='neg'?`${s} won't ${v1}${tail}.`:fin('will',v1);
+    case 'going':return fin(be(s),`going to ${v1}`);
+    case 'fc':return type==='neg'?`${s} won't be ${ing}${tail}.`:fin('will',`be ${ing}`);
+    case 'fp':return type==='neg'?`${s} won't have ${v3}${tail}.`:fin('will',`have ${v3}`);
+    default:return type==='neg'?`${s} won't have been ${ing}${tail}.`:fin('will',`have been ${ing}`);
+  }
+}
+// нормализация за сравнение на въведени изречения
+function norm(s){
+  return String(s).toLowerCase().replace(/[’`]/g,"'").replace(/\bwon't\b/g,'will not').replace(/\bcan't\b/g,'can not')
+    .replace(/n't\b/g,' not').replace(/'m\b/g,' am').replace(/'re\b/g,' are').replace(/'ve\b/g,' have').replace(/'ll\b/g,' will').replace(/'d\b/g,' had')
+    .replace(/[.,!?;:"]/g,'').replace(/\s+/g,' ').trim();
+}
+
+// ===== ВРЕМЕВА ЛИНИЯ =====
+function timeline(t,mini=false){
+  const d=t.tl,c=d.c;let h=`<div class="tl ${mini?'tl-mini':''}"><div class="tl-line"></div><div class="tl-now"><span>СЕГА</span></div>`;
+  (d.link?[d.link]:[]).forEach(([a,b])=>h+=`<div class="tl-link" style="left:${a}%;--w:${b-a}%"></div>`);
+  (d.s||[]).forEach(([a,b])=>h+=`<div class="tl-span ${c}" style="left:${a}%;--w:${b-a}%"></div>`);
+  (d.p||[]).forEach((x,i)=>h+=`<div class="tl-pt ${d.ptc==='event'?'past':c}" style="left:${x}%;--d:${.3+i*.12}s"></div>`);
+  if(d.ref!=null)h+=`<div class="tl-ref" style="left:${d.ref}%"></div>${d.refLab?`<em style="left:${d.ref}%">${d.refLab}</em>`:''}`;
+  if(d.cap&&!d.refLab)h+=`<span class="tl-cap" style="left:${d.s?(d.s[0][0]+d.s[0][1])/2:d.p.length>1?50:d.p[0]}%">${d.cap}</span>`;
+  h+=`<span class="tl-lab" style="left:0;color:var(--past)">Минало</span><span class="tl-lab" style="left:50%;transform:translateX(-50%);color:var(--present)">Настояще</span><span class="tl-lab" style="right:0;color:var(--future)">Бъдеще</span></div>`;
+  return h;
+}
+
+// ===== УРОЦИ =====
+const tenseTabs=$('tenseTabs'),tenseContent=$('tenseContent');
+function tabs(){
+  tenseTabs.innerHTML=PERIODS.map(([p,n])=>`<div class="group">${n}</div>`+T.filter(t=>t.period===p).map(t=>`<button class="tTab" data-id="${t.id}">${t.name} <small>Н${t.level}</small></button>`).join('')).join('');
+  tenseTabs.querySelectorAll('button').forEach(b=>b.onclick=()=>showTense(b.dataset.id));
+}
+function fmlHtml(f){
+  return esc(f).replace(/\b(do|does|did|am|is|are|was|were|have|has|had|will|been|be|going to|Do|Does|Did|Am|Is|Are|Was|Were|Have|Has|Had|Will)\b/g,'<span class="aux">$1</span>').replace(/\b(V1|V2|V3|V-ing|V-s|V-ed)\b/g,'<span class="vb">$1</span>').replace(/\b(not|won’t)\b/g,'<span class="nt">$1</span>');
+}
+function showTense(id){
+  const t=TN[id],i=T.indexOf(t);S.last=id;S.seen[id]=1;save();
+  tenseTabs.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
+  const sub=SUBJ.map(s=>`<option>${s}</option>`).join(''),vopts=Object.entries(V).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join('');
+  tenseContent.innerHTML=`<article class="panel reveal">
+  <div class="head"><div><div class="eyebrow">${t.bg} · ${PNAME[t.period]}</div><h2>${t.name}</h2><p style="margin:2px 0 0">${t.short}</p></div><div class="row"><span class="pill">Ниво ${t.level}</span></div></div>
+  <h3>Къде е на времевата ос?</h3>${timeline(t)}<div class="row"><button class="pillbtn" id="replay">↻ Повтори анимацията</button></div>
+  <div class="grid2"><div><h3>Кога?</h3><ul>${t.uses.map(x=>`<li>${x}</li>`).join('')}</ul></div><div><h3>Формула</h3><div class="formula">${fmlHtml(t.formula)}</div><p style="margin:8px 0 0"><b>Отрицание:</b> <code>${esc(t.neg)}</code><br><b>Въпрос:</b> <code>${esc(t.q)}</code></p></div></div>
+  <div class="call why"><div class="ico">💡</div><div><b>Защо съществува?</b><br>${t.why}</div></div>
+  <h3>Опитай сам</h3>
+  <div class="toolbar"><div class="field"><label>Подлог</label><select id="lvS">${sub}</select></div><div class="field"><label>Глагол</label><select id="lvV">${vopts}</select></div></div>
+  <div class="scroll" style="max-height:none;margin-top:10px"><table><tbody id="lvOut"></tbody></table></div>
+  <h3>Примери <span class="muted" style="font-weight:400;font-size:13px">(🔊 за произношение)</span></h3>
+  <div class="examples">${t.examples.map(e=>`<div class="example">${sayBtn(e[0])}<div><b>${e[0]}</b><span>${e[1]}</span></div></div>`).join('')}</div>
+  <details style="margin-top:10px"><summary style="cursor:pointer;font-weight:800">Още примери (${t.more.length})</summary><div class="examples" style="margin-top:9px">${t.more.map(e=>`<div class="example">${sayBtn(e[0])}<div><b>${e[0]}</b><span>${e[1]}</span></div></div>`).join('')}</div></details>
+  <h3>Думи-сигнали</h3><div class="row">${t.signals.map(s=>`<span class="pill">${s}</span>`).join('')}</div>
+  <div class="call warn"><b>Важно:</b> ${t.note}</div>
+  <h3>Чести грешки</h3>${t.mistakes.map(m=>`<div class="mistake"><span class="wrong">${m[0]}</span> → <span class="right">${m[1]}</span><span class="why2">${m[2]}</span></div>`).join('')}
+  <div class="call"><b>Не го бъркай с…</b><br>${t.vs}</div>
+  <h3>Мини упражнение <span class="pill" id="pracScore">0/${t.prac.length}</span></h3><div id="prac"></div>
+  <div class="nav2"><button class="btn ghost" ${i?`data-tense="${T[i-1].id}"`:'disabled'}>← ${i?T[i-1].name:''}</button><button class="btn" ${i<T.length-1?`data-tense="${T[i+1].id}"`:'disabled'}>${i<T.length-1?T[i+1].name:''} →</button></div>
+  </article>`;
+  $('replay').onclick=()=>{const old=tenseContent.querySelector('.tl');old.outerHTML=timeline(t)};
+  const upd=()=>{$('lvOut').innerHTML=[['Положително','pos'],['Отрицателно','neg'],['Въпрос','q']].map(([n,k])=>`<tr><td style="width:130px">${n}</td><td><b>${esc(sent(id,$('lvS').value,V[$('lvV').value],k))}</b></td></tr>`).join('')};
+  $('lvS').onchange=$('lvV').onchange=upd;upd();
+  // мини упражнение
+  let okc=0,ans=0;const box=$('prac');
+  box.innerHTML=t.prac.map((q,qi)=>`<div class="concept" style="margin:8px 0" data-q="${qi}"><b>${qi+1}. ${esc(q[0])}</b><div class="row" style="margin-top:8px">${q[1].map((o,oi)=>`<button class="pillbtn" data-o="${oi}">${esc(o)}</button>`).join('')}</div><div class="muted" style="margin-top:6px"></div></div>`).join('');
+  box.querySelectorAll('[data-q]').forEach(el=>{
+    const q=t.prac[+el.dataset.q];
+    el.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+      if(el.dataset.done)return;el.dataset.done=1;const ok=+b.dataset.o===q[2];ans++;
+      b.classList.add(ok?'active':'');if(!ok)b.style.cssText='background:var(--red);color:#fff;border-color:var(--red)';
+      el.querySelectorAll('button')[q[2]].style.cssText='background:var(--green);color:#fff;border-color:var(--green)';
+      el.lastElementChild.textContent=(ok?'✓ ':'✗ ')+q[3];
+      if(ok){okc++;addXP(5)}
+      $('pracScore').textContent=okc+'/'+t.prac.length;
+      if(ans===t.prac.length){S.prac[id]=Math.max(S.prac[id]||0,okc);save();hud();if(okc===t.prac.length){confetti(30)}}
+    });
+  });
+  hud();
+}
+
+// ===== КОЕ ВРЕМЕ? =====
+const WIZ={
+ start:{q:'Кога се случва действието?',o:[['Минало','Преди „сега“','past'],['Настояще','Сега или по принцип','present'],['Бъдеще','След „сега“','future']]},
+ present:{q:'Как гледаш на действието?',o:[['Навик, факт, разписание','I work every day.',['T','ps']],['В момента / временно','I am working now.',['T','pc']],['Минало, но резултатът е важен сега','I have lost my keys.',['T','pp']],['Започнало е и още продължава (колко дълго?)','I have been working for 2 hours.',['T','ppc']]]},
+ past:{q:'Какво е миналото действие?',o:[['Завършено събитие (с точно време)','I called her yesterday.',['T','pas']],['Процес в минал момент / фон','I was sleeping at 11.',['T','pac']],['По-ранно от друго минало действие','She had left before I arrived.','pastPerf']]},
+ pastPerf:{q:'Какво подчертаваш?',o:[['Резултат / факт','She had left.',['T','pap']],['Продължителност','She had been waiting for an hour.',['T','papc']]]},
+ future:{q:'Какво е бъдещото действие?',o:[['Решавам сега / обещание / мнение','I will help you.',['T','fs']],['Вече планирано / има знаци','I am going to study tonight.',['T','going']],['Ще тече в бъдещ момент','At 8, I will be working.',['T','fc']],['Ще е завършено до бъдещ момент','By Friday, I will have finished.','futPerf']]},
+ futPerf:{q:'Какво подчертаваш?',o:[['Резултат / завършеност','I will have finished.',['T','fp']],['Колко дълго ще е продължило','I will have been working for 5 hours.',['T','fpc']]]}
+};
+let wizPath=[],wizStack=[];
+function wiz(){
+  const cur=wizStack[wizStack.length-1]||'start';
+  const body=$('wizBody');
+  const crumbs=`<div class="crumbs">${wizPath.map(p=>`<span class="pill">${esc(p)}</span>`).join('')}</div>`;
+  if(cur.startsWith('T:')){
+    const t=TN[cur.slice(2)];
+    body.innerHTML=`${crumbs}<div class="result"><div class="eyebrow">Твоето време</div><h2>${t.name}</h2><p style="margin:2px 0">${t.bg} — ${t.short}</p><div class="formula" style="margin:10px 0">${fmlHtml(t.formula)}</div>
+    <div class="example">${sayBtn(t.examples[0][0])}<div><b>${t.examples[0][0]}</b><span>${t.examples[0][1]}</span></div></div>${timeline(t)}<div class="call warn">${t.note}</div>
+    <div class="row"><button class="btn" data-tense="${t.id}">Отвори урока →</button><button class="btn ghost" id="wizBack">← Назад</button><button class="btn ghost" id="wizReset">↺ Отначало</button></div></div>`;
+  }else{
+    const st=WIZ[cur];
+    body.innerHTML=`${crumbs}<h3 style="margin-top:6px">${st.q}</h3><div class="wopts">${st.o.map((o,i)=>`<button class="wopt" style="animation-delay:${i*.06}s" data-i="${i}"><b>${o[0]}</b><span class="muted">${o[1]}</span></button>`).join('')}</div>${wizPath.length?'<div class="row" style="margin-top:12px"><button class="btn ghost" id="wizBack">← Назад</button></div>':''}`;
+    body.querySelectorAll('.wopt').forEach(b=>b.onclick=()=>{const o=st.o[+b.dataset.i],n=o[2];wizPath.push(o[0]);wizStack.push(Array.isArray(n)?'T:'+n[1]:n);wiz()});
+  }
+  const bk=$('wizBack'),rs=$('wizReset');
+  if(bk)bk.onclick=()=>{wizPath.pop();wizStack.pop();wiz()};
+  if(rs)rs.onclick=()=>{wizPath=[];wizStack=[];wiz()};
+}
+
+// ===== СРАВНЕНИЕ / СГЛОБИ =====
+const cmpVerb=$('cmpVerb'),cmpPeriod=$('cmpPeriod'),cmpBody=$('cmpBody'),bTense=$('bTense'),bSubject=$('bSubject'),bVerb=$('bVerb'),bType=$('bType'),buildOut=$('buildOut');
+function compare(){const v=V[cmpVerb.value],p=cmpPeriod.value;cmpBody.innerHTML=T.filter(t=>p==='all'||t.period===p).map(t=>`<tr><td><b>${t.name}</b><small>${t.bg}</small></td><td>${esc(sent(t.id,'I',v))}</td><td>${esc(sent(t.id,'He',v))}</td><td>${t.short}</td></tr>`).join('')}
+function build(){const t=TN[bTense.value];buildOut.innerHTML=`<b>${esc(sent(t.id,bSubject.value,V[bVerb.value],bType.value))}</b> ${sayBtn(sent(t.id,bSubject.value,V[bVerb.value],bType.value))}<p>${t.name} — ${t.short}</p><div class="formula" style="display:inline-block">${fmlHtml(bType.value==='pos'?t.formula:bType.value==='neg'?t.neg:t.q)}</div><p class="muted">${t.note}</p>`}
+// Подреди думите
+let ord={words:[],built:[],target:''};
+function orderNew(){
+  const t=rnd(T),e=rnd([...t.examples,...t.more]);
+  ord.target=e[0];ord.words=shuffle(e[0].split(' ').map((w,i)=>({w,i})));ord.built=[];
+  $('orderPrompt').textContent=e[1]+'  ('+t.name+')';orderDraw();$('orderFb').style.display='none';
+}
+function orderDraw(){
+  $('orderBuilt').innerHTML=ord.built.map((x,i)=>`<button class="tok" data-b="${i}">${esc(x.w)}</button>`).join('')||'<span class="muted">…</span>';
+  $('orderPool').innerHTML=ord.words.map((x,i)=>`<button class="tok" data-p="${i}">${esc(x.w)}</button>`).join('');
+  $('orderBuilt').querySelectorAll('[data-b]').forEach(b=>b.onclick=()=>{ord.words.push(ord.built.splice(+b.dataset.b,1)[0]);orderDraw()});
+  $('orderPool').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{ord.built.push(ord.words.splice(+b.dataset.p,1)[0]);orderDraw()});
+}
+function orderCheck(){
+  const got=ord.built.map(x=>x.w).join(' '),fb=$('orderFb'),ok=norm(got)===norm(ord.target);
+  fb.style.display='block';fb.className='feedback '+(ok?'ok':'no');
+  fb.innerHTML=ok?`<b>Правилно!</b> ${esc(ord.target)}`:`<b>Още не.</b> Провери подредбата${ord.words.length?' (остават думи)':''}. Подсказка: подлог → помощен глагол → основен глагол.`;
+  if(ok){addXP(5);confetti(25)}
+}
+
+// ===== ТЕСТОВЕ =====
+const STATIC=QS.map(q=>({k:'mc',cat:q[0],p:q[1],o:q[2],ans:q[2][q[3]],e:q[4]}))
+  .concat(WRITE.map(w=>({k:'type',cat:'попълни',p:w[0],accept:w[1].map(norm),e:w[2]+' → '+w[1][0]})));
+const CATS=['всички','време','форма','грешка','превод','разпознай','попълни','образувай','глаголи','грешките ми'];
+let cat='всички',cur=null,answered=false,session=null;const decks={};
+function mcQ(cat_,p,hint,opts,ans,e){const o=shuffle(opts);return{k:'mc',cat:cat_,p,hint,o,ans,e}}
+function drawStatic(c){
+  const key=c==='всички'?'*':c;
+  if(!decks[key]||!decks[key].length)decks[key]=shuffle(STATIC.filter(q=>key==='*'||q.cat===key));
+  const q=decks[key].pop();return q.k==='mc'?mcQ(q.cat,q.p,'',q.o,q.ans,q.e):{...q};
+}
+function genIdent(){
+  const t=rnd(T),e=rnd(t.examples.concat(t.more));
+  const same=T.filter(x=>x!==t&&x.period===t.period),other=T.filter(x=>x!==t&&x.period!==t.period);
+  const opts=[t,...shuffle(same).slice(0,2),...shuffle(other).slice(0,1)].slice(0,4).map(x=>x.name);
+  return mcQ('разпознай',e[0],'Кое време е използвано?',opts,t.name,`${t.name} — ${t.short}. Превод: ${e[1]}`);
+}
+const TYPEBG={pos:'положително',neg:'отрицателно',q:'въпрос'};
+function genBuild(){
+  const t=rnd(T),s=rnd(SUBJ),vk=rnd(Object.keys(V)),ty=rnd(['pos','neg','q']),v=V[vk],a=sent(t.id,s,v,ty);
+  return{k:'type',cat:'образувай',p:`${t.name} · ${s} · ${v[0]} · ${TYPEBG[ty]}`,hint:`Напиши цялото изречение${TAIL[t.id]?` (добави „${TAIL[t.id]}“)`:''}. Формула: ${t.formula}`,accept:[norm(a)],e:`${a} — ${t.formula}`};
+}
+function genIrr(){
+  const x=rnd(IRR.slice(1)),w=rnd([1,2]);
+  const acc=x[w].split('/').map(norm);
+  return{k:'type',cat:'глаголи',p:`${x[0]} (${x[3]}) → ${w===1?'V2 (минало просто)':'V3 (причастие)'}`,hint:'Неправилен глагол',accept:acc,e:`${x[0]} – ${x[1]} – ${x[2]}`};
+}
+function makeQ(){
+  if(cat==='грешките ми'){
+    if(!S.mistakes.length)return null;
+    return S.mistakes[Math.floor(Math.random()*S.mistakes.length)];
+  }
+  if(cat==='разпознай')return genIdent();
+  if(cat==='образувай')return genBuild();
+  if(cat==='глаголи')return genIrr();
+  if(cat==='всички'){const r=Math.random();return r<.6?drawStatic('всички'):r<.75?genIdent():r<.9?genBuild():genIrr()}
+  return drawStatic(cat);
+}
+function qmeta(){
+  $('quizMeta').textContent=session?`ТЕСТ · ${Math.min(session.n+1,session.max)}/${session.max}`:cat.toUpperCase();
+}
+function question(){
+  const box=$('quizAnswers');
+  if(session&&session.n>=session.max)return finishTest();
+  cur=makeQ();answered=false;$('feedback').style.display='none';qmeta();
+  if(!cur){$('quizQuestion').textContent='Нямаш запазени грешки. Браво! 🎉';$('quizHint').textContent='';box.innerHTML='';box.className='';return}
+  $('quizQuestion').textContent=cur.p;$('quizHint').textContent=cur.hint||'';
+  if(cur.k==='mc'){
+    box.className='answers';
+    box.innerHTML=cur.o.map((a,i)=>`<button class="answer" data-i="${i}"><kbd>${i+1}</kbd>${esc(a)}</button>`).join('');
+    box.querySelectorAll('button').forEach(b=>b.onclick=()=>answerMC(+b.dataset.i));
+  }else{
+    box.className='';
+    box.innerHTML=`<div class="typeRow"><input type="text" id="tIn" placeholder="Напиши отговора…" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn" id="tOk">Провери</button></div>`;
+    const inp=$('tIn');inp.focus({preventScroll:true});$('tOk').onclick=()=>answerType(inp.value);
+    inp.onkeydown=e=>{if(e.key==='Enter'){e.stopPropagation();if(!answered)answerType(inp.value)}};
+  }
+  stats();
+}
+function settle(ok,shown){
+  answered=true;S.attempts++;const cs=S.cats[cur.cat]||(S.cats[cur.cat]=[0,0]);cs[1]++;
+  const fb=$('feedback');
+  if(ok){S.score++;S.streak++;S.best=Math.max(S.best,S.streak);cs[0]++;addXP(10);
+    S.mistakes=S.mistakes.filter(m=>m.p!==cur.p);if(S.streak%5===0)confetti()}
+  else{S.streak=0;if(!S.mistakes.some(m=>m.p===cur.p)){S.mistakes.push(cur);if(S.mistakes.length>40)S.mistakes.shift()}touchDay()}
+  if(session){session.n++;if(ok)session.ok++;else session.wrong.push(cur)}
+  fb.className='feedback '+(ok?'ok':'no');
+  fb.innerHTML=`<b>${ok?'Правилно! +10 XP':'Не съвсем.'}</b> ${esc(cur.e)}${!ok&&cur.k==='type'?`<br>Твоят отговор: <i>${esc(shown)}</i>`:''}`;fb.style.display='block';
+  save();stats();hud();
+  if(session&&session.n>=session.max)$('next').textContent='Виж резултата →';else $('next').textContent='Следващ →';
+}
+function answerMC(i){
+  if(answered)return;const bs=[...$('quizAnswers').children],ok=cur.o[i]===cur.ans;
+  bs.forEach(b=>b.disabled=true);bs[i].classList.add(ok?'correct':'wrong');if(!ok)bs[cur.o.indexOf(cur.ans)].classList.add('correct');
+  settle(ok,cur.o[i]);
+}
+function answerType(v){
+  if(answered||!v.trim())return;const ok=cur.accept.includes(norm(v));
+  const inp=$('tIn');inp.disabled=true;inp.classList.add(ok?'input-ok':'input-no');$('tOk').disabled=true;
+  settle(ok,v);
+}
+function stats(){
+  $('score').textContent=S.score;$('attempts').textContent=S.attempts;
+  const p=S.attempts?Math.round(S.score/S.attempts*100):0;$('percent').textContent=p+'%';$('bar').style.width=p+'%';
+  $('streak').textContent=`Поредица: ${S.streak} · рекорд: ${S.best}`;
+  $('catStats').innerHTML=Object.entries(S.cats).map(([k,v])=>{const pc=Math.round(v[0]/v[1]*100);return`<div class="cat"><div class="row" style="justify-content:space-between"><span>${k}</span><b>${pc}%</b></div><div class="progress"><div style="width:${pc}%"></div></div></div>`}).join('')||'<span class="muted">Още няма данни.</span>';
+}
+function finishTest(){
+  const r=session,pc=Math.round(r.ok/r.max*100),grade=pc>=90?'Отлично! 🏆':pc>=70?'Добре! 👍':pc>=50?'Може и по-добре — повтори грешките.':'Нужна е още практика — върни се към уроците.';
+  if(pc>=70)confetti(60);
+  $('quizMeta').textContent='РЕЗУЛТАТ';$('quizHint').textContent='';$('feedback').style.display='none';
+  $('quizQuestion').innerHTML=`<div class="big">${r.ok}/${r.max}</div>${grade}`;
+  $('quizAnswers').className='';
+  $('quizAnswers').innerHTML=(r.wrong.length?`<h3>Грешки</h3>`+r.wrong.map(q=>`<div class="mistake"><b>${esc(q.p)}</b><span class="why2">${esc(q.e)}</span></div>`).join(''):'<div class="call good">Без грешки!</div>')+`<div class="row" style="margin-top:12px"><button class="btn" id="again">Нов тест</button><button class="btn ghost" id="exit">Свободна практика</button></div>`;
+  $('again').onclick=startTest;$('exit').onclick=()=>{session=null;question()};
+  addXP(r.ok*2);session=null;$('next').textContent='Следващ →';
+}
+function startTest(){session={n:0,ok:0,max:10,wrong:[]};const c=cat;cat='всички';question();cat=c}
+function catButtons(){
+  $('quizCats').innerHTML=CATS.map(c=>`<button class="pillbtn ${c===cat?'active':''}" data-c="${c}">${c}${c==='грешките ми'&&S.mistakes.length?` (${S.mistakes.length})`:''}</button>`).join('');
+  $('quizCats').querySelectorAll('button').forEach(b=>b.onclick=()=>{cat=b.dataset.c;session=null;catButtons();question()});
+}
+$('next').onclick=()=>{question();catButtons()};
+$('startTest').onclick=startTest;
+document.addEventListener('keydown',e=>{
+  if(!$('quiz').classList.contains('active'))return;
+  if(e.target.tagName==='INPUT'){return}
+  if(/^[1-4]$/.test(e.key)&&cur&&cur.k==='mc'&&!answered)answerMC(+e.key-1);
+  else if(e.key==='Enter'&&answered){question();catButtons()}
+});
+
+// ===== ГЛАГОЛИ / ФЛАШКАРТИ =====
+let fcOnlyUnk=false,fcList=[],fcI=0;
+function fcBuild(){fcList=shuffle(IRR.filter(x=>!fcOnlyUnk||!S.known[x[0]]));fcI=0;fcShow()}
+function fcShow(){
+  const card=$('fcCard');card.classList.remove('on');
+  if(!fcList.length){$('fcFront').textContent='🎉';$('fcBg').textContent='Всички са известни!';$('fcBack').textContent='';$('fcMeta').textContent='0 карти';return}
+  const x=fcList[fcI%fcList.length];
+  $('fcFront').textContent=x[0];$('fcBg').textContent=x[3];$('fcBack').textContent=x[1]+' · '+x[2];
+  $('fcMeta').textContent=`${Object.keys(S.known).length}/${IRR.length} известни`;
+}
+function fcMark(ok){
+  if(!fcList.length)return;const x=fcList[fcI%fcList.length];
+  if(ok){S.known[x[0]]=1;addXP(2)}else delete S.known[x[0]];
+  save();if(fcOnlyUnk&&ok){fcList.splice(fcI%fcList.length,1)}else fcI++;
+  setTimeout(fcShow,150);verbGridDraw();
+}
+function verbGridDraw(){$('verbGrid').innerHTML=IRR.map(x=>`<div class="verb ${S.known[x[0]]?'known':''}"><b>${x[0]}</b> <span class="muted">${x[3]}</span><br>${x[1]} · ${x[2]}</div>`).join('')}
+
+// ===== ПРАВОПИСНА МАШИНА =====
+function spell(){
+  const w=$('spIn').value.trim().toLowerCase(),out=$('spOut');
+  if(!/^[a-z]+$/.test(w)){out.innerHTML='<span class="muted">Въведи английски глагол…</span>';return}
+  const s=spellS(w),g=spellIng(w),d=spellEd(w);
+  out.innerHTML=`<div class="grid3"><div class="diff"><b>he ${s[0]}</b><div class="muted">-s: ${s[1]}</div></div><div class="diff"><b>${g[0]}</b><div class="muted">-ing: ${g[1]}</div></div><div class="diff"><b>${d[0]}</b><div class="muted">V2: ${d[1]}${d[2]?`<br>Произношение: ${d[2]}`:''}</div></div></div>`;
+}
+
+// ===== ИНИЦИАЛИЗАЦИЯ =====
+function init(){
+  if(S.dark===null)S.dark=matchMedia('(prefers-color-scheme: dark)').matches;
+  document.body.classList.toggle('dark',!!S.dark);
+  $('dark').onclick=()=>{S.dark=!S.dark;document.body.classList.toggle('dark',S.dark);save()};
+  $('reset').onclick=()=>{if(confirm('Да нулирам ли целия напредък?')){const d=S.dark;S={...DEF,dark:d};save();hud();stats();catButtons();tabs();showTense('ps');fcBuild();verbGridDraw()}};
+  tabs();showTense(TN[S.last]?S.last:'ps');
+  const opts=Object.entries(V).map(([k,v])=>`<option value="${k}">${v[0]} — ${v[5]}</option>`).join('');
+  cmpVerb.innerHTML=bVerb.innerHTML=opts;bTense.innerHTML=T.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');bSubject.innerHTML=SUBJ.map(s=>`<option>${s}</option>`).join('');
+  [cmpVerb,cmpPeriod].forEach(e=>e.onchange=compare);[bTense,bSubject,bVerb,bType].forEach(e=>e.onchange=build);compare();build();
+  $('orderNext').onclick=orderNew;$('orderCheck').onclick=orderCheck;orderNew();
+  $('tlGrid').innerHTML=T.map(t=>`<button class="tlcard concept" data-tense="${t.id}"><div class="eyebrow">${PNAME[t.period]}</div><b>${t.name}</b><div class="muted" style="font-size:13px">${t.short}</div>${timeline(t,true)}</button>`).join('');
+  $('trapBody').innerHTML=BGTRAP.map(r=>`<tr><td>${r[0]}</td><td><b>${r[1]}</b></td><td class="muted">${r[2]}</td></tr>`).join('');
+  $('spIn').oninput=spell;spell();
+  $('quickGrid').innerHTML=T.map(t=>`<div class="quick"><b>${t.name}</b><div class="formula" style="padding:7px;font-size:12px;margin:6px 0">${fmlHtml(t.formula)}</div>${t.short}<br><small class="muted">${t.signals.slice(0,3).join(' · ')}</small></div>`).join('');
+  $('fcCard').onclick=()=>$('fcCard').classList.toggle('on');
+  $('fcYes').onclick=()=>fcMark(true);$('fcNo').onclick=()=>fcMark(false);
+  $('fcAll').onclick=()=>{fcOnlyUnk=false;$('fcAll').classList.add('active');$('fcUnk').classList.remove('active');fcBuild()};
+  $('fcUnk').onclick=()=>{fcOnlyUnk=true;$('fcUnk').classList.add('active');$('fcAll').classList.remove('active');fcBuild()};
+  fcBuild();verbGridDraw();
+  wiz();catButtons();question();stats();hud();
+  // „цикъл“ в началото
+  const cs=[...document.querySelectorAll('#cycle .concept')];let ci=0;
+  setInterval(()=>{cs.forEach((c,i)=>c.classList.toggle('on',i===ci));ci=(ci+1)%cs.length},1800);
+  const h=location.hash.slice(1);if(h&&$(h)&&$(h).classList.contains('page'))go(h);
+}
+init();
+</script></body></html>
