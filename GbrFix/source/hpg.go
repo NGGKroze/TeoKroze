@@ -113,6 +113,7 @@ type hpgNotch struct {
 	e, i         [2]int
 	c1, c2       [2]int
 	t            bool  // T (with crossbar) or I
+	ret          bool  // the pen goes back to E (notch inside the contour); false = notch drawn on its own
 	idx          []int // step indexes of the notch moves (not part of the contour)
 	edgeStep     int
 	slit, crossb float64
@@ -120,7 +121,27 @@ type hpgNotch struct {
 
 func dist(a, b [2]int) float64 { return math.Hypot(float64(a[0]-b[0]), float64(a[1]-b[1])) }
 
-// hpgNotches finds the T notches (E; PD I; PU C1; PD C2; PU E) and I notches (E; PD I; PU E).
+// isTShape: the crossbar C1–C2 is perpendicular to the slit E–I, centred on I, and about
+// as long as the slit (any plotter resolution: slit 2–8 mm is 20–1000 units).
+func isTShape(e, i, c1, c2 [2]int) bool {
+	slit, bar := dist(e, i), dist(c1, c2)
+	if slit < 20 || slit > 1000 || bar < 0.6*slit || bar > 1.7*slit {
+		return false
+	}
+	mx, my := float64(c1[0]+c2[0])/2, float64(c1[1]+c2[1])/2
+	if math.Hypot(mx-float64(i[0]), my-float64(i[1])) > 0.03*bar+2 {
+		return false
+	}
+	cos := float64((i[0]-e[0])*(c2[0]-c1[0])+(i[1]-e[1])*(c2[1]-c1[1])) / (slit * bar)
+	return math.Abs(cos) <= 0.1
+}
+
+// hpgNotches finds the notches of a file. Optitex writes a T in two ways:
+//
+//	HPG (notch inside the contour):   E; PD I; PU C1; PD C2; PU E   (the pen goes back to E)
+//	PLT (notch on its own pen):       PU E; PU E; PD I; PU C1; PD C2 (nothing follows)
+//
+// and an I notch as E; PD I; PU E.
 func hpgNotches(st []hpgStep) []hpgNotch {
 	var out []hpgNotch
 	same := func(a, b hpgStep) bool { return a.x == b.x && a.y == b.y }
@@ -130,18 +151,21 @@ func hpgNotches(st []hpgStep) []hpgNotch {
 		if !st[k].down || st[k].pen != e.pen {
 			continue
 		}
-		if k+3 < len(st) && !st[k+1].down && st[k+2].down && !st[k+3].down && same(st[k+3], e) && st[k+3].pen == e.pen {
+		if k+2 < len(st) && !st[k+1].down && st[k+2].down && st[k+1].pen == e.pen && st[k+2].pen == e.pen &&
+			isTShape(pt(e), pt(st[k]), pt(st[k+1]), pt(st[k+2])) {
 			n := hpgNotch{pen: e.pen, e: pt(e), i: pt(st[k]), c1: pt(st[k+1]), c2: pt(st[k+2]), t: true,
-				idx: []int{k, k + 1, k + 2, k + 3}, edgeStep: k - 1}
-			n.slit, n.crossb = dist(n.e, n.i), dist(n.c1, n.c2)
-			if n.slit > 0 && n.crossb > 0 {
-				out = append(out, n)
-				k += 3
+				idx: []int{k, k + 1, k + 2}, edgeStep: k - 1}
+			if k+3 < len(st) && !st[k+3].down && st[k+3].pen == e.pen && same(st[k+3], e) {
+				n.ret = true
+				n.idx = append(n.idx, k+3)
 			}
+			n.slit, n.crossb = dist(n.e, n.i), dist(n.c1, n.c2)
+			out = append(out, n)
+			k += len(n.idx) - 1
 			continue
 		}
 		if k+1 < len(st) && !st[k+1].down && same(st[k+1], e) && st[k+1].pen == e.pen {
-			n := hpgNotch{pen: e.pen, e: pt(e), i: pt(st[k]), idx: []int{k, k + 1}, edgeStep: k - 1}
+			n := hpgNotch{pen: e.pen, e: pt(e), i: pt(st[k]), ret: true, idx: []int{k, k + 1}, edgeStep: k - 1}
 			n.slit = dist(n.e, n.i)
 			if n.slit > 0 {
 				out = append(out, n)
@@ -150,6 +174,38 @@ func hpgNotches(st []hpgStep) []hpgNotch {
 		}
 	}
 	return out
+}
+
+// hpgPens: the pen that cuts the contours (the one that draws the most) and the pen that
+// carries the notches (the one with most notches). In an HPG they are the same pen, in a
+// PLT the notches have a pen of their own.
+func hpgPens(st []hpgStep, ns []hpgNotch) (cut, notch string) {
+	cnt := map[string]int{}
+	for _, n := range ns {
+		cnt[n.pen]++
+	}
+	best := 0
+	for p, c := range cnt {
+		if c > best || (c == best && p < notch) {
+			notch, best = p, c
+		}
+	}
+	length := map[string]float64{}
+	for k := 1; k < len(st); k++ {
+		if st[k].down && st[k-1].pen == st[k].pen {
+			length[st[k].pen] += math.Hypot(float64(st[k].x-st[k-1].x), float64(st[k].y-st[k-1].y))
+		}
+	}
+	var bl float64
+	for p, l := range length {
+		if l > bl || (l == bl && p < cut) {
+			cut, bl = p, l
+		}
+	}
+	if notch == "" {
+		notch = cut
+	}
+	return cut, notch
 }
 
 // hpgTransform maps marker coordinates (0.1 mm) to file units.
@@ -226,6 +282,8 @@ type hpgInsert struct {
 	inner     [2]int
 	c1, c2    [2]int
 	t         bool
+	sep       bool // notch on its own pen (PLT): no contour point, no return to the edge
+	lead      int  // sep: how many times "PU E" is written before PD I (as the file does)
 }
 
 // HPGCheck: what the marker expects and what the file has.
@@ -277,12 +335,23 @@ func RestoreHPG(raw string, d *svgDrawing) (string, *RestoreInfo, HPGCheck) {
 	}
 	slit, bar := median(slits), median(bars)
 	useT := tCount*2 >= len(mine)
+	retN := 0
+	for _, n := range mine {
+		if n.ret {
+			retN++
+		}
+	}
+	sepForm := retN*2 < len(mine) // PLT: the notches are drawn on a pen of their own
 	if slit == 0 {
 		slit, bar, useT = 40*tr.scale, 40*tr.scale, true // 4 mm
 	}
-	info.Form = fmt.Sprintf("като I-нотч %.1f мм – както останалите в HPG файла", slit/tr.scale/10)
+	where := ""
+	if sepForm {
+		where = fmt.Sprintf(" с перо %s", pen)
+	}
+	info.Form = fmt.Sprintf("като I-нотч %.1f мм%s – както останалите във файла", slit/tr.scale/10, where)
 	if useT {
-		info.Form = fmt.Sprintf("като T-нотч %.1f × %.1f мм – както останалите в HPG файла", slit/tr.scale/10, bar/tr.scale/10)
+		info.Form = fmt.Sprintf("като T-нотч %.1f × %.1f мм%s – както останалите във файла", slit/tr.scale/10, bar/tr.scale/10, where)
 	}
 
 	tol := 10 * tr.scale // 1 mm: a notch this close is the same notch
@@ -317,6 +386,38 @@ func RestoreHPG(raw string, d *svgDrawing) (string, *RestoreInfo, HPGCheck) {
 				}
 			}
 			if exists {
+				continue
+			}
+			if sepForm {
+				if l == 0 {
+					info.Unplaced++
+					continue
+				}
+				// drawn like its neighbours: after the nearest notch of the file, with the same lead-in
+				tmpl, td := -1, math.Inf(1)
+				for j, n := range mine {
+					if dd := math.Hypot(float64(n.e[0])-ax, float64(n.e[1])-ay); dd < td {
+						tmpl, td = j, dd
+					}
+				}
+				tn := mine[tmpl]
+				lead := 0
+				for k := tn.idx[0] - 1; k >= 0 && !st[k].down && st[k].pen == tn.pen && st[k].x == tn.e[0] && st[k].y == tn.e[1] && lead < 3; k-- {
+					lead++
+				}
+				ins := hpgInsert{afterStep: tn.idx[len(tn.idx)-1], t: useT, sep: true, lead: max(lead, 1)}
+				ux, uy := dx/l, dy/l
+				r := func(x, y float64) [2]int { return [2]int{int(math.Round(x)), int(math.Round(y))} }
+				ex, ey := ax, ay
+				ix, iy := ex+ux*slit, ey+uy*slit
+				ins.edge, ins.inner = r(ex, ey), r(ix, iy)
+				ins.c1 = r(ix+uy*bar/2, iy-ux*bar/2)
+				ins.c2 = r(ix-uy*bar/2, iy+ux*bar/2)
+				adds = append(adds, ins)
+				info.Restored++
+				info.ByPiece[p.Name]++
+				x, y := tr.back(ins.edge[0], ins.edge[1])
+				info.Coords = append(info.Coords, fmt.Sprintf("%s: X%dY%d", p.Name, x, y))
 				continue
 			}
 			// nearest cut segment (not part of a notch)
@@ -404,6 +505,17 @@ func (f *hpgFile) withInserts(st []hpgStep, adds []hpgInsert) string {
 				emit(c.op + xy(p))
 			}
 			for _, a := range byStep[stepOf[[2]int{ci, pi}]] {
+				if a.sep {
+					for j := 0; j < a.lead; j++ {
+						emit("PU" + xy(a.edge))
+					}
+					emit("PD" + xy(a.inner))
+					if a.t {
+						emit("PU" + xy(a.c1))
+						emit("PD" + xy(a.c2))
+					}
+					continue
+				}
 				back := p // where the contour was
 				if a.edge != p {
 					emit("PD" + xy(a.edge))
@@ -429,22 +541,13 @@ func hpgSim(raw string) *SimResult {
 	f := parseHPG(raw)
 	st := f.steps()
 	ns := hpgNotches(st)
-	cnt := map[string]int{}
-	for _, n := range ns {
-		cnt[n.pen]++
-	}
-	cut, bestN := "", -1
-	for p, c := range cnt {
-		if c > bestN {
-			cut, bestN = p, c
-		}
-	}
+	cut, notchPen := hpgPens(st, ns)
 	notchStep := map[int]bool{}
 	res := &SimResult{MinX: 1 << 30, MinY: 1 << 30, MaxX: -(1 << 30), MaxY: -(1 << 30), Header: "HP-GL"}
 	var cur *SimPiece
 	notchAt := map[int]hpgNotch{}
 	for _, n := range ns {
-		if n.pen == cut {
+		if n.pen == notchPen {
 			for _, k := range n.idx {
 				notchStep[k] = true
 			}
@@ -455,9 +558,10 @@ func hpgSim(raw string) *SimResult {
 		a, s := st[k-1], st[k]
 		// Optitex writes each piece as one run of the cut pen (cut line and seam line);
 		// text and drills of other pens go with the piece before them
-		if cur == nil || (s.pen == cut && a.pen != cut) {
+		isMain := func(pen string) bool { return pen == cut || pen == notchPen }
+		if cur == nil || (isMain(s.pen) && !isMain(a.pen)) {
 			name := ""
-			if s.pen == cut {
+			if isMain(s.pen) {
 				name = strconv.Itoa(len(res.Pieces) + 1)
 				if len(res.Pieces) > 0 && res.Pieces[0].Name == "" {
 					name = strconv.Itoa(len(res.Pieces))
@@ -472,9 +576,9 @@ func hpgSim(raw string) *SimResult {
 		kind := "u"
 		if s.pen == cut {
 			kind = "c"
-			if notchStep[k] {
-				kind = "n"
-			}
+		}
+		if notchStep[k] {
+			kind = "n"
 		}
 		cur.Moves = append(cur.Moves, Move{a.x, a.y, s.x, s.y, kind})
 		if n, ok := notchAt[k]; ok {
@@ -495,20 +599,13 @@ func hpgBoxes(raw string) []pieceBox {
 	f := parseHPG(raw)
 	st := f.steps()
 	ns := hpgNotches(st)
-	cnt := map[string]int{}
 	notchStep := map[int]bool{}
 	for _, n := range ns {
-		cnt[n.pen]++
 		for _, k := range n.idx {
 			notchStep[k] = true
 		}
 	}
-	cut, bestN := "", 0
-	for p, c := range cnt {
-		if c > bestN {
-			cut, bestN = p, c
-		}
-	}
+	cut, _ := hpgPens(st, ns)
 	if cut == "" {
 		return nil
 	}

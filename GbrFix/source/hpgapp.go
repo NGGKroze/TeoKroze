@@ -11,7 +11,16 @@ import (
 	"time"
 )
 
+// hpglKind: "HPG" or "PLT" – how the file is called in messages.
+func hpglKind(name string) string {
+	if k := strings.ToUpper(strings.TrimPrefix(filepath.Ext(name), ".")); k == "PLT" || k == "HPGL" {
+		return k
+	}
+	return "HPG"
+}
+
 func (a *App) convertHPG(p, s string) {
+	kind := hpglKind(p)
 	cfg := a.conf()
 	if !cfg.CheckMissing && cfg.RestoreMode == "off" {
 		return
@@ -20,7 +29,7 @@ func (a *App) convertHPG(p, s string) {
 	if mm.MRK == "" {
 		a.waitForMarker(p)
 		a.logEvent(Event{Time: now(), Src: p, Status: "info", NoMarker: true,
-			Msg: "HPG файл: .MRK на маркировката не е намерен – липсващите нотчове не са проверени (посочете го с „Посочи .MRK…“ или добавете папката с маркировките в „Настройки“)."})
+			Msg: kind + " файл: .MRK на маркировката не е намерен – липсващите нотчове не са проверени (посочете го с „Посочи .MRK…“ или добавете папката с маркировките в „Настройки“)."})
 		return
 	}
 	a.pmu.Lock()
@@ -32,11 +41,11 @@ func (a *App) convertHPG(p, s string) {
 	e := Event{Time: now(), Src: p, Marker: markerNote}
 	switch {
 	case chk.NoFit:
-		e.Status, e.Msg = "warn", "HPG файлът не съвпада с маркировката "+filepath.Base(mm.MRK)+" (нотчовете не лежат на местата от маркировката) – нищо не е променено. Посочете друга .MRK или проверете настройките на плотера."
+		e.Status, e.Msg = "warn", kind+" файлът не съвпада с маркировката "+filepath.Base(mm.MRK)+" (нотчовете не лежат на местата от маркировката) – нищо не е променено. Посочете друга .MRK или проверете настройките на плотера."
 	case info.Restored == 0 && info.Unplaced == 0:
-		e.Status, e.Msg = "info", fmt.Sprintf("HPG файл: всички %d нотча от маркировката са налице – файлът не е променян.", chk.Expected)
+		e.Status, e.Msg = "info", fmt.Sprintf("%s файл: всички %d нотча от маркировката са налице – файлът не е променян.", kind, chk.Expected)
 	case cfg.RestoreMode == "off":
-		e.Status, e.Msg = "warn", fmt.Sprintf("HPG файл: ЛИПСВАТ %d нотча (в файла %d от %d). Добавянето на липсващи нотчове е изключено в „Настройки“.", info.Restored, chk.Found, chk.Expected)
+		e.Status, e.Msg = "warn", fmt.Sprintf("%s файл: ЛИПСВАТ %d нотча (в файла %d от %d). Добавянето на липсващи нотчове е изключено в „Настройки“.", kind, info.Restored, chk.Found, chk.Expected)
 	case info.Restored == 0:
 		e.Status, e.Msg = "warn", info.Text()
 	default:
@@ -60,7 +69,7 @@ func (a *App) convertHPG(p, s string) {
 		}
 		e.Status = "ok"
 		e.RestoredFrom, e.RestoredN = mm.MRK, info.Restored
-		e.Msg = fmt.Sprintf("HPG файл: в него имаше %d от %d нотча. ", chk.Found, chk.Expected) + info.Text() + " Прегледайте го преди рязане."
+		e.Msg = fmt.Sprintf("%s файл: в него имаше %d от %d нотча. ", kind, chk.Found, chk.Expected) + info.Text() + " Прегледайте го преди рязане."
 		if info.Unplaced > 0 {
 			e.Status = "warn"
 		}
@@ -86,6 +95,7 @@ func (a *App) convertHPG(p, s string) {
 
 // convertHPGManual: a file opened in the window ("Ръчно конвертиране").
 func (a *App) convertHPGManual(raw, name, path string) map[string]any {
+	kind := hpglKind(name)
 	d := a.recallMRK(name)
 	src := "MRK файла"
 	if d == nil {
@@ -97,14 +107,14 @@ func (a *App) convertHPGManual(raw, name, path string) map[string]any {
 	resp := map[string]any{"name": name, "needsFix": false, "before": before, "after": before,
 		"fixed": base64.StdEncoding.EncodeToString([]byte(raw))}
 	if d == nil {
-		resp["report"] = "HPG файл: няма .MRK на маркировката – отворете я заедно с HPG файла или добавете папката ѝ в „Настройки“."
+		resp["report"] = kind + " файл: няма .MRK на маркировката – отворете я заедно с файла или добавете папката ѝ в „Настройки“."
 		return resp
 	}
 	out, info, chk := RestoreHPG(raw, d)
 	info.SourceName = src
-	rep := fmt.Sprintf("HPG файл: в него има %d от %d нотча на маркировката.\n", chk.Found, chk.Expected)
+	rep := fmt.Sprintf("%s файл: в него има %d от %d нотча на маркировката.\n", kind, chk.Found, chk.Expected)
 	if chk.NoFit {
-		rep = "HPG файлът не съвпада с маркировката – нищо не е променено.\n"
+		rep = kind + " файлът не съвпада с маркировката – нищо не е променено.\n"
 	}
 	if t := info.Text(); t != "" {
 		rep += t + "\n  " + strings.Join(info.Coords, "\n  ") + "\n"

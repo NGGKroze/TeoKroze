@@ -163,7 +163,7 @@ func (w *watcher) run(root string, onFile func(string), onErr func(string)) {
 				switch info.Action {
 				case syscall.FILE_ACTION_ADDED, syscall.FILE_ACTION_MODIFIED, syscall.FILE_ACTION_RENAMED_NEW_NAME:
 					switch strings.ToLower(filepath.Ext(name)) {
-					case ".gbr", ".hpg", ".hpgl", ".mrk", ".pds":
+					case ".gbr", ".hpg", ".hpgl", ".plt", ".mrk", ".pds":
 						onFile(filepath.Join(root, name))
 					}
 				}

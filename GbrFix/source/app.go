@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const appVersion = "2.8"
+const appVersion = "2.9"
 
 const restoredTag = "_restored"
 
@@ -370,7 +370,7 @@ func (a *App) applyWatch() {
 
 // ---------------- file processing ----------------
 
-var gbrExts = map[string]bool{".gbr": true, ".hpg": true, ".hpgl": true}
+var gbrExts = map[string]bool{".gbr": true, ".hpg": true, ".hpgl": true, ".plt": true}
 
 func (a *App) candidate(p string) bool {
 	ext := strings.ToLower(filepath.Ext(p))
@@ -1096,7 +1096,7 @@ func (a *App) readInput(r *http.Request) (string, string, error) {
 	}
 	p := r.URL.Query().Get("path")
 	if ext := strings.ToLower(filepath.Ext(p)); !gbrExts[ext] && ext != ".mrk" && ext != ".pds" {
-		return "", "", fmt.Errorf("разрешени са само .GBR, .HPG, .MRK и .PDS файлове")
+		return "", "", fmt.Errorf("разрешени са само .GBR, .HPG, .PLT, .MRK и .PDS файлове")
 	}
 	b, err := readShared(p)
 	return string(b), filepath.Base(p), err

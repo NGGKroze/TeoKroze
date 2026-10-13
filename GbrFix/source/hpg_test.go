@@ -190,3 +190,83 @@ func TestGBRUnplacedNotchesAreExplained(t *testing.T) {
 		t.Fatal("the placeable notch was not restored")
 	}
 }
+
+// ---- PLT: the notches are drawn on a pen of their own (pen 4), before the contour (pen 2) ----
+
+// the same square piece as hpgSample; a T is  PU E; PU E; PD I; PU C1; PD C2
+func pltSample(withTop bool) string {
+	cmds := []string{"PU", "SP3", "LT", "PU0,0", "PD0,300",
+		"SP4",
+		"PU4800,4000", "PU4800,4000", "PD4800,4160", "PU4720,4160", "PD4880,4160", // bottom
+		"PU4000,4800", "PU4000,4800", "PD4160,4800", "PU4160,4720", "PD4160,4880", // left
+	}
+	if withTop {
+		cmds = append(cmds, "PU4800,5600", "PU4800,5600", "PD4800,5440", "PU4720,5440", "PD4880,5440") // top
+	}
+	cmds = append(cmds, "PU", "SP2", "PU4000,4000", "PD5600,4000", "PD5600,5600", "PD4000,5600", "PD4000,4000", "PU", "SP0", "PG")
+	return strings.Join(cmds, ";\r\n") + ";\r\n"
+}
+
+func TestPLTNotchesAreFoundOnTheirOwnPen(t *testing.T) {
+	st := parseHPG(pltSample(true)).steps()
+	ns := hpgNotches(st)
+	cut, notch := hpgPens(st, ns)
+	if len(ns) != 3 || cut != "2" || notch != "4" || ns[0].ret {
+		t.Fatalf("notches %d, cut pen %q, notch pen %q", len(ns), cut, notch)
+	}
+}
+
+func TestRestorePLTKeepsTheFilesOwnForm(t *testing.T) {
+	in := pltSample(false) // the top notch is missing
+	out, info, chk := RestoreHPG(in, sampleMarker())
+	if chk.Expected != 3 || chk.Found != 2 || info.Restored != 1 || chk.NoFit {
+		t.Fatalf("check %+v info %+v", chk, info)
+	}
+	// written like the other notches: two "PU E", PD I, the crossbar – after the nearest notch (the left one)
+	want := "PD4160,4880;\r\nPU4800,5600;\r\nPU4800,5600;\r\nPD4800,5440;\r\nPU4720,5440;\r\nPD4880,5440;\r\nPU;"
+	if !strings.Contains(out, want) {
+		t.Fatalf("restored T not found:\n%s", out)
+	}
+	if want := pltSample(true); strings.ReplaceAll(out, "\r\n", "") == "" || len(out) != len(want) {
+		t.Fatalf("size differs from the complete file (%d vs %d):\n%s", len(out), len(want), out)
+	}
+	if !strings.Contains(info.Form, "T-нотч 4.0 × 4.0 мм с перо 4") {
+		t.Fatalf("form %q", info.Form)
+	}
+	// nothing but added lines, and a second run adds nothing
+	if out2, i2, _ := RestoreHPG(out, sampleMarker()); i2.Restored != 0 || out2 != out {
+		t.Fatalf("second pass: %+v", i2)
+	}
+	if s := Simulate(out); s.Notches != 3 {
+		t.Fatalf("preview notches %d", s.Notches)
+	}
+}
+
+func TestCompletePLTIsLeftAlone(t *testing.T) {
+	in := pltSample(true)
+	out, info, chk := RestoreHPG(in, sampleMarker())
+	if out != in || info.Restored != 0 || chk.Found != 3 || chk.Expected != 3 {
+		t.Fatalf("%+v %+v", chk, info)
+	}
+}
+
+func TestPLTFileIsWatchedAndWrittenWithItsExtension(t *testing.T) {
+	root := t.TempDir()
+	pl := write(t, filepath.Join(root, "cut", "M1.PLT"), pltSample(false))
+	write(t, filepath.Join(root, "cut", "M1.MRK"), mrkWithNotches(t, sampleMarker()))
+	a := testApp(t, defaultConfig())
+	if !a.candidate(pl) {
+		t.Fatal(".PLT is not a watched extension")
+	}
+	a.process(pl, 0)
+	if !exists(filepath.Join(root, "cut", "M1_fixed_restored.PLT")) {
+		t.Fatalf("%v", a.events)
+	}
+	if e := a.events[0]; !strings.HasPrefix(e.Msg, "PLT файл:") || e.Status != "ok" {
+		t.Fatalf("event %+v", e)
+	}
+	// the files it wrote are not processed again
+	if a.candidate(filepath.Join(root, "cut", "M1_fixed_restored.PLT")) {
+		t.Fatal("own output would be processed again")
+	}
+}

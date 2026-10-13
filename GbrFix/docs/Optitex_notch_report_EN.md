@@ -23,6 +23,7 @@ The same symptom (one notch per piece type missing) was also seen in earlier tes
 | `CH-CHINO-Atatex-PR-LICE-32-44.MRK` | the marker: 32 pieces (28 with notches; the 4 `gajka` pieces have none) and 4 more rectangular outlines without a name; 232 notches in total |
 | `CH-CHINO-Atatex-pr.PDS` | the pattern; every notch is `T_NOTCH` / `CUT`, 8 mm of cut length per notch (e.g. piece `grub`: COUNT 14, LENGTH 112 mm) |
 | `CH-CHINO-ATATEX-PR-LICE-32-44.HPG` | the HP-GL plot of that marker (cut pen `SP2`) |
+| `CH-CHINO-ATATEX-PR-LICE-32-44.PLT` | a PLT plot of the same marker in which **all** notches are present (see section 7) |
 | `CH-CHINO-ATATEX-PR-LICE-32-44.GBR` | the GBR export of the same marker, for comparison |
 
 ## 4. What we expect and what we get
@@ -77,6 +78,7 @@ What the table shows:
 - **28 of 28 pieces that have notches** lose exactly one notch, and in all 28 it is the **last** notch of the piece in the marker's notch order. (The 4 pieces without notches, `gajka`, are not affected.)
 - Notch type does not matter: all are `T_NOTCH`, `CUT`, 8 mm. The missing ones do not differ from the written ones.
 - It is not tied to a particular place: the missing notches lie at many different places on pieces of different sizes.
+- The same 28 notches are also missing on the inner (sewing) line, which carries a second set of T symbols about 10 mm inside the outline.
 - Along the drawn contour the missing notch is also behind all the other notches of that contour for 26 of the 28 pieces (for the two `pr-diasna` pieces it is the last in the list but not at the end of the drawn contour).
 
 ## 5. Our guess (we cannot see the code)
@@ -87,13 +89,26 @@ The loop that writes the notches of a piece seems to run for `N − 1` notches i
 
 In the GBR export of the same marker, 24 of the 32 pieces and the 4 rectangular outlines are written with all their notches (194 notches). Eight pieces (4 × `gr-filetka`, 2 × `podshlic`, 2 × `shlic` = 38 notches) are **not in the GBR at all**; they lie on top of the four rectangles (each rectangle holds two of them). The HPG draws the rectangles and these 8 pieces. Is it intended that the GBR leaves them out (for example pieces placed over other pieces)? If yes, please tell us and we will not count these 38 as missing in the GBR.
 
-## 7. What we ask
+## 7. The same marker plotted as PLT: all notches are present
+
+We also have a PLT plot of the same marker (attached). It is **complete**: all 232 marker notches are written on the cut line, and 232 more on the inner (sewing) line about 10 mm inside the outline (464 T symbols). Every notch of the HPG is also in the PLT, identical to within 0.1 mm. The HPG lacks exactly **56 of the PLT's 464 T symbols**: the 28 on the cut line listed above and 28 on the inner line.
+
+The two files write the notches differently:
+
+| | HPG (notches missing) | PLT (complete) |
+|---|---|---|
+| Pen | the T is part of the contour, on the cut pen `SP2` | all T symbols on a separate pen `SP4`, written before the contour (`SP2`) of the piece |
+| Commands | `PD E; PD I; PU C1; PD C2; PU E` | `PU E; PU E; PD I; PU C1; PD C2` |
+
+We do not know yet which plot settings were different for the PLT (for example a separate tool/pen for notches): ______ (to be filled in). If the notches written on their own pen are complete and those written inside the contour are not, the defect is in the in-contour notch writer.
+
+## 8. What we ask
 
 1. Please confirm the defect and tell us in which build it is fixed.
-2. Is there any setting that makes Optitex write the last notch of each piece in HP-GL? We did not find one.
+2. Is there a setting that makes Optitex write the last notch of each piece in HP-GL? The PLT shows that a path which writes all notches exists; please tell us which setting selects it, if it is a setting.
 3. Please check the same behaviour for the GBR/ISO output of 26.x.
 
-## 8. How to reproduce
+## 9. How to reproduce
 
 1. Open the attached marker (`.MRK`) with its pattern (`.PDS`).
 2. Plot → machine format HP-GL, resolution Metric 1/40, "Cut Darts and Pleats notches" on, plot to a file.

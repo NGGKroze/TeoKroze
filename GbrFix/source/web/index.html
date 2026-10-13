@@ -66,13 +66,13 @@ code{background:#eef0f3;padding:1px 5px;border-radius:4px}
   <h1>GBR Fix <span id="ver" style="font-weight:400;font-size:12px;color:#9aa0a8"></span></h1>
   <span class="pill" id="watchPill">…</span>
   <span class="sp"></span>
-  <button id="openBtn">Отвори .GBR / .HPG за преглед</button>
+  <button id="openBtn">Отвори .GBR / .HPG / .PLT за преглед</button>
   <button id="pauseBtn" title="Временно спира автоматичното конвертиране">Пауза</button>
   <button id="quitBtn" title="Затваря програмата напълно (и иконата в трея)">Изход</button>
-  <input type="file" id="fileIn" accept=".gbr,.GBR,.hpg,.HPG,.mrk,.MRK,.pds,.PDS" multiple hidden>
+  <input type="file" id="fileIn" accept=".gbr,.GBR,.hpg,.HPG,.plt,.PLT,.mrk,.MRK,.pds,.PDS" multiple hidden>
 </header>
 <div id="noFolder" style="display:none;padding:10px 18px;background:#fdecea;border-bottom:1px solid #f5c2c0;font-size:14px">
-  <b>Не е избрана папка за автоматично конвертиране.</b> Изберете папката, в която Marker записва .GBR / .HPG файловете (с подпапките ѝ).
+  <b>Не е избрана папка за автоматично конвертиране.</b> Изберете папката, в която Marker записва .GBR / .HPG / .PLT файловете (с подпапките ѝ).
   <button class="pri" id="quickPick" style="margin-left:10px">Избери папка…</button> <span id="quickMsg" class="small"></span>
 </div>
 <div id="trayHint" class="small" style="padding:6px 18px;background:#fffbe8;border-bottom:1px solid #f1e3a6">Затварянето на този прозорец не спира програмата – тя продължава да работи в трея (до часовника) и конвертира автоматично. Иконата: <img src="/icon.png" style="width:16px;height:16px;vertical-align:-3px"> · <a href="#" id="hideHint">скрий</a></div>
@@ -86,7 +86,7 @@ code{background:#eef0f3;padding:1px 5px;border-radius:4px}
 <section class="panel act" id="p-events">
   <div class="card">
     <h3>Автоматично коригирани файлове</h3>
-    <div class="small" style="margin-bottom:8px">Всеки нов или променен .GBR или .HPG в следените папки се проверява. Ако има счупени или липсващи нотчове, се записва коригиран файл – <span id="outDesc"></span>. Оригиналът не се променя.</div>
+    <div class="small" style="margin-bottom:8px">Всеки нов или променен .GBR, .HPG или .PLT в следените папки се проверява. Ако има счупени или липсващи нотчове, се записва коригиран файл – <span id="outDesc"></span>. Оригиналът не се променя.</div>
     <table><thead><tr><th>Време</th><th>Статус</th><th>Файл</th><th>Резултат</th><th></th></tr></thead><tbody id="evBody"><tr><td colspan="5" class="small">Все още няма събития.</td></tr></tbody></table>
   </div>
 </section>
@@ -105,7 +105,7 @@ code{background:#eef0f3;padding:1px 5px;border-radius:4px}
       <span id="coord" style="margin-left:auto;font:12px ui-monospace,Consolas,monospace;color:var(--ink);background:#f3f4f6;border-radius:6px;padding:4px 8px;min-width:330px">Посочете с мишката за координати</span>
       <span class="small">Колелце = мащаб, влачене = преместване, двоен клик = побери. Двата изгледа се движат заедно.</span>
     </div>
-    <div id="viewEmpty" class="drop" style="margin-bottom:10px">Пуснете .GBR, .HPG, .MRK или .PDS файл тук или натиснете <b>„Отвори файл…“</b>, за да го видите.<div class="small" style="margin-top:6px">GBR: ако има счупени нотчове, до него се показва и как ще изглежда след корекцията – с бутон за сваляне.<br>MRK / PDS: показват се детайлите и всички нотчове с координатите им. Ако отворите GBR (или HPG) и MRK заедно, липсващите нотчове се добавят от MRK.</div></div>
+    <div id="viewEmpty" class="drop" style="margin-bottom:10px">Пуснете .GBR, .HPG, .PLT, .MRK или .PDS файл тук или натиснете <b>„Отвори файл…“</b>, за да го видите.<div class="small" style="margin-top:6px">GBR: ако има счупени нотчове, до него се показва и как ще изглежда след корекцията – с бутон за сваляне.<br>MRK / PDS: показват се детайлите и всички нотчове с координатите им. Ако отворите GBR (или HPG/PLT) и MRK заедно, липсващите нотчове се добавят от MRK.</div></div>
     <div class="viewer single" id="viewer">
       <div class="cvwrap"><div class="cvhead"><b id="t0">Няма файл</b><span id="s0"></span></div><canvas id="c0"></canvas></div>
       <div class="cvwrap" id="w1" style="display:none"><div class="cvhead"><b id="t1"></b><span id="s1"></span></div><canvas id="c1"></canvas></div>
@@ -125,8 +125,8 @@ code{background:#eef0f3;padding:1px 5px;border-radius:4px}
 <section class="panel" id="p-manual">
   <div class="card">
     <h3>Ръчно конвертиране</h3>
-    <div class="drop" id="drop">Пуснете .GBR или .HPG файлове (може и с .MRK към тях) тук или <button id="pickBtn" class="pri">изберете</button><div class="small" style="margin-top:6px"><span id="dlDesc"></span> Нищо не се качва в интернет – всичко остава на този компютър.</div></div>
-    <input type="file" id="fileIn2" accept=".gbr,.GBR,.hpg,.HPG,.mrk,.MRK" multiple hidden>
+    <div class="drop" id="drop">Пуснете .GBR, .HPG или .PLT файлове (може и с .MRK към тях) тук или <button id="pickBtn" class="pri">изберете</button><div class="small" style="margin-top:6px"><span id="dlDesc"></span> Нищо не се качва в интернет – всичко остава на този компютър.</div></div>
+    <input type="file" id="fileIn2" accept=".gbr,.GBR,.hpg,.HPG,.plt,.PLT,.mrk,.MRK" multiple hidden>
     <table style="margin-top:12px"><tbody id="manBody"></tbody></table>
   </div>
 </section>
@@ -174,7 +174,7 @@ code{background:#eef0f3;padding:1px 5px;border-radius:4px}
     <label class="chk"><input type="checkbox" id="optCloseU"> Довършвай U нотча до ръба, ако остава като U <span class="small">(26.1 не го затваря и отрязва тънка ивица от ръба)</span></label>
     <div style="margin:12px 0 2px">Нотчове, които Optitex е изпуснал в GBR</div>
     <div class="small" style="margin-bottom:4px">Мястото им се взима от .MRK файла на маркировката (виж „Къде са маркировките“ горе) и се добавят като I-нотч с M19. Без .MRK нищо не се добавя.</div>
-    <label class="chk"><input type="radio" name="restMode" value="separate" id="rmSep"> Записвай <b>втори файл</b> с добавените нотчове <span class="small">(…_restored) – първият файл остава само конвертиран. При HPG се записва само файлът с добавените нотчове</span></label>
+    <label class="chk"><input type="radio" name="restMode" value="separate" id="rmSep"> Записвай <b>втори файл</b> с добавените нотчове <span class="small">(…_restored) – първият файл остава само конвертиран. При HPG/PLT се записва само файлът с добавените нотчове</span></label>
     <label class="chk"><input type="radio" name="restMode" value="same" id="rmSame"> Добавяй ги направо в коригирания файл <span class="small">(един файл)</span></label>
     <label class="chk"><input type="radio" name="restMode" value="off" id="rmOff"> Не добавяй липсващи нотчове</label>
     <label class="chk"><input type="checkbox" id="optMissing"> Проверявай за липсващи нотчове спрямо .MRK / .PDS файла на маркировката</label>
@@ -230,7 +230,7 @@ async function refresh(){
   $('#outDesc').innerHTML=status.config.outMode==='folder'?'в подпапка <code>ПАПКА'+esc(status.config.suffix)+'</code> с оригиналното име':'до него, с име <code>ИМЕ'+esc(status.config.suffix)+'.GBR</code>';$('#dlDesc').textContent=status.config.outMode==='folder'?'Коригираният файл се сваля с оригиналното име (запазете го в отделна папка).':'Коригираният файл се сваля с име ИМЕ'+status.config.suffix+'.GBR.';
   const ev=status.events||[];
   const lbl={ok:'Коригиран',warn:'Провери',error:'Грешка',info:'Инфо'};
-  const isGbr=e=>/\.(gbr|hpgl?)$/i.test(e.src||'');
+  const isGbr=e=>/\.(gbr|hpgl?|plt)$/i.test(e.src||'');
   $('#evBody').innerHTML=ev.length?ev.map((e,i)=>{
     const paths=(e.src?esc(e.src):'')+
       (e.out?'<div class="small">→ '+esc(e.out)+'</div>':'')+
