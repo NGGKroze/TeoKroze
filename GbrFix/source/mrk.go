@@ -185,6 +185,7 @@ type RestoreInfo struct {
 	Restored   int            `json:"restored"`
 	ByPiece    map[string]int `json:"byPiece"`
 	Unplaced   int            `json:"unplaced"`
+	UnplacedBy map[string]int `json:"unplacedBy"` // piece name -> notches that could not be placed
 	Coords     []string       `json:"coords"`
 	SourceName string         `json:"source"`
 	Form       string         `json:"form"` // how they were added; "" = I notch with M19 (GBR)
@@ -194,23 +195,49 @@ func (r *RestoreInfo) Text() string {
 	if r == nil || (r.Restored == 0 && r.Unplaced == 0) {
 		return ""
 	}
-	form := r.Form
-	if form == "" {
-		form = "като I-нотч с M19"
-	}
-	s := fmt.Sprintf("Възстановени %d липсващи нотча от %s (%s)", r.Restored, r.SourceName, form)
-	if len(r.ByPiece) > 0 {
-		var parts []string
-		for _, k := range sortedKeys(r.ByPiece) {
-			parts = append(parts, fmt.Sprintf("%s: %d", k, r.ByPiece[k]))
+	s := ""
+	if r.Restored > 0 {
+		form := r.Form
+		if form == "" {
+			form = "като I-нотч с M19"
 		}
-		s += " – " + strings.Join(parts, ", ")
+		s = fmt.Sprintf("Възстановени %d липсващи нотча от %s (%s)", r.Restored, r.SourceName, form)
+		if len(r.ByPiece) > 0 {
+			var parts []string
+			for _, k := range sortedKeys(r.ByPiece) {
+				parts = append(parts, fmt.Sprintf("%s: %d", k, r.ByPiece[k]))
+			}
+			s += " – " + strings.Join(parts, ", ")
+		}
+		s += "."
 	}
-	s += "."
-	if r.Unplaced > 0 {
-		s += fmt.Sprintf(" %d нотча от маркировката не можаха да се поставят (не лежат на контур в файла – напр. детайли, които се режат като блок/правоъгълник).", r.Unplaced)
+	if u := r.UnplacedText(); u != "" {
+		if s != "" {
+			s += " "
+		}
+		s += u
 	}
 	return s
+}
+
+// UnplacedText: the marker notches that could not be put back, and why.
+func (r *RestoreInfo) UnplacedText() string {
+	if r == nil || r.Unplaced == 0 {
+		return ""
+	}
+	s := fmt.Sprintf("%d нотча от маркировката НЕ могат да се върнат автоматично – не лежат на контур във файла", r.Unplaced)
+	if len(r.UnplacedBy) > 0 {
+		var parts []string
+		for _, k := range sortedKeys(r.UnplacedBy) {
+			name := k
+			if name == "" {
+				name = "(без име)"
+			}
+			parts = append(parts, fmt.Sprintf("%s: %d", name, r.UnplacedBy[k]))
+		}
+		s += " (" + strings.Join(parts, ", ") + ")"
+	}
+	return s + ". Най-често самите детайли не са във файла (Optitex не ги е записал), затова няма на кой контур да се добавят."
 }
 
 func sortedKeys(m map[string]int) []string {
@@ -255,7 +282,7 @@ func notchAnchors(c []string) []fpt {
 
 // RestoreMissing adds, as I notches, the marker notches that have no counterpart in the GBR.
 func RestoreMissing(gbr string, d *svgDrawing, segTol float64) (string, *RestoreInfo) {
-	info := &RestoreInfo{ByPiece: map[string]int{}}
+	info := &RestoreInfo{ByPiece: map[string]int{}, UnplacedBy: map[string]int{}}
 	if d == nil || d.Kind != "MRK" {
 		return gbr, info
 	}
@@ -333,6 +360,7 @@ func RestoreMissing(gbr string, d *svgDrawing, segTol float64) (string, *Restore
 			}
 			if best < 0 || bestD > segTol {
 				info.Unplaced++
+				info.UnplacedBy[sp.Name]++
 				continue
 			}
 			g := pcs[best]

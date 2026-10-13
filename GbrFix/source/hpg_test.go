@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -86,5 +88,105 @@ func TestRestoreKeepsNotchAtContourStart(t *testing.T) {
 	out, info := RestoreMissing(gbr, d, 400)
 	if info.Restored != 0 || out != gbr {
 		t.Fatalf("notch at the contour start added again: %+v\n%s", info, out)
+	}
+}
+
+// ---- the app: where the restored HPG goes, and the message for notches that cannot be placed ----
+
+// mrkWithNotches: a marker file whose drawing has the given pieces with notch lines.
+func mrkWithNotches(t *testing.T, d *svgDrawing) string {
+	const h = 2000
+	var b strings.Builder
+	b.WriteString(`<?xml version="1.0"?><MARKER><STYLE><FILENAME></FILENAME></STYLE></MARKER>`)
+	fmt.Fprintf(&b, `<svg viewBox="0 0 5000 %d">`, h)
+	sx := func(x int) int { return x + 1 }
+	sy := func(y int) int { return h - 1 - y }
+	for _, p := range d.Pieces {
+		pts := ""
+		for _, q := range p.Poly {
+			pts += fmt.Sprintf("%d,%d ", sx(q[0]), sy(q[1]))
+		}
+		fmt.Fprintf(&b, `<polygon comment="%s" points="%s"/>`, p.Name, pts)
+		for _, n := range p.Notches {
+			fmt.Fprintf(&b, `<path d="M%d,%d L%d,%d"/>`, sx(n[0]), sy(n[1]), sx(n[2]), sy(n[3]))
+		}
+	}
+	b.WriteString("</svg>")
+	return b.String()
+}
+
+func hpgApp(t *testing.T, mode, out string) (*App, string, string) {
+	root := t.TempDir()
+	hp := write(t, filepath.Join(root, "cut", "M1.HPG"), hpgSample())
+	write(t, filepath.Join(root, "cut", "M1.MRK"), mrkWithNotches(t, sampleMarker()))
+	cfg := defaultConfig()
+	cfg.RestoreMode, cfg.OutMode = mode, out
+	return testApp(t, cfg), hp, root
+}
+
+func exists(p string) bool { _, err := os.Stat(p); return err == nil }
+
+func TestHPGSeparateWritesOnlyRestoredFile(t *testing.T) {
+	a, hp, root := hpgApp(t, "separate", "suffix")
+	a.process(hp, 0)
+	rs := filepath.Join(root, "cut", "M1_fixed_restored.HPG")
+	if !exists(rs) || exists(filepath.Join(root, "cut", "M1_fixed.HPG")) {
+		t.Fatalf("files: %v", a.events)
+	}
+	if e := a.events[0]; e.Out2 != rs || e.Out != "" || e.Status != "ok" {
+		t.Fatalf("event %+v", e)
+	}
+	if b, _ := os.ReadFile(hp); string(b) != hpgSample() {
+		t.Fatal("original changed")
+	}
+}
+
+func TestHPGSeparateInFolder(t *testing.T) {
+	a, hp, root := hpgApp(t, "separate", "folder")
+	a.process(hp, 0)
+	if !exists(filepath.Join(root, "cut", "cut_fixed_restored", "M1.HPG")) || exists(filepath.Join(root, "cut", "cut_fixed", "M1.HPG")) {
+		t.Fatalf("%v", a.events)
+	}
+}
+
+func TestHPGSameWritesFixedFile(t *testing.T) {
+	a, hp, root := hpgApp(t, "same", "suffix")
+	a.process(hp, 0)
+	if !exists(filepath.Join(root, "cut", "M1_fixed.HPG")) || exists(filepath.Join(root, "cut", "M1_fixed_restored.HPG")) {
+		t.Fatalf("%v", a.events)
+	}
+	if e := a.events[0]; e.Out == "" || e.Out2 != "" {
+		t.Fatalf("event %+v", e)
+	}
+}
+
+func TestHPGOffWritesNothing(t *testing.T) {
+	a, hp, root := hpgApp(t, "off", "suffix")
+	a.process(hp, 0)
+	if exists(filepath.Join(root, "cut", "M1_fixed.HPG")) || exists(filepath.Join(root, "cut", "M1_fixed_restored.HPG")) || a.events[0].Status != "warn" {
+		t.Fatalf("%v", a.events)
+	}
+}
+
+// Notches of pieces that are not in the GBR at all (Optitex left them out) cannot be put
+// back; the message must say so and name the pieces instead of just "missing".
+func TestGBRUnplacedNotchesAreExplained(t *testing.T) {
+	root := t.TempDir()
+	gbr := write(t, filepath.Join(root, "cut", "M1.GBR"), gbrOf(pcsA[0]))
+	m := &svgDrawing{Kind: "MRK", Pieces: []svgPiece{
+		{Name: "in-gbr", Poly: [][2]int{{100, 100}, {1100, 100}, {1100, 600}, {100, 600}}, Notches: [][4]int{{600, 100, 600, 140}}},
+		{Name: "not-in-gbr", Poly: [][2]int{{3000, 3000}, {3500, 3000}, {3500, 3400}, {3000, 3400}}, Notches: [][4]int{{3250, 3000, 3250, 3040}, {3000, 3200, 3040, 3200}}},
+	}}
+	write(t, filepath.Join(root, "cut", "M1.MRK"), mrkWithNotches(t, m))
+	a := testApp(t, defaultConfig())
+	a.process(gbr, 0)
+	msg := a.events[0].Msg
+	for _, want := range []string{"2 нотча от маркировката НЕ могат да се върнат", "not-in-gbr: 2", "Втори файл с върнати 1"} {
+		if !strings.Contains(msg, want) {
+			t.Fatalf("missing %q in: %s", want, msg)
+		}
+	}
+	if !exists(filepath.Join(root, "cut", "M1_fixed_restored.GBR")) {
+		t.Fatal("the placeable notch was not restored")
 	}
 }

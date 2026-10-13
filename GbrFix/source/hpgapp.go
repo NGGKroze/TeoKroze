@@ -40,12 +40,23 @@ func (a *App) convertHPG(p, s string) {
 	case info.Restored == 0:
 		e.Status, e.Msg = "warn", info.Text()
 	default:
-		e.Out = a.outPath(p)
-		if err := writeAtomic(e.Out, out); err != nil {
-			e.Status, e.Msg = "error", "Грешка при запис на "+filepath.Base(e.Out)+" (отворен ли е?): "+err.Error()
+		// An HPG has nothing to convert, so "separate" gives only the file with the
+		// restored notches (…_fixed_restored), "same" gives the usual …_fixed.
+		target := a.outPath(p)
+		if cfg.RestoreMode == "separate" {
+			target = a.restoredPath(p)
+		}
+		if err := writeAtomic(target, out); err != nil {
+			e.Status, e.Msg = "error", "Грешка при запис на "+filepath.Base(target)+" (отворен ли е?): "+err.Error()
+			e.Out = target
 			a.logEvent(e)
-			a.note(e.Out, "error")
+			a.note(target, "error")
 			return
+		}
+		if cfg.RestoreMode == "separate" {
+			e.Out2 = target
+		} else {
+			e.Out = target
 		}
 		e.Status = "ok"
 		e.RestoredFrom, e.RestoredN = mm.MRK, info.Restored
@@ -63,6 +74,9 @@ func (a *App) convertHPG(p, s string) {
 	a.logEvent(e)
 	if e.Status != "info" {
 		target := e.Out
+		if target == "" {
+			target = e.Out2
+		}
 		if target == "" {
 			target = p
 		}

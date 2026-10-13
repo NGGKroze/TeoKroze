@@ -20,7 +20,7 @@ The same symptom (one notch per piece type missing) was also seen in earlier tes
 
 | File | Content |
 |---|---|
-| `CH-CHINO-Atatex-PR-LICE-32-44.MRK` | the marker: 36 pieces, 28 of them with notches, 232 notches in total |
+| `CH-CHINO-Atatex-PR-LICE-32-44.MRK` | the marker: 32 pieces (28 with notches; the 4 `gajka` pieces have none) and 4 more rectangular outlines without a name; 232 notches in total |
 | `CH-CHINO-Atatex-pr.PDS` | the pattern; every notch is `T_NOTCH` / `CUT`, 8 mm of cut length per notch (e.g. piece `grub`: COUNT 14, LENGTH 112 mm) |
 | `CH-CHINO-ATATEX-PR-LICE-32-44.HPG` | the HP-GL plot of that marker (cut pen `SP2`) |
 | `CH-CHINO-ATATEX-PR-LICE-32-44.GBR` | the GBR export of the same marker, for comparison |
@@ -39,7 +39,7 @@ PD E; PD I; PU C1; PD C2; PU E; PD <next contour point>
 | Written to the HPG on the cut pen | **204** |
 | Missing | **28** |
 
-The 28 missing notches, one per piece. "Marker piece #" is the order of the pieces in the `.MRK` drawing; positions are in HPGL units (1/40 mm) and in mm from the marker origin, the same coordinate system as the HPG file:
+The 28 missing notches, one per piece. "Marker piece #" is the order of the outlines in the `.MRK` drawing (36 outlines: the 32 pieces and the 4 unnamed rectangles #20, #23, #26, #30); positions are in HPGL units (1/40 mm) and in mm from the marker origin, the same coordinate system as the HPG file:
 
 | Marker piece # | Piece | Notches in marker | Notches in HPG | Missing notch | Position (HPGL units) | Position (mm) |
 |---|---|---|---|---|---|---|
@@ -74,7 +74,7 @@ The 28 missing notches, one per piece. "Marker piece #" is the order of the piec
 
 What the table shows:
 
-- **28 of 28 pieces that have notches** lose exactly one notch, and in all 28 it is the **last** notch of the piece in the marker's notch order. (The 8 pieces without notches are not affected.)
+- **28 of 28 pieces that have notches** lose exactly one notch, and in all 28 it is the **last** notch of the piece in the marker's notch order. (The 4 pieces without notches, `gajka`, are not affected.)
 - Notch type does not matter: all are `T_NOTCH`, `CUT`, 8 mm. The missing ones do not differ from the written ones.
 - It is not tied to a particular place: the missing notches lie at many different places on pieces of different sizes.
 - Along the drawn contour the missing notch is also behind all the other notches of that contour for 26 of the 28 pieces (for the two `pr-diasna` pieces it is the last in the list but not at the end of the drawn contour).
@@ -85,7 +85,7 @@ The loop that writes the notches of a piece seems to run for `N − 1` notches i
 
 ## 6. Related observation – please confirm whether it is by design
 
-In the GBR export of the same marker the 28 individually cut pieces have all their notches, but 8 pieces (4 × `gr-filetka`, 2 × `podshlic`, 2 × `shlic` = 38 notches) are not in the GBR as pieces: the GBR contains only four rectangular outlines, each enclosing two of these pieces. The HPG draws the pieces individually. If this is the buffer/block cutting, tell us and we will not count these 38 as missing.
+In the GBR export of the same marker, 24 of the 32 pieces and the 4 rectangular outlines are written with all their notches (194 notches). Eight pieces (4 × `gr-filetka`, 2 × `podshlic`, 2 × `shlic` = 38 notches) are **not in the GBR at all**; they lie on top of the four rectangles (each rectangle holds two of them). The HPG draws the rectangles and these 8 pieces. Is it intended that the GBR leaves them out (for example pieces placed over other pieces)? If yes, please tell us and we will not count these 38 as missing in the GBR.
 
 ## 7. What we ask
 

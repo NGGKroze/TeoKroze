@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const appVersion = "2.7"
+const appVersion = "2.8"
 
 const restoredTag = "_restored"
 
@@ -610,6 +610,9 @@ func (a *App) convertFile(p string, raw []byte) {
 			hint := " Включете добавянето на липсващи нотчове от „Настройки“ или експортирайте отново."
 			if cfg.RestoreMode != "off" {
 				hint = " Не могат да се върнат автоматично – проверете в Optitex и експортирайте отново."
+				if u := plan.rest.UnplacedText(); u != "" {
+					hint = " " + u
+				}
 			}
 			a.logEvent(Event{Time: now(), Src: p, Status: "warn", Msg: "Нотчовете в файла са наред, но " + miss.Text() + hint, Report: miss.Text(), Marker: markerNote})
 			a.note(p, "warn")
@@ -617,13 +620,16 @@ func (a *App) convertFile(p string, raw []byte) {
 			a.logEvent(Event{Time: now(), Src: p, Status: "warn", Msg: "Нотчовете са наред, но заглавката е повредена: " + r.HeaderWarn + ". Експортирайте файла наново от Marker.", Marker: markerNote, NoMarker: noMarker})
 			a.note(p, "warn")
 		default:
-			msg := "Няма счупени нотчове – файлът не е променян."
+			msg, status := "Няма счупени нотчове – файлът не е променян.", "info"
 			if miss != nil {
 				msg += " " + miss.Text()
 			} else if noMarker {
 				msg += noMrkHint
 			}
-			a.logEvent(Event{Time: now(), Src: p, Status: "info", Msg: msg, Marker: markerNote, NoMarker: noMarker})
+			if u := plan.rest.UnplacedText(); u != "" {
+				msg, status = msg+" "+u, "warn"
+			}
+			a.logEvent(Event{Time: now(), Src: p, Status: status, Msg: msg, Marker: markerNote, NoMarker: noMarker})
 		}
 		return
 	}
@@ -703,6 +709,10 @@ func (a *App) convertFile(p string, raw []byte) {
 		msg = append(msg, "ВНИМАНИЕ: "+miss.Text()+hint)
 	} else if miss == nil && noMarker {
 		msg = append(msg, noMrkHint)
+	}
+	if u := plan.rest.UnplacedText(); u != "" { // also when the notch count cannot be checked
+		e.Status = "warn"
+		msg = append(msg, u)
 	}
 	if r.HeaderWarn != "" {
 		e.Status = "warn"
