@@ -1,0 +1,40 @@
+{
+ "default": "granite",
+ "themes": [
+  {
+   "id": "granite",
+   "name": "Графитен гранит",
+   "desc": "Тъмен сив гранит със светли жилки",
+   "wall": "wall_granite.jpg",
+   "tile": "tile_granite.jpg",
+   "shell": {
+    "ink": "#E9EAEC",
+    "inkSoft": "#A5A8AE",
+    "stoneText": "#F1F1F2",
+    "stoneSoft": "#B5B8BE",
+    "tileText": "#F2F2F3",
+    "tileSoft": "#BFC2C8",
+    "brass": "#B9975B",
+    "tileBorder": "#55585F",
+    "bar": "#F0121316",
+    "paper": "#F5F2EC"
+   },
+   "web": {
+    "bg": "#ebe8e2",
+    "side": "#e6e2da",
+    "line": "#d8d3c8",
+    "ink": "#26272b",
+    "inkSoft": "#5b5c62",
+    "accent": "#2f3034",
+    "accentDark": "#131416",
+    "brass": "#b08d57",
+    "brassDark": "#8d6d3c",
+    "soft": "#f3ede0",
+    "sel": "#d9c7a3",
+    "thumb": "#b6b1a5"
+   },
+   "mode": "dark",
+   "gloss": 0.35
+  }
+ ]
+}

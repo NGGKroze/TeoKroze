@@ -1,0 +1,41 @@
+{
+  "exact": {
+    "CHANEL UNIFORMS LABEL GENERATOR": "CHANEL UNIFORMS – ГЕНЕРАТОР НА ЕТИКЕТИ",
+    "Upload your packing list Excel file to generate A4 print-ready PDFs.": "Качете Excel с опаковъчния лист, за да получите PDF етикети на A4 за печат.",
+    "Download Labels (PDF)": "Изтегли етикетите (PDF)",
+    "1. Data Source": "1. Източник на данни",
+    "Drag & drop Packing List": "Плъзнете опаковъчния лист",
+    "2. Manual Edit": "2. Ръчна редакция",
+    "Label 1": "Етикет 1",
+    "Order / Packing List / Date": "Поръчка / Packing list / Дата",
+    "Code Article": "Код на артикула",
+    "Color Code": "Код на цвета",
+    "Ctn Number": "№ на кашона",
+    "Total Ctns": "Общо кашони",
+    "Total Pieces": "Общо бройки",
+    "Net Wt (KG)": "Нето (кг)",
+    "Gross Wt (KG)": "Бруто (кг)",
+    "Address Lines (Customer)": "Адрес (клиент)",
+    "Destination": "Дестинация",
+    "Bottom Note": "Бележка в долната част",
+    "Live Preview": "Преглед на живо",
+    "Upload an Excel file to see the preview.": "Качете Excel файл, за да видите прегледа.",
+    "Parsing file...": "Файлът се чете…",
+    "Error parsing file:": "Грешка при четене на файла:",
+    "Error parsing file. Ensure it is a valid Excel document.": "Грешка при четене. Проверете дали е валиден Excel документ.",
+    "Could not find header row containing 'CTN NO.' or 'CODE'. Please check file format.": "Не е намерен ред със заглавия „CTN NO.“ или „CODE“. Проверете формата на файла."
+  },
+  "patterns": [
+    [
+      "^(\\d+) labels loaded$",
+      "$1 заредени етикета"
+    ],
+    [
+      "^Download (\\d+) Labels \\(PDF\\)$",
+      "Изтегли $1 етикета (PDF)"
+    ]
+  ],
+  "skip": [
+    "#preview-content"
+  ]
+}

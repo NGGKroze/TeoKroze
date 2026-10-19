@@ -1,0 +1,58 @@
+{
+  "exact": {
+    "Dior Packing List + Labels Generator v20": "Dior – опаковъчен лист и етикети v20",
+    "🏷️ Dior Packing List + Labels Generator v20": "🏷️ Dior – опаковъчен лист и етикети v20",
+    "Drag & drop OA PDF + COMMESSA PDF files here": "Плъзнете OA PDF + COMMESSA PDF файловете тук",
+    "or drop an already generated Packing List .xlsx to make labels only": "или пуснете вече готов опаковъчен лист (.xlsx), за да направите само етикети",
+    "PDFs are read locally in your browser. Nothing is uploaded.": "PDF файловете се четат локално. Нищо не се качва в интернет.",
+    "Waiting for files...": "Очакват се файлове…",
+    "Detected order data": "Открити данни за поръчката",
+    "Order / file set": "Поръчка / набор файлове",
+    "Packing list №": "Опаковъчен лист №",
+    "Invoice number / date": "Фактура № / дата",
+    "PAP label top": "PAP етикет (горе)",
+    "Max pcs per carton": "Макс. бройки в кашон",
+    "Net kg / piece": "Нето кг / брой",
+    "Carton tare kg": "Тара на кашона (кг)",
+    "Cartons": "Кашони",
+    "PARCEL FOR address (auto-filled from OA where possible)": "Адрес „PARCEL FOR“ (попълва се от OA, когато е възможно)",
+    "Supplier address": "Адрес на доставчика",
+    "🔄 Rebuild preview": "🔄 Преизчисли прегледа",
+    "📥 Download Packing List XLSX": "📥 Изтегли опаковъчния лист (XLSX)",
+    "📥 Download Labels XLSX": "📥 Изтегли етикетите (XLSX)",
+    "🖨️ Print Labels / Save as PDF": "🖨️ Печат на етикетите / Запази като PDF",
+    "Packing list preview": "Преглед на опаковъчния лист",
+    "Reading files...": "Четат се файловете…",
+    "No readable OA / COMMESSA PDF or Packing List XLSX found.": "Не е намерен четим OA / COMMESSA PDF или опаковъчен лист XLSX.",
+    "No packing list data generated yet.": "Още няма генериран опаковъчен лист.",
+    "No labels generated yet.": "Още няма генерирани етикети.",
+    "ITALY DELIVERY ADDRESS (edit this field before printing if OA did not contain the address)": "АДРЕС ЗА ДОСТАВКА В ИТАЛИЯ (редактирайте полето преди печат, ако OA не съдържа адреса)",
+    "No packing rows generated. Check that the OA PDF text contains item rows with size quantities.": "Няма генерирани редове. Проверете дали OA PDF съдържа редове с количества по размери.",
+    "➕ Нов ред": "➕ Нов ред"
+  },
+  "patterns": [
+    [
+      "^Skipped (.+): unsupported file type$",
+      "Пропуснат: $1 (неподдържан тип файл)"
+    ],
+    [
+      "^Files: (.*)$",
+      "Файлове: $1"
+    ],
+    [
+      "^PO: (.*?)\\s+Commessa: (.*?)\\s+Type: (.*)$",
+      "PO: $1    Commessa: $2    Тип: $3"
+    ],
+    [
+      "^Generated: (\\d+) cartons, (\\d+) pcs, ([\\d.]+) kg net, ([\\d.]+) kg gross$",
+      "Генерирани: $1 кашона, $2 бр., $3 кг нето, $4 кг бруто"
+    ],
+    [
+      "^Packing list № (.*)$",
+      "Опаковъчен лист № $1"
+    ]
+  ],
+  "skip": [
+    "#pages-container"
+  ]
+}

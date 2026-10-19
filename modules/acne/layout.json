@@ -1,0 +1,28 @@
+{
+  "title": "ACNE Studios – опаковъчни листове и етикети",
+  "subtitle": "PO PDF или готов Packing List → редактируем PL + Excel етикети",
+  "hide": [
+    "body > header"
+  ],
+  "side": [
+    {
+      "title": "1. Файлове",
+      "move": [
+        "#dropZone",
+        "#status"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "sel": ".toolbar .btn.light",
+      "kind": "danger",
+      "side": "left"
+    },
+    {
+      "sel": "#exportAllBtn",
+      "kind": "primary",
+      "side": "right"
+    }
+  ]
+}

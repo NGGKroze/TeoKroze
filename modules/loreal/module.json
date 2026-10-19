@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "id": "loreal",
+  "name": "L’Oréal",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 120,
+  "summary": "Valentino, Prada и Biotherm",
+  "requires": [],
+  "note": "Изберете подклиент. Всички три работят в един и същ генератор.",
+  "formats": [
+    "XLSX",
+    "XLS",
+    "CSV",
+    "ODS",
+    "PDF"
+  ],
+  "variants": [
+    {
+      "id": "valentino",
+      "name": "Valentino",
+      "summary": "Комплексен PL, breakdown и labels процес",
+      "requires": [
+        "Template workbook",
+        "Packing information workbook",
+        "Raw country breakdown файл",
+        "По желание: barcode/label файл",
+        "За changes режим: final PL плюс barcode файл"
+      ],
+      "note": "Най-тежкият процес. Вътре първо изберете правилния tab: generate от raw files или changes от existing final PL.",
+      "onLoad": "document.getElementById('tabRawBtn').click()"
+    },
+    {
+      "id": "prada",
+      "name": "Prada",
+      "summary": "Prada S1 27 → L’Oréal шаблон",
+      "requires": [
+        "L’Oréal V6 шаблон",
+        "PRADA packing information (Inter/Asia)",
+        "PRADA source packing list (с ASIA FCA и INTER DDP листове)"
+      ],
+      "note": "Генерира по един L’Oréal файл за всеки поток (ASIA / INTER).",
+      "onLoad": "document.getElementById('tabPradaBtn').click()"
+    },
+    {
+      "id": "biotherm",
+      "name": "Biotherm",
+      "summary": "Biotherm → L’Oréal шаблон",
+      "requires": [
+        "L’Oréal V6 шаблон",
+        "BIOTHERM packing information (листове FCA и DDP)",
+        "Source packing list за ASIA и/или INTER"
+      ],
+      "note": "Може да качите само единия поток.",
+      "onLoad": "document.getElementById('tabBiothermBtn').click()"
+    }
+  ]
+}

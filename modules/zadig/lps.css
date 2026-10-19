@@ -1,0 +1,10 @@
+/* ZADIG - единна тема */
+@media screen {
+  html[data-lps="zadig"] { --accent:var(--lps-accent); --accent-dark:var(--lps-accent-dark); --bg:transparent; }
+  html[data-lps="zadig"] header { background: rgba(255,255,255,.86) !important; color: #26272b !important; border-bottom: 2px solid var(--lps-brass) !important; box-shadow: 0 6px 20px rgba(31,32,35,.07) !important; }
+  html[data-lps="zadig"] header p { color:#5b5c62 !important; }
+  html[data-lps="zadig"] .dropzone.drag { background:var(--lps-soft) !important; border-color:var(--lps-brass) !important; }
+}
+@media screen {
+  html[data-lps="zadig"] main { max-width: none !important; padding: 0 !important; } html[data-lps="zadig"] main > .grid { display: block !important; } html[data-lps="zadig"] .lps-bare > section.card { width: 100% !important; }
+}

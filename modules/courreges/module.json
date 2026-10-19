@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "id": "courreges",
+  "name": "Courreges",
+  "version": "1.0.0",
+  "type": "python",
+  "entry": "run.py",
+  "order": 50,
+  "summary": "Order PDF → PL и етикети (с OCR)",
+  "requires": [
+    "Order PDF (текстов или сканиран)",
+    "При сканиран PDF включете „Force OCR“"
+  ],
+  "note": "По подразбиране 25 бр. на кашон, първо пълни кашони по размер. Проверете таблицата преди експорт.",
+  "formats": [
+    "PDF",
+    "XLSX"
+  ],
+  "python": {
+    "script": "run.py",
+    "health": "/",
+    "startupTimeoutSec": 90,
+    "port": 8765
+  }
+}

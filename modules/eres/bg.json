@@ -1,0 +1,18 @@
+{
+  "exact": {
+    "ERES Label Generator": "ERES – генератор на етикети",
+    "Drag and drop your packing list (.xlsx or .csv) to generate printable A4 labels.": "Плъзнете опаковъчния лист (.xlsx или .csv), за да получите етикети за печат на A4.",
+    "New Batch": "Нова партида",
+    "Generate PDF Labels": "Генерирай PDF етикети",
+    "Processing Packing List...": "Обработва се опаковъчният лист…",
+    "Drag and drop your packing list here": "Плъзнете опаковъчния лист тук",
+    "Supports Excel (.xlsx) and CSV formats": "Поддържа Excel (.xlsx) и CSV",
+    "Generating PDF... Please wait": "Генерира се PDF… Моля, изчакайте",
+    "PDF generation failed:": "Генерирането на PDF не успя:",
+    "An error occurred while creating the PDF. See console for details.": "Грешка при създаване на PDF. Подробности има в конзолата.",
+    "Error reading Excel file:": "Грешка при четене на Excel файла:",
+    "Could not find standard headers ('REF ARTICLE' and 'COLORIS') in this document.": "В документа не са намерени стандартните заглавия („REF ARTICLE“ и „COLORIS“).",
+    "Missing 'COLORIS' column required for processing.": "Липсва колоната „COLORIS“, необходима за обработката.",
+    "No valid carton rows found in the uploaded file.": "В качения файл не са намерени валидни редове с кашони."
+  }
+}

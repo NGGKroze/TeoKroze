@@ -1,0 +1,37 @@
+{
+  "title": "PELINTEX – етикети за палети (GS1-128)",
+  "subtitle": "Excel експорт → етикети 100 × 150 мм, по 2 на страница A4 (пейзаж)",
+  "hide": [
+    ".top-row > div:first-child",
+    ".service-note"
+  ],
+  "side": [
+    {
+      "title": "1. Файл",
+      "move": [
+        ".tab-buttons",
+        "#excelPane",
+        "#manualPane",
+        "#status"
+      ]
+    },
+    {
+      "title": "2. Настройки",
+      "move": [
+        ".settings"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "sel": "#clearBtn",
+      "kind": "danger",
+      "side": "left"
+    },
+    {
+      "sel": "#printBtn",
+      "kind": "primary",
+      "side": "right"
+    }
+  ]
+}

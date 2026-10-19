@@ -1,0 +1,23 @@
+{
+  "exact": {
+    "GANNI - Label Generator": "GANNI – генератор на етикети",
+    "Label Generator": "Генератор на етикети",
+    "Client-Specific Standalone Tool": "Самостоятелен инструмент за клиента",
+    "Reset Data": "Нулирай данните",
+    "Download PDF": "Изтегли PDF",
+    "Print": "Печат",
+    "Location Code (Fallback)": "Код на локацията (резервен)",
+    "Ship-To (Auto-Extracted)": "Получател (от файла)",
+    "Generate 1:1 Matching Address Labels (Full A4)": "Генерирай адресни етикети 1:1 (цял A4)",
+    "Drag & Drop Packing List": "Плъзнете опаковъчния лист",
+    "Supports .XLSX and .CSV": "Поддържа .XLSX и .CSV",
+    "Will auto-fill from Excel...": "Ще се попълни автоматично от Excel…",
+    "Processing Data...": "Обработват се данните…",
+    "Data Extracted Successfully": "Данните са извлечени успешно",
+    "Failed to parse Excel file.": "Excel файлът не може да бъде прочетен.",
+    "Could not find valid carton data matching the Ganni format.": "Не са намерени данни за кашони във формата на Ganni."
+  },
+  "skip": [
+    "#preview-grid"
+  ]
+}

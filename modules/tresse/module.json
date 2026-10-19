@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "tresse",
+  "name": "Tresse",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 170,
+  "summary": "Box labels от PL",
+  "requires": [
+    "Packing list workbook или CSV"
+  ],
+  "note": "Качете PL файла и използвайте Tresse генератора за parsing и export.",
+  "formats": [
+    "XLSX",
+    "XLS",
+    "CSV"
+  ]
+}

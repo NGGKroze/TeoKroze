@@ -1,0 +1,11 @@
+/* LONGCHAMP - единна тема */
+@media screen {
+  html[data-lps="longchamp"] div.bg-blue-600.text-white.p-6 {
+    background: rgba(255,255,255,.86) !important; color:#26272b !important; border-bottom:2px solid var(--lps-brass) !important;
+  }
+  html[data-lps="longchamp"] div.bg-blue-600.text-white.p-6 * { color:#26272b !important; }
+}
+@media screen {
+  html[data-lps="longchamp"] body > div.max-w-6xl, html[data-lps="longchamp"] .max-w-6xl.w-full { max-width: none !important; box-shadow: none !important; background: transparent !important; }
+  html[data-lps="longchamp"] .p-6.grid { display: block !important; padding: 0 !important; }
+}

@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "id": "jacquemus",
+  "name": "Jacquemus",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 100,
+  "summary": "Packing file плюс barcode/reference file",
+  "requires": [
+    "Packing list файл",
+    "Barcode/reference файл"
+  ],
+  "note": "Този клиент има отделни upload полета за packing данни и barcode/reference данни.",
+  "formats": [
+    "XLSX",
+    "XLS",
+    "CSV"
+  ]
+}

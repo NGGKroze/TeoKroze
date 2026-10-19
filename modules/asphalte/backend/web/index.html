@@ -1,0 +1,1247 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ASPHALTE Workshop</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
+  <style>
+    :root{
+      --bg:#f3f0ea;
+      --shell:#ebe6de;
+      --card:#f8f6f2;
+      --card-2:#ffffff;
+      --text:#2d2a26;
+      --muted:#777067;
+      --line:#d7cfc2;
+      --line-2:#c7bbaa;
+      --head:#111111;
+      --accent:#9c4a00;
+      --accent-2:#b85a07;
+      --green:#2f855a;
+      --soft:#f0ebe3;
+      --warn:#9a6700;
+      --warn-bg:#fff4dc;
+      --danger:#a83a32;
+      --danger-bg:#fff0ee;
+      --blue:#2b6cb0;
+      --shadow:0 20px 50px rgba(42,33,22,.10);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+    body{min-height:100vh}
+    header{height:74px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;background:var(--card-2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+    .brand{display:flex;align-items:center;gap:14px}
+    .logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#111,#5b5b5b);color:#fff;display:grid;place-items:center;font-weight:900;letter-spacing:.04em}
+    .brand h1{margin:0;font-size:18px;letter-spacing:-.02em}
+    .brand p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+    .top-badges{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .pill{padding:8px 12px;border-radius:999px;background:#f0ece5;border:1px solid var(--line);font-size:12px;font-weight:800;color:#584e42}
+    .lang-pill{padding:8px 12px;border-radius:999px;background:#111;color:#fff;font-size:12px;font-weight:800}
+
+    main{display:grid;grid-template-columns:360px 1fr;min-height:calc(100vh - 74px)}
+    aside{padding:18px;background:var(--shell);border-right:1px solid var(--line);overflow:auto}
+    .workspace{padding:22px;overflow:auto}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:16px}
+    .card h2{margin:0 0 12px;font-size:13px;color:#5d5347;text-transform:uppercase;letter-spacing:.08em}
+    .tabs{display:flex;gap:8px;margin-bottom:16px}
+    .tab{flex:1;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:12px 10px;cursor:pointer;font-weight:800;color:#655b50}
+    .tab.active{background:#111;border-color:#111;color:#fff}
+    .drop{border:2px dashed var(--line-2);background:var(--card-2);border-radius:16px;padding:16px;text-align:center;cursor:pointer;transition:.16s ease;margin-bottom:10px}
+    .drop.drag{border-color:var(--accent);background:#fff8f0}
+    .drop strong{display:block;margin-bottom:4px;font-size:14px}
+    .drop span{display:block;font-size:12px;color:var(--muted)}
+    input[type=file]{display:none}
+    .file-name{display:none;margin:-2px 0 8px;font-size:12px;color:var(--blue);word-break:break-all}
+    label{display:block;font-size:12px;font-weight:800;color:#64594b;margin:12px 0 6px}
+    input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card-2);color:var(--text);outline:none;font:inherit;font-size:13px}
+    input:focus,select:focus,textarea:focus{border-color:#b99f7d;box-shadow:0 0 0 3px rgba(185,159,125,.15)}
+    textarea{min-height:92px;resize:vertical;font-family:Consolas,'Courier New',monospace}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .hint{font-size:12px;color:var(--muted);line-height:1.45}
+    .primary-action{width:100%;border:0;background:var(--accent);color:#fff;border-radius:14px;padding:13px;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 14px 30px rgba(156,74,0,.18);margin-top:14px}
+    .primary-action:hover{background:var(--accent-2)}
+    .primary-action:disabled{opacity:.7;cursor:wait}
+    .spinner{display:none;width:16px;height:16px;border-radius:50%;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;animation:spin .9s linear infinite;margin-right:8px;vertical-align:-3px}
+    .busy .spinner{display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .empty{min-height:420px;border:1px dashed var(--line);background:rgba(255,255,255,.45);border-radius:24px;display:grid;place-items:center;text-align:center;padding:24px}
+    .empty h2{margin:0 0 8px;font-size:24px}
+    .empty p{margin:0;color:var(--muted);max-width:620px;line-height:1.6}
+
+    .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-bottom:10px}
+    .kpi{background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:8px 12px;box-shadow:none;min-width:0}
+    .kpi .label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .kpi .value{font-size:20px;font-weight:900;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .downloads{margin:8px 0 10px!important}
+    .rtabs{display:flex;gap:6px;margin:6px 0 12px;border-bottom:1px solid var(--line)}
+    .rtab{border:1px solid var(--line);border-bottom:0;background:var(--card);border-radius:12px 12px 0 0;padding:9px 16px;font-size:13px;font-weight:800;color:#655b50;cursor:pointer;margin-bottom:-1px}
+    .rtab.active{background:#111;color:#fff;border-color:#111}
+    .rview{display:none}
+    .rview.show{display:block}
+    .lb-nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+    .lb-nav select{max-width:420px}
+    .lb-sheet{background:#fff;border:2px solid #111;border-radius:6px;max-width:980px;padding:14px 18px 16px;box-shadow:var(--shadow);font-family:Arial,Helvetica,sans-serif;color:#111}
+    .lb-top{display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px solid #111;padding-bottom:6px;margin-bottom:8px}
+    .lb-top b{font-size:22px;letter-spacing:.18em}
+    .lb-top span{font-size:12px;font-weight:700;color:#6b7280}
+    .lb-row{display:grid;grid-template-columns:1.1fr 1fr 1fr;border-bottom:3px solid #111;padding-bottom:8px;margin-bottom:8px;gap:0}
+    .lb-cell{padding:2px 12px;border-right:1px solid #cbd3de;min-width:0}
+    .lb-cell:last-child{border-right:0}
+    .lb-cell:first-child{padding-left:0}
+    .lb-k{font-size:9px;font-weight:700;color:#58687d;text-transform:uppercase;letter-spacing:.04em;margin:4px 0 2px}
+    .lb-v{font-size:12px;font-weight:700;white-space:pre-line}
+    .lb-v.big{font-size:24px}
+    .lb-v.red{color:#d8272f}
+    .lb-v.blue{color:#24457a}
+    .lb-v.grey{font-weight:400;color:#5a6574}
+    .lb-choice{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;margin-right:4px;background:#111;color:#fff}
+    .lb-choice.off{background:#f5f6f7;color:#7a7f87}
+    .lb-pass{display:inline-block;background:#d9f5e5;color:#008a4e;font-weight:800;font-size:12px;padding:6px 14px}
+    table.lb-sizes{width:100%;border-collapse:collapse;border:2px solid #111;margin:6px 0 10px;table-layout:auto}
+    table.lb-sizes th{background:#f5f6f7;font-size:9px;font-weight:800;padding:4px 6px;border:1px solid #bbb;text-align:center;text-transform:uppercase}
+    table.lb-sizes td{padding:7px 6px;border:1px solid #bbb;text-align:center;font-size:12px;font-weight:700}
+    table.lb-sizes td.on{background:#fffbea;font-size:14px}
+    table.lb-sizes td.tot{background:#111;color:#fff;font-size:17px}
+    table.lb-sizes td.l{text-align:left}
+    .lb-bottom{display:grid;grid-template-columns:230px 1fr;gap:14px;border-top:2px solid #111;padding-top:8px}
+    .lb-eans{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+    .lb-eans img{height:84px;border:1px solid #eee}
+    .lb-idimg{max-width:210px;height:auto;display:block;margin-top:4px}
+    .lb-miss{font-size:11px;font-weight:700;color:#9b1c1c;border:1px dashed #d9a5a5;padding:12px 18px;min-width:150px;text-align:center}
+    @media(max-width:700px){.lb-row,.lb-bottom{grid-template-columns:1fr}}
+    .downloads{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 18px}
+    .downloads a,.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--text);font-size:12px;font-weight:800;text-decoration:none;cursor:pointer}
+    .downloads a.main,.btn.main{background:#111;border-color:#111;color:#fff}
+    .btn.green{background:#2f855a;border-color:#2f855a;color:#fff}
+    .btn.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+    .btn.orange{background:var(--accent);border-color:var(--accent);color:#fff}
+    .btn.ghost{background:#fff}
+    .btn.soft{background:var(--soft)}
+    .btn.red{background:var(--danger-bg);border-color:#e7b4af;color:var(--danger)}
+    .section-title{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:18px 0 10px}
+    .section-title h3{margin:0;font-size:16px}
+    .small{font-size:12px;color:var(--muted)}
+    .warnings,.error{padding:13px 14px;border-radius:14px;margin-bottom:16px;font-size:13px}
+    .warnings{background:var(--warn-bg);border:1px solid #f0d9a2;color:var(--warn)}
+    .error{background:var(--danger-bg);border:1px solid #efc4bf;color:var(--danger)}
+    .warnings ul{margin:8px 0 0 18px;padding:0}
+
+    .order-block{background:var(--card-2);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:18px}
+    .order-head{padding:16px 18px 12px;background:linear-gradient(180deg,#fff,#f7f4ee);border-bottom:1px solid var(--line)}
+    .order-title{font-size:17px;font-weight:900;margin-bottom:8px}
+    .order-meta{display:flex;flex-wrap:wrap;gap:8px}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid var(--line);background:#fff;color:#63584b}
+    .badge.warn{background:var(--warn-bg);border-color:#efcf86;color:#7c5600}
+    .badge.dark{background:#111;color:#fff;border-color:#111}
+
+    .line-table-wrap{overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:11px 10px;border-bottom:1px solid var(--line);font-size:12px;vertical-align:middle}
+    thead th{background:#f1ece4;color:#64584c;font-size:11px;text-transform:uppercase;letter-spacing:.06em;text-align:left;position:sticky;top:0;z-index:1}
+    tbody tr:hover td{background:#fbf8f3}
+    tbody tr.clickable{cursor:pointer}
+    .style-cell strong{display:block;font-size:13px}
+    .style-cell span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+    .qty{text-align:center;min-width:38px}
+    .total-cell{font-weight:900}
+    .row-actions{display:flex;flex-wrap:wrap;gap:8px}
+
+    .pk-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 14px}
+    .pk-wrap table.pk-table th{white-space:nowrap}
+    .pk-table td input{width:100%;min-width:56px;padding:6px 8px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text);font:inherit}
+    .pk-table td input:focus{border-color:#b99f7d;box-shadow:0 0 0 2px rgba(185,159,125,.15)}
+    .pk-table td.narrow input{text-align:center;min-width:54px}
+    .pk-banner{display:none}
+    .pk-banner.show{display:block}
+
+    .subsection-card{background:var(--card-2);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);margin-top:10px}
+    .subsection-card h4{margin:0 0 10px;font-size:14px}
+
+    .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:100;align-items:center;justify-content:center;padding:24px}
+    .modal-bg.show{display:flex}
+    .modal{width:min(980px,96vw);max-height:94vh;overflow:auto;border-radius:22px;background:#f5f1ea;box-shadow:0 35px 80px rgba(0,0,0,.30)}
+    .modal-head{background:#111;color:#fff;padding:16px 18px;border-radius:22px 22px 0 0;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .modal-head h3{margin:0;font-size:20px}
+    .modal-close{border:0;background:#fff;color:#111;border-radius:10px;padding:8px 14px;font-weight:900;cursor:pointer}
+    .modal-body{padding:18px}
+    .metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+    .metric{background:#fcfaf7;border:1px solid #d9cfc2;border-radius:16px;padding:14px}
+    .metric .n{font-size:32px;font-weight:900;line-height:1.05}
+    .metric .s{font-size:11px;color:var(--muted);text-transform:uppercase;margin-top:6px}
+    .editor-section{padding-top:6px;margin-top:10px;border-top:1px solid #d9cfc2}
+    .editor-section h4{margin:0 0 12px;font-size:16px}
+    .editor-row{display:grid;grid-template-columns:1.1fr 1.1fr 1.1fr;gap:10px;margin-bottom:10px}
+    .editor-row.two{grid-template-columns:1fr 1fr}
+    .editor-row.four{grid-template-columns:repeat(4,1fr)}
+    .editor-row.sizes{grid-template-columns:repeat(6,1fr)}
+    .field label{margin-top:0}
+    .field input{background:#fff}
+    .muted-tip{font-size:12px;color:var(--muted);margin-top:4px}
+    .modal-foot{padding:14px 18px;border-top:1px solid #d9cfc2;background:#f0ebe3;border-radius:0 0 22px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .modal-actions-left,.modal-actions-right{display:flex;gap:10px;flex-wrap:wrap}
+
+    @media(max-width:1100px){
+      main{grid-template-columns:1fr}
+      aside{border-right:0;border-bottom:1px solid var(--line)}
+      .metric-grid{grid-template-columns:repeat(2,1fr)}
+      .editor-row,.editor-row.two,.editor-row.four,.editor-row.sizes{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:700px){
+      header{height:auto;padding:14px;align-items:flex-start;gap:12px;flex-direction:column}
+      .kpis{grid-template-columns:repeat(3,1fr)}
+      .metric-grid,.editor-row,.editor-row.two,.editor-row.four,.editor-row.sizes{grid-template-columns:1fr}
+      .row-actions{flex-direction:column;align-items:flex-start}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">PL</div>
+    <div>
+      <h1>ASPHALTE Python + Tesseract Workshop</h1>
+      <p>PDF поръчка + EAN → PKL Excel + carton labels Excel + pallet labels Excel, OCR fallback, редакция на всеки ред и директна редакция на пакинга в реално време.</p>
+    </div>
+  </div>
+  <div class="top-badges">
+    <div class="lang-pill">Български по подразбиране</div>
+    <div class="pill">Локално приложение</div>
+    <div class="pill">v21</div>
+  </div>
+</header>
+<main>
+  <aside>
+    <div class="tabs">
+      <button class="tab active" id="tabOrder" onclick="switchMode('order')">Поръчка PDF</button>
+      <button class="tab" id="tabPL" onclick="switchMode('pl')">Готов PKL</button>
+      <button class="tab" id="tabAudit" onclick="switchMode('audit')">Одит ZIP</button>
+    </div>
+
+    <section id="panelOrder">
+      <div class="card">
+        <h2>1. Изходни файлове</h2>
+        <div class="drop" data-input="order_pdf"><strong>PDF поръчка</strong><span>Пуснете PDF тук или натиснете за избор</span></div>
+        <div class="file-name" id="name_order_pdf"></div>
+        <input id="order_pdf" name="order_pdf" type="file" accept=".pdf">
+
+        <div class="drop" data-input="ean_xlsx"><strong>EAN / SKU Excel</strong><span>По избор · .xlsx / .xls / .csv · букви и цифрови размери</span></div>
+        <div class="file-name" id="name_ean_xlsx"></div>
+        <input id="ean_xlsx" name="ean_xlsx" type="file" accept=".xlsx,.xls,.csv">
+
+        <div class="drop" data-input="template_xlsx"><strong>Оригинален packing list шаблон</strong><span>По избор · чете адреси и истински ID код от A1</span></div>
+        <div class="file-name" id="name_template_xlsx"></div>
+        <input id="template_xlsx" name="template_xlsx" type="file" accept=".xlsx,.xls">
+      </div>
+
+      <div class="card" id="cardSettings">
+        <h2>2. Парсване и настройки</h2>
+        <div class="grid2">
+          <div class="order-only">
+            <label>OCR режим</label>
+            <select id="ocr_mode">
+              <option value="auto">Автоматично</option>
+              <option value="always">Винаги OCR</option>
+              <option value="never">Само text layer</option>
+            </select>
+          </div>
+          <div class="order-only">
+            <label>Режим на кашониране</label>
+            <select id="carton_mode">
+              <option value="sequential">Последователно по размери</option>
+              <option value="single_size_then_mixed">Пълни кашони по размер + смесени остатъци</option>
+            </select>
+          </div>
+          <div class="order-only">
+            <label>Макс. бр. в кашон</label>
+            <input id="max_pcs" type="number" min="1" value="15">
+          </div>
+          <div>
+            <label>Кашона / палет</label>
+            <input id="pallet_capacity" type="number" min="1" value="16">
+          </div>
+          <div>
+            <label>PKL тегло kg / бр.</label>
+            <input id="pl_unit_kg" type="number" step="0.01" value="0.75">
+          </div>
+          <div>
+            <label>Label kg / бр.</label>
+            <input id="unit_kg" type="number" step="0.01" value="1.30">
+          </div>
+          <div>
+            <label>Тара кашон kg</label>
+            <input id="tare_kg" type="number" step="0.01" value="1.20">
+          </div>
+          <div>
+            <label>Дата на експедиция</label>
+            <input id="shipment_date" placeholder="ДД/ММ/ГГГГ">
+          </div>
+        </div>
+        <label>Override на identification code</label>
+        <input id="identification_code" placeholder="Празно = A1 от шаблона → ако липсва 189 + ДДММГГГГ">
+        <p class="hint">Приоритет: истински код от A1 → ръчно въведен код → автоматично изчисление от датата. Редът “RECEPTION IDENTIFICATION NUMBER” не се ползва.</p>
+      </div>
+
+      <div class="card" id="cardManualEan">
+        <h2>3. Ръчни EAN кодове</h2>
+        <textarea id="manual_eans" placeholder="Пример:\nbleu marine|XS=1234567890123\nbleu marine|S=1234567890124\nbeige|3XL=1234567890999"></textarea>
+        <p class="hint">Ако няма EAN Excel, може да въведете кодовете тук. Формат: цвят|размер=EAN. Размерът може да е XS/XL/3XL или цифров, напр. 27/28/40.</p>
+        <button id="buildOrderBtn" class="primary-action" onclick="buildOrder()"><span class="spinner"></span>Изгради PKL + carton labels + pallet labels</button>
+      </div>
+    </section>
+
+    <section id="panelPL" style="display:none">
+      <div class="card">
+        <h2>1. Готов packing list</h2>
+        <div class="drop" data-input="pl_xlsx"><strong>Съществуващ PKL Excel</strong><span>Пуснете .xlsx / .xls файл</span></div>
+        <div class="file-name" id="name_pl_xlsx"></div>
+        <input id="pl_xlsx" name="pl_xlsx" type="file" accept=".xlsx,.xls">
+
+        <div class="drop" data-input="pl_ean_xlsx"><strong>EAN / SKU Excel (баркодове)</strong><span>По избор · .xlsx / .xls / .csv · за да се регенерират етикетите с баркодове</span></div>
+        <div class="file-name" id="name_pl_ean_xlsx"></div>
+        <input id="pl_ean_xlsx" name="pl_ean_xlsx" type="file" accept=".xlsx,.xls,.csv">
+
+        <label>Или ръчни EAN кодове</label>
+        <textarea id="pl_manual_eans" placeholder="bleu marine|XS=1234567890123&#10;beige|3XL=1234567890999"></textarea>
+        <p class="hint">Кодовете се пасват по цвят и размер към кашоните от PKL файла. След зареждане можеш да добавиш/смениш EAN файла и да натиснеш бутона отново, за да се регенерират етикетите.</p>
+      </div>
+      <div class="card" id="cardPLBuild">
+        <p class="hint">Режимът чете наличния packing list и генерира етикети в Excel.</p>
+        <button id="buildPLBtn" class="primary-action" onclick="buildPLLabels()"><span class="spinner"></span>Генерирай carton + pallet labels от PKL</button>
+      </div>
+    </section>
+
+    <section id="panelAudit" style="display:none">
+      <div class="card">
+        <h2>1. ZIP за анализ / обучение</h2>
+        <div class="drop" data-input="orders_zip"><strong>ZIP с PDF поръчки</strong><span>Пуснете архив с много поръчки</span></div>
+        <div class="file-name" id="name_orders_zip"></div>
+        <input id="orders_zip" name="orders_zip" type="file" accept=".zip">
+        <div class="grid2">
+          <div>
+            <label>OCR режим</label>
+            <select id="audit_ocr_mode">
+              <option value="never">Само text layer</option>
+              <option value="auto">Автоматично</option>
+              <option value="always">Винаги OCR</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint">Получавате CSV / JSON отчет кои PDF-и се четат правилно, колко реда и колко бройки са намерени.</p>
+        <button id="auditBtn" class="primary-action" onclick="buildAudit()"><span class="spinner"></span>Стартирай одит</button>
+      </div>
+    </section>
+  </aside>
+
+  <section class="workspace">
+    <div id="results" class="empty">
+      <div>
+        <h2>Качи файл, за да започнеш</h2>
+        <p>Интерфейсът вече е по подразбиране на български и редакторът за packing list е преработен в по-структуриран стил. След обработка ще виждаш редовете в таблица, а с клик или бутон <strong>Редакция</strong> ще се отвори прозорец за редакция и индивидуално сваляне.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Редакция на ред</h3>
+      <button class="modal-close" onclick="closeLineEditor()">Затвори</button>
+    </div>
+    <div class="modal-body">
+      <div class="metric-grid" id="m_stats"></div>
+
+      <div class="editor-section">
+        <h4>Информация за поръчката / артикула</h4>
+        <div class="editor-row">
+          <div class="field"><label>Номер на поръчка</label><input id="m_order_no"></div>
+          <div class="field"><label>Сезон</label><input id="m_season"></div>
+          <div class="field"><label>Ex-mill / export дата</label><input id="m_date"></div>
+        </div>
+        <div class="editor-row two">
+          <div class="field"><label>Style / артикул</label><input id="m_style"></div>
+          <div class="field"><label>EAN (по избор)</label><input id="m_ean"></div>
+        </div>
+        <div class="editor-row two">
+          <div class="field"><label>Десигнация</label><input id="m_designation"></div>
+          <div class="field"><label>Batch / Order line</label><input id="m_batch"></div>
+        </div>
+        <div class="editor-row two">
+          <div class="field"><label>Color code</label><input id="m_color_code"></div>
+          <div class="field"><label>Color description</label><input id="m_color_name"></div>
+        </div>
+        <div class="muted-tip">Ако някое поле липсва от PDF-а, може да го попълниш ръчно. При rebuild приложението ще обнови PKL, carton labels и pallet labels Excel файловете.</div>
+      </div>
+
+      <div class="editor-section">
+        <h4>Количества по размер</h4>
+        <div class="editor-row sizes" id="m_sizes"></div>
+      </div>
+
+      <div class="editor-section">
+        <h4>Настройки за опаковка за този ред</h4>
+        <div class="muted-tip">Остави празно, за да се ползват глобалните настройки отляво.</div>
+        <div class="editor-row two">
+          <div class="field"><label>Override: бр. в кашон</label><input id="m_pcs_per_carton" placeholder="Използвай default"></div>
+          <div class="field"><label>Override: PKL kg / бр.</label><input id="m_pl_unit_kg" placeholder="Използвай default"></div>
+        </div>
+        <div class="editor-row two">
+          <div class="field"><label>Override: label kg / бр.</label><input id="m_unit_kg" placeholder="Използвай default"></div>
+          <div class="field"><label>Override: тара кашон kg</label><input id="m_tare_kg" placeholder="Използвай default"></div>
+        </div>
+        <div class="editor-row two">
+          <div class="field"><label>Override: размер на кашон</label><input id="m_box_size" placeholder="Напр. 60/40/40"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="modal-actions-left">
+        <button class="btn ghost" onclick="clearLineOverrides()">Изчисти override полета</button>
+        <button class="btn red" onclick="deleteCurrentLine()">Изтрий реда</button>
+      </div>
+      <div class="modal-actions-right" id="modalDownloads"></div>
+      <div class="modal-actions-right">
+        <button class="btn orange" onclick="saveLineEditor()">Запази</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=(id)=>document.getElementById(id);
+let activeMode='order';
+let currentJob=null;
+let currentLines=[];
+let currentCartons=[];
+let currentIndividual=[];
+let currentDownloads={};
+let currentWarnings=[];
+let currentOrderTitle='';
+let dirty=false;
+let editIndex=-1;
+let cartonsEdited=false;
+let resultsFlavor='order';
+let resultsTab='lines';
+let lbIdx=0;
+let DEFAULTS={shipper:'',receiver:''};
+const SIZE_ORDER=['XXS','XS','S','M','L','XL','XXL','3XL','4XL','5XL'];
+
+function switchMode(mode){
+  activeMode=mode;
+  $('tabOrder').classList.toggle('active',mode==='order');
+  $('tabPL').classList.toggle('active',mode==='pl');
+  $('tabAudit').classList.toggle('active',mode==='audit');
+  $('panelOrder').style.display=mode==='order'?'':'none';
+  $('panelPL').style.display=mode==='pl'?'':'none';
+  $('panelAudit').style.display=mode==='audit'?'':'none';
+  placeSettings(mode);
+}
+function placeSettings(mode){
+  const card=$('cardSettings');
+  if(mode==='order')$('panelOrder').insertBefore(card,$('cardManualEan'));
+  else if(mode==='pl')$('panelPL').insertBefore(card,$('cardPLBuild'));
+  document.querySelectorAll('#cardSettings .order-only').forEach(el=>el.style.display=mode==='pl'?'none':'');
+}
+
+function setupDrops(){
+  document.querySelectorAll('.drop').forEach(drop=>{
+    const inputId=drop.dataset.input;
+    const input=$(inputId);
+    drop.addEventListener('click',()=>input.click());
+    drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag')});
+    drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+    drop.addEventListener('drop',e=>{
+      e.preventDefault();
+      drop.classList.remove('drag');
+      if(e.dataTransfer.files.length){
+        const dt=new DataTransfer();
+        dt.items.add(e.dataTransfer.files[0]);
+        input.files=dt.files;
+        showFileName(inputId);
+      }
+    });
+    input.addEventListener('change',()=>showFileName(inputId));
+  });
+  window.addEventListener('dragover',e=>e.preventDefault());
+  window.addEventListener('drop',e=>e.preventDefault());
+}
+function showFileName(inputId){
+  const input=$(inputId),label=$('name_'+inputId);
+  if(input.files&&input.files.length){label.textContent=input.files[0].name;label.style.display='block'}
+  else{label.style.display='none';label.textContent=''}
+}
+function setBusy(btnId,busy){const btn=$(btnId);btn.disabled=busy;btn.classList.toggle('busy',busy)}
+function value(id){return $(id).value.trim()}
+
+async function buildOrder(){
+  const fd=new FormData();
+  if(!$('order_pdf').files.length)return showError('Първо качи PDF поръчка.');
+  fd.append('order_pdf',$('order_pdf').files[0]);
+  if($('ean_xlsx').files.length)fd.append('ean_xlsx',$('ean_xlsx').files[0]);
+  if($('template_xlsx').files.length)fd.append('template_xlsx',$('template_xlsx').files[0]);
+  ['manual_eans','ocr_mode','carton_mode','max_pcs','pallet_capacity','shipment_date','identification_code','tare_kg','unit_kg','pl_unit_kg'].forEach(id=>fd.append(id,value(id)));
+  setBusy('buildOrderBtn',true);
+  $('results').innerHTML='<div class="empty"><div><h2>Обработка…</h2><p>Четене на PDF / OCR, EAN кодове, кашониране и генериране на PKL Excel + carton labels Excel + pallet labels Excel.</p></div></div>';
+  try{
+    const res=await fetch('/api/build/order',{method:'POST',body:fd});
+    const data=await res.json();
+    if(!data.ok)throw new Error(data.error||'Грешка при обработка.');
+    renderOrderResults(data);
+  }catch(err){showError(err.message)}
+  finally{setBusy('buildOrderBtn',false)}
+}
+
+async function buildPLLabels(){
+  const fd=new FormData();
+  if(!$('pl_xlsx').files.length)return showError('Първо качи готов packing list Excel файл.');
+  fd.append('pl_xlsx',$('pl_xlsx').files[0]);
+  if($('pl_ean_xlsx').files.length)fd.append('ean_xlsx',$('pl_ean_xlsx').files[0]);
+  fd.append('manual_eans',value('pl_manual_eans'));
+  ['pallet_capacity','shipment_date','identification_code','tare_kg','unit_kg','pl_unit_kg'].forEach(id=>fd.append(id,value(id)));
+  setBusy('buildPLBtn',true);
+  $('results').innerHTML='<div class="empty"><div><h2>Обработка…</h2><p>Четене на готовия packing list и генериране на carton labels Excel + pallet labels Excel.</p></div></div>';
+  try{
+    const res=await fetch('/api/build/pl-labels',{method:'POST',body:fd});
+    const data=await res.json();
+    if(!data.ok)throw new Error(data.error||'Грешка при обработка.');
+    renderPLResults(data);
+  }catch(err){showError(err.message)}
+  finally{setBusy('buildPLBtn',false)}
+}
+
+async function buildAudit(){
+  const fd=new FormData();
+  if(!$('orders_zip').files.length)return showError('Първо качи ZIP с PDF поръчки.');
+  fd.append('orders_zip',$('orders_zip').files[0]);
+  fd.append('ocr_mode',value('audit_ocr_mode')||'never');
+  setBusy('auditBtn',true);
+  $('results').innerHTML='<div class="empty"><div><h2>Анализиране…</h2><p>Четене на ZIP файла и създаване на одитен отчет за парсера.</p></div></div>';
+  try{
+    const res=await fetch('/api/analyze/zip',{method:'POST',body:fd});
+    const data=await res.json();
+    if(!data.ok)throw new Error(data.error||'Грешка при одита.');
+    renderAuditResults(data);
+  }catch(err){showError(err.message)}
+  finally{setBusy('auditBtn',false)}
+}
+
+function showError(msg){$('results').innerHTML=`<div class="error"><strong>Грешка:</strong> ${escapeHtml(msg)}</div>`}
+function renderDownloads(downloads){
+  const items=[];
+  const hasThree=downloads.xlsx&&downloads.labels_xlsx&&downloads.pallet_labels_xlsx;
+  if(hasThree)items.push(`<button class="btn orange" onclick="downloadMultiple(['${downloads.xlsx}','${downloads.labels_xlsx}','${downloads.pallet_labels_xlsx}'])">Свали 3 файла: PKL + labels + pallets</button>`);
+  if(downloads.xlsx)items.push(`<a class="main" href="${downloads.xlsx}">1) Общ packing XLSX · всички sheet-ове</a>`);
+  if(downloads.labels_xlsx)items.push(`<a class="main" href="${downloads.labels_xlsx}">2) Всички carton labels XLSX · 1 етикет = 1 sheet</a>`);
+  if(downloads.pallet_labels_xlsx)items.push(`<a class="main" href="${downloads.pallet_labels_xlsx}">3) Всички pallet labels XLSX · 1 палет = 1 sheet</a>`);
+  if(downloads.zip)items.push(`<a href="${downloads.zip}">Свали ZIP архив</a>`);
+  if(downloads.csv)items.push(`<a class="main" href="${downloads.csv}">Свали audit CSV</a>`);
+  if(downloads.json)items.push(`<a href="${downloads.json}">Свали parsed JSON</a>`);
+  return `<div class="downloads">${items.join('')}</div>`;
+}
+function warningsHtml(warnings){
+  if(!warnings||!warnings.length)return '';
+  return `<div class="warnings"><strong>Предупреждения:</strong><ul>${warnings.slice(0,50).map(w=>`<li>${escapeHtml(w)}</li>`).join('')}</ul></div>`;
+}
+function kpi(label,value){return `<div class="kpi"><div class="label">${escapeHtml(label)}</div><div class="value" title="${escapeHtml(String(value))}">${escapeHtml(String(value))}</div></div>`}
+function kpiId(label,value,id){return `<div class="kpi"><div class="label">${escapeHtml(label)}</div><div class="value" id="${id}">${escapeHtml(String(value))}</div></div>`}
+
+function renderOrderResults(data){
+  currentJob=data;
+  currentLines=JSON.parse(JSON.stringify(data.preview.order_lines||[]));
+  currentCartons=JSON.parse(JSON.stringify(data.preview.cartons||[]));
+  currentIndividual=data.individual_downloads||[];
+  currentDownloads=data.downloads||{};
+  currentWarnings=(data.summary||{}).warnings||[];
+  const s=data.summary||{};
+  currentOrderTitle=s.order||s.production_order||'Поръчка';
+  dirty=false;
+  cartonsEdited=false;
+  resultsFlavor='order';
+  resultsTab='lines';lbIdx=0;
+  refreshLiveOrderView();
+}
+
+function refreshLiveOrderView(){
+  if(!currentJob)return;
+  if(!cartonsEdited){
+    currentCartons=simulateAllCartons(currentLines);
+  }
+  const totalPieces=currentLines.reduce((a,l)=>a+lineTotal(l),0);
+  const t=packingTotals();
+  $('results').classList.remove('empty');
+  $('results').innerHTML=`
+    <div class="kpis">
+      ${kpi('Поръчка',currentOrderTitle)}
+      ${kpi('Общо бройки',totalPieces)}
+      ${kpi('Редове',currentLines.length)}
+      ${kpiId('Кашони',t.cartons,'kpiCartonsVal')}
+      ${kpiId('Палети',t.pallets,'kpiPalletsVal')}
+      ${kpiId('PKL kg',t.weight,'kpiPklKgVal')}
+    </div>
+    ${renderDownloads(currentDownloads||{})}
+    <div class="downloads"><button class="btn orange" onclick="rebuildEditedOrderGuarded()">Обнови XLSX файловете от редовете на поръчката</button>${dirty?'<span class="badge warn">Има промени в редовете на поръчката · натисни бутона, за да се обновят файловете</span>':'<span class="badge">Файловете са актуални спрямо последния build</span>'}</div>
+    ${warningsHtml(currentWarnings||[])}
+    ${resultsTabsHtml(['lines','pack','labels'])}
+    <div class="rview ${resultsTab==='lines'?'show':''}" data-view="lines">${renderOrderBlock(currentLines,currentIndividual,currentOrderTitle,{total_pieces:totalPieces,cartons:t.cartons,pallets:t.pallets})}</div>
+    <div class="rview ${resultsTab==='pack'?'show':''}" data-view="pack">${renderPackingBlock({allowRegenFromLines:true})}</div>
+    <div class="rview ${resultsTab==='labels'?'show':''}" data-view="labels"><div id="labelPreviewWrap"></div></div>
+  `;
+  if(resultsTab==='labels')renderLabelPreview();
+}
+
+function round2(v){return Math.round((Number(v)||0)*100)/100}
+function nval(v,fb=0){const n=Number(v);return Number.isFinite(n)?n:fb}
+function lineTotal(line){return Object.values(line.sizes||{}).reduce((a,b)=>a+nval(b),0)}
+function lineMaxPcs(line){return Math.max(1,Math.round(nval(line.pieces_per_carton_override||value('max_pcs')||15,15)))}
+function lineTare(line){return nval(line.tare_kg_override||value('tare_kg')||1.2,1.2)}
+function lineLabelKg(line){return nval(line.unit_kg_override||value('unit_kg')||1.3,1.3)}
+function linePklKg(line){return nval(line.pl_unit_kg_override||value('pl_unit_kg')||0.75,0.75)}
+function eanKey(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'')}
+function simulatedEan(color,szmap){
+  const rows=currentJob?.preview?.ean_rows||[];
+  if(!rows.length)return '';
+  const map={};
+  rows.forEach(r=>{const e=String(r.ean||'').trim(),sz=String(r.size||'').trim().toUpperCase();if(!e||!sz)return;map[eanKey(r.color)+'|'+sz]=e;if(!map['*|'+sz])map['*|'+sz]=e;});
+  const ck=eanKey(color);
+  return activeSizesSorted({sizes:szmap}).map(sz=>map[ck+'|'+sz]||map['*|'+sz]||'').join(',').replace(/^,+$/,'');
+}
+function simulateLineCartons(line){
+  const sizes=Object.entries(line.sizes||{}).filter(([s,q])=>nval(q)>0).sort((a,b)=>SIZE_ORDER.indexOf(a[0])-SIZE_ORDER.indexOf(b[0]));
+  const max=lineMaxPcs(line), tare=lineTare(line), unit=lineLabelKg(line), pkl=linePklKg(line);
+  const mode=value('carton_mode')||currentJob?.settings?.carton_mode||'sequential';
+  const rows=[]; let box=1;
+  function push(szmap){const total=Object.values(szmap).reduce((a,b)=>a+nval(b),0); if(total<=0)return; rows.push({line_index:line.line_index??currentLines.indexOf(line),batch:line.batch||'',reference:line.reference||line.style||line.product||line.designation||currentJob?.preview?.metadata?.product_name||'',color:line.asphalte_color||line.color||line.color_name||'',box_no:box++,sizes:szmap,total_pcs:total,ean:simulatedEan(line.asphalte_color||line.color||line.color_name||'',szmap)||line.ean||'',gross_weight:round2(tare+total*unit),pl_weight:round2(total*pkl)});}
+  if(mode==='single_size_then_mixed'){
+    const rem={};
+    for(const [sz,q0] of sizes){let q=nval(q0); while(q>=max){push({[sz]:max}); q-=max;} if(q>0)rem[sz]=q;}
+    let cur={}, curTot=0;
+    for(const [sz] of sizes){let q=rem[sz]||0; while(q>0){let take=Math.min(q,max-curTot); cur[sz]=(cur[sz]||0)+take; q-=take; curTot+=take; if(curTot>=max){push(cur); cur={}; curTot=0;}}}
+    if(curTot>0)push(cur);
+    return rows;
+  }
+  let cur={}, curTot=0;
+  for(const [sz,q0] of sizes){let q=nval(q0); while(q>0){let take=Math.min(q,max-curTot); cur[sz]=(cur[sz]||0)+take; q-=take; curTot+=take; if(curTot>=max){push(cur); cur={}; curTot=0;}}}
+  if(curTot>0)push(cur);
+  return rows;
+}
+function simulateAllCartons(lines){return lines.flatMap((line,idx)=>{line.line_index=idx; return simulateLineCartons(line);});}
+function palletCapacity(){return Math.max(1,Math.round(Number(value('pallet_capacity')||currentJob?.settings?.pallet_capacity||16)||16));}
+function simulatePallets(cartons){const cap=palletCapacity(); const pallets=[]; let cur=[]; for(const c of cartons){ if(cur.length>=cap){pallets.push(cur); cur=[];} cur.push(c); } if(cur.length)pallets.push(cur); return pallets;}
+function markDirtyAndRefresh(){if(!currentJob)return; dirty=true; refreshLiveOrderView();}
+
+function renderOrderBlock(rows,inds,orderTitle,summary){
+  if(!rows.length)return '<div class="error">Не са открити редове в поръчката.</div>';
+  return `
+    <div class="order-block">
+      <div class="order-head">
+        <div class="order-title">${escapeHtml(orderTitle)} · ${escapeHtml(String(summary.total_pieces||0))} бр. · ${escapeHtml(String(summary.cartons||0))} очаквани кашона · ${escapeHtml(String(summary.pallets||Math.ceil((summary.cartons||0)/palletCapacity())))} палет(а) · ${escapeHtml(String(rows.length))} ред(а)</div>
+        <div class="order-meta">
+          <span class="badge dark">Редакция с popup</span>
+          <span class="badge">Клик върху ред или бутон “Редакция”</span>
+          <span class="badge">Индивидуални сваляния без ZIP</span>
+        </div>
+      </div>
+      <div class="line-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:180px">Style</th>
+              <th style="min-width:190px">Color</th>
+              ${renderSizeHead(rows)}
+              <th class="qty">Общо</th>
+              <th class="qty">Кашони</th>
+              <th style="min-width:280px">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((r,i)=>renderLineRow(r,i,inds)).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderSizeHead(rows){
+  const sizes=getAllSizes(rows);
+  return sizes.map(sz=>`<th class="qty">${escapeHtml(sz)}</th>`).join('');
+}
+function getAllSizes(rows){
+  const found=new Set();
+  rows.forEach(r=>Object.keys(r.sizes||{}).forEach(s=>found.add(s)));
+  const list=Array.from(found);
+  list.sort((a,b)=>{
+    const ia=SIZE_ORDER.indexOf(a),ib=SIZE_ORDER.indexOf(b);
+    if(ia!==-1&&ib!==-1)return ia-ib;
+    if(ia!==-1)return -1;
+    if(ib!==-1)return 1;
+    const na=Number(a),nb=Number(b);
+    if(Number.isFinite(na)&&Number.isFinite(nb))return na-nb;
+    return String(a).localeCompare(String(b),undefined,{numeric:true,sensitivity:'base'});
+  });
+  return list.length?list:['XS','S','M','L','XL','XXL'];
+}
+function lineTitle(r,i){return r.reference||r.style||r.product||r.designation||('Ред '+(i+1))}
+function lineSubtitle(r){return r.designation||r.batch||''}
+function lineColor(r){return [r.color_code||'', r.asphalte_color||r.color||'', r.supplier_color||r.color_name||''].filter(Boolean).join(' - ') || '-'}
+function getIndividual(i){return (currentIndividual||[]).find(x=>Number(x.line_index)===Number(i))||{}}
+function renderLineRow(r,i,inds){
+  const ind=inds.find(x=>Number(x.line_index)===Number(i))||{};
+  const sizes=getAllSizes(currentLines);
+  const needSplit=r.size_breakdown_missing?'<span class="badge warn">Липсва разбивка по размери</span>':'';
+  return `<tr class="clickable" onclick="openLineEditor(${i})">
+    <td class="style-cell"><strong>${escapeHtml(lineTitle(r,i))}</strong><span>${escapeHtml(lineSubtitle(r)||'')}</span>${needSplit}</td>
+    <td>${escapeHtml(lineColor(r))}</td>
+    ${sizes.map(sz=>`<td class="qty">${escapeHtml(String(r.sizes?.[sz]||0))}</td>`).join('')}
+    <td class="qty total-cell">${escapeHtml(String(r.total||0))}</td>
+    <td class="qty">${escapeHtml(String(simulateLineCartons(r).length))}</td>
+    <td onclick="event.stopPropagation()"><div class="row-actions">
+      <button class="btn blue" onclick="openLineEditor(${i})">Редакция</button>
+      ${ind.xlsx?`<a class="btn green" href="${ind.xlsx}">PKL XLSX</a>`:''}
+      ${ind.labels_xlsx?`<a class="btn green" href="${ind.labels_xlsx}">Carton labels</a>`:''}
+      ${ind.pallet_labels_xlsx?`<a class="btn green" href="${ind.pallet_labels_xlsx}">Pallet labels</a>`:''}
+      ${ind.xlsx&&ind.labels_xlsx&&ind.pallet_labels_xlsx?`<button class="btn orange" onclick="downloadMultiple(['${ind.xlsx}','${ind.labels_xlsx}','${ind.pallet_labels_xlsx}'])">Свали трите</button>`:''}
+    </div></td>
+  </tr>`;
+}
+function estimateCartons(total){const max=Number(value('max_pcs')||15)||15;return Math.max(1,Math.ceil(Number(total||0)/max))}
+
+function renderPLResults(data){
+  currentJob=data;
+  currentCartons=JSON.parse(JSON.stringify(data.preview?.cartons||[]));
+  currentIndividual=data.individual_downloads||[];
+  currentDownloads=data.downloads||{};
+  currentWarnings=(data.summary||{}).warnings||[];
+  resultsFlavor='pl';
+  cartonsEdited=false;
+  resultsTab='pack';lbIdx=0;
+  refreshPLView();
+}
+
+function refreshPLView(){
+  if(!currentJob)return;
+  const s=currentJob.summary||{};
+  const t=packingTotals();
+  $('results').classList.remove('empty');
+  $('results').innerHTML=`
+    <div class="kpis">
+      ${kpiId('Кашони',t.cartons,'kpiCartonsVal')}
+      ${kpiId('Палети',t.pallets,'kpiPalletsVal')}
+      ${kpi('ID код',s.identification_code||currentJob.settings?.identification_code||'-')}
+      ${kpi('Бройки',t.pieces)}
+      ${kpi('EAN',s.eans||0)}
+      ${kpiId('PKL kg',t.weight,'kpiPklKgVal')}
+    </div>
+    ${renderDownloads(currentDownloads||{})}
+    ${warningsHtml(currentWarnings||[])}
+    ${resultsTabsHtml(['pack','labels'])}
+    <div class="rview ${resultsTab==='pack'?'show':''}" data-view="pack">${renderPackingBlock({allowRegenFromLines:false})}</div>
+    <div class="rview ${resultsTab==='labels'?'show':''}" data-view="labels"><div id="labelPreviewWrap"></div></div>
+  `;
+  if(resultsTab==='labels')renderLabelPreview();
+}
+
+function renderAuditResults(data){
+  const s=data.summary||{},rows=data.rows||[];
+  $('results').classList.remove('empty');
+  $('results').innerHTML=`
+    <div class="kpis">
+      ${kpi('PDF файлове',s.files||0)}
+      ${kpi('Успешни',s.ok||0)}
+      ${kpi('С положителни бройки',s.positive_files||0)}
+      ${kpi('Планиращи / нули',s.zero_or_planning_files||0)}
+      ${kpi('Открити бройки',s.total_detected_pieces||0)}
+    </div>
+    ${renderDownloads(data.downloads||{})}
+    <div class="subsection-card">
+      <h4>Одитен отчет</h4>
+      ${renderAuditTable(rows)}
+    </div>`;
+}
+function renderAuditTable(rows){
+  if(!rows.length)return '<div class="error">Не са намерени редове за одит.</div>';
+  return `<div class="line-table-wrap"><table><thead><tr><th>Файл</th><th>Поръчка</th><th>Продукт</th><th>Редове</th><th>Положителни</th><th>Нулеви</th><th>Липсващи размери</th><th>Бройки</th><th>Изпращач</th><th>Получател</th><th>Статус / бележки</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${escapeHtml(r.file||'')}</td><td>${escapeHtml(r.production_order||'')}</td><td>${escapeHtml(r.product||'')}</td><td>${escapeHtml(String(r.order_lines||0))}</td><td>${escapeHtml(String(r.positive_lines||0))}</td><td>${escapeHtml(String(r.zero_lines||0))}</td><td>${escapeHtml(String(r.missing_size_breakdown_lines||0))}</td><td><strong>${escapeHtml(String(r.total_pieces||0))}</strong></td><td>${escapeHtml(r.shipper_first_line||'')}</td><td>${escapeHtml(r.receiver_first_line||'')}</td><td>${escapeHtml(((r.status||'')+' '+(r.warnings||'')).trim())}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderCartonTable(rows){
+  if(!rows.length)return '<div class="error">Не са открити кашони.</div>';
+  const sizes=getAllSizes(rows.map(r=>({sizes:r.sizes||{}})));
+  return `<div class="line-table-wrap"><table><thead><tr><th>Ред</th><th>Batch</th><th>Кашон</th><th>Референция</th><th>Цвят</th>${sizes.map(s=>`<th class="qty">${escapeHtml(s)}</th>`).join('')}<th class="qty">Общо</th><th>EAN</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${escapeHtml(String((r.line_index??0)+1))}</td><td>${escapeHtml(r.batch||r.sheet||'')}</td><td>${escapeHtml(String(r.box_no||''))}</td><td>${escapeHtml(r.reference||'')}</td><td>${escapeHtml(r.color||'')}</td>${sizes.map(sz=>`<td class="qty">${escapeHtml(String(r.sizes?.[sz]||''))}</td>`).join('')}<td class="qty total-cell">${escapeHtml(String(r.total_pcs||''))}</td><td>${escapeHtml(r.ean||'')}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function openLineEditor(i){
+  editIndex=i;
+  const r=currentLines[i];
+  if(!r)return;
+  const ind=getIndividual(i);
+  const orderNo=r.order_number||currentJob?.summary?.order||currentJob?.summary?.production_order||'';
+  $('modalTitle').textContent=`Редакция: ${lineTitle(r,i)}${r.asphalte_color?(' · '+r.asphalte_color):''}`;
+  $('m_order_no').value=orderNo;
+  $('m_season').value=r.season||'';
+  $('m_date').value=r.export_date||'';
+  $('m_style').value=r.reference||r.style||'';
+  $('m_ean').value=r.ean||'';
+  $('m_designation').value=r.designation||r.product||'';
+  $('m_batch').value=r.batch||'';
+  $('m_color_code').value=r.color_code||'';
+  $('m_color_name').value=r.asphalte_color||r.color||'';
+  $('m_pcs_per_carton').value=r.pieces_per_carton_override||'';
+  $('m_pl_unit_kg').value=r.pl_unit_kg_override||'';
+  $('m_unit_kg').value=r.unit_kg_override||'';
+  $('m_tare_kg').value=r.tare_kg_override||'';
+  $('m_box_size').value=r.box_size_override||'';
+
+  const sizes=getAllSizes([{sizes:r.sizes||{}}]);
+  $('m_sizes').innerHTML=sizes.map(sz=>`<div class="field"><label>${escapeHtml(sz)}</label><input data-size="${escapeHtml(sz)}" type="number" min="0" value="${Number(r.sizes?.[sz]||0)}"></div>`).join('');
+  wireModalRealtime();
+  updateModalLiveStats();
+  $('modalDownloads').innerHTML=`${ind.xlsx?`<a class="btn green" href="${ind.xlsx}">Свали този PKL</a>`:''}${ind.labels_xlsx?`<a class="btn green" href="${ind.labels_xlsx}">Свали carton labels</a>`:''}${ind.pallet_labels_xlsx?`<a class="btn green" href="${ind.pallet_labels_xlsx}">Свали pallet labels</a>`:''}${ind.xlsx&&ind.labels_xlsx&&ind.pallet_labels_xlsx?`<button class="btn orange" onclick="downloadMultiple(['${ind.xlsx}','${ind.labels_xlsx}','${ind.pallet_labels_xlsx}'])">Свали трите</button>`:''}`;
+  $('editModal').classList.add('show');
+}
+function modalSizes(){
+  const sizes={};
+  document.querySelectorAll('#m_sizes input').forEach(inp=>{const q=Number(inp.value||0); if(q>0)sizes[inp.dataset.size]=q});
+  return sizes;
+}
+function updateModalLiveStats(){
+  if(editIndex<0)return;
+  const sizes=modalSizes();
+  const total=Object.values(sizes).reduce((a,b)=>a+Number(b||0),0);
+  const max=Math.max(1,Math.round(Number(value('m_pcs_per_carton')||value('max_pcs')||15)||15));
+  const pkl=Number(value('m_pl_unit_kg')||value('pl_unit_kg')||0.75)||0.75;
+  const unit=Number(value('m_unit_kg')||value('unit_kg')||1.3)||1.3;
+  const tare=Number(value('m_tare_kg')||value('tare_kg')||1.2)||1.2;
+  const cartons=total?Math.ceil(total/max):0;
+  const first=Math.min(total,max);
+  const grossFirst=round2(tare + first*unit);
+  $('m_stats').innerHTML=`
+    <div class="metric"><div class="n">${escapeHtml(String(total))}</div><div class="s">Общо бройки</div></div>
+    <div class="metric"><div class="n">${escapeHtml(String(cartons))}</div><div class="s">Очаквани кашони</div></div>
+    <div class="metric"><div class="n">${escapeHtml(String(round2(total*pkl)))} kg</div><div class="s">PKL total kg</div></div>
+    <div class="metric"><div class="n">${escapeHtml(String(grossFirst))} kg</div><div class="s">Gross kg първи кашон</div></div>`;
+}
+function wireModalRealtime(){
+  document.querySelectorAll('#editModal input').forEach(inp=>{inp.oninput=updateModalLiveStats});
+}
+function closeLineEditor(){$('editModal').classList.remove('show');editIndex=-1}
+function clearLineOverrides(){['m_pcs_per_carton','m_pl_unit_kg','m_unit_kg','m_tare_kg','m_box_size'].forEach(id=>$(id).value=''); updateModalLiveStats();}
+function deleteCurrentLine(){if(editIndex<0)return; if(!confirm('Сигурни ли сте, че искате да изтриете този ред?')) return; currentLines.splice(editIndex,1); closeLineEditor(); markDirtyAndRefresh();}
+
+async function saveLineEditor(){
+  if(editIndex<0)return;
+  const r=currentLines[editIndex];
+  r.order_number=value('m_order_no');
+  r.season=value('m_season');
+  r.export_date=value('m_date');
+  r.reference=value('m_style');
+  r.style=value('m_style');
+  r.ean=value('m_ean');
+  r.designation=value('m_designation');
+  r.product=value('m_designation');
+  r.batch=value('m_batch');
+  r.color_code=value('m_color_code');
+  r.asphalte_color=value('m_color_name');
+  r.color=value('m_color_name');
+  r.pieces_per_carton_override=value('m_pcs_per_carton');
+  r.pl_unit_kg_override=value('m_pl_unit_kg');
+  r.unit_kg_override=value('m_unit_kg');
+  r.tare_kg_override=value('m_tare_kg');
+  r.box_size_override=value('m_box_size');
+  r.sizes={};
+  document.querySelectorAll('#m_sizes input').forEach(inp=>{const q=Number(inp.value||0); if(q>0)r.sizes[inp.dataset.size]=q});
+  r.total=Object.values(r.sizes).reduce((a,b)=>a+Number(b||0),0);
+  closeLineEditor();
+  markDirtyAndRefresh();
+}
+
+async function rebuildEditedOrder(){
+  if(!currentJob)return;
+  const body={
+    job_id:currentJob.job_id,
+    order_lines:currentLines,
+    max_pcs:value('max_pcs')||currentJob.settings?.max_pcs||15,
+    pallet_capacity:value('pallet_capacity')||currentJob.settings?.pallet_capacity||16,
+    carton_mode:value('carton_mode')||currentJob.settings?.carton_mode||'sequential',
+    tare_kg:value('tare_kg')||currentJob.settings?.tare_kg||1.2,
+    unit_kg:value('unit_kg')||currentJob.settings?.unit_kg||1.3,
+    pl_unit_kg:value('pl_unit_kg')||currentJob.settings?.pl_unit_kg||0.75,
+    shipment_date:value('shipment_date')||currentJob.settings?.shipment_date||'',
+    identification_code:value('identification_code')||currentJob.settings?.identification_code||''
+  };
+  $('results').insertAdjacentHTML('afterbegin','<div class="warnings" id="rebuildMsg"><strong>Преизграждане:</strong> обновяват се packing lists, carton labels и pallet labels Excel файловете…</div>');
+  try{
+    const res=await fetch('/api/rebuild/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(!data.ok)throw new Error(data.error||'Грешка при преизграждане.');
+    renderOrderResults(data);
+  }catch(err){showError(err.message)}
+}
+
+function setupRealtimeInputs(){
+  ['max_pcs','pallet_capacity','carton_mode','tare_kg','unit_kg','pl_unit_kg'].forEach(id=>{
+    const el=$(id);
+    if(!el)return;
+    const handler=()=>{
+      if(!currentJob)return;
+      if(cartonsEdited){
+        currentCartons.forEach(recomputePackingRowWeights);
+        rerenderPackingTable();
+      } else if(resultsFlavor==='order'){
+        dirty=true;
+        refreshLiveOrderView();
+      } else {
+        refreshPLView();
+      }
+    };
+    el.addEventListener('input',handler);
+    el.addEventListener('change',handler);
+  });
+}
+
+/* ---------------------------------------------------------------------
+   Packing (carton) editor - edit the generated packing list directly and
+   see every change reflected immediately, then push it straight into the
+   generated PKL / carton labels / pallet labels Excel files.
+--------------------------------------------------------------------- */
+
+function packingSizes(){return getAllSizes(currentCartons||[]);}
+
+function packingTotals(){
+  const cartons=currentCartons||[];
+  const pieces=cartons.reduce((a,c)=>a+nval(c.total_pcs),0);
+  const weight=cartons.reduce((a,c)=>a+nval(c.pl_weight),0);
+  const pallets=simulatePallets(cartons).length;
+  return {cartons:cartons.length,pieces,weight:round2(weight),pallets};
+}
+
+function renderPackingBlock(opts){
+  opts=opts||{};
+  const sizes=packingSizes();
+  const t=packingTotals();
+  return `
+    <div class="section-title"><h3>Опаковъчен лист (пакинг) · директна редакция</h3><span class="small">Редактирай количества, box №, batch, цвят и EAN направо в таблицата. Промените излизат веднага в сумите отдолу.</span></div>
+    <div class="warnings pk-banner ${cartonsEdited?'show':''}" id="pkEditedBanner"><strong>Пакингът е редактиран ръчно.</strong> Кашоните вече не се преизчисляват автоматично от редовете на поръчката${opts.allowRegenFromLines?' (освен ако натиснеш “Регенерирай от редовете”)':''}. Натисни “Запази пакинга”, за да обновиш PKL / labels / pallet labels Excel файловете точно според тази таблица.</div>
+    <div class="pk-toolbar">
+      <span class="badge dark" id="pkBadgeCartons">${t.cartons} кашона</span>
+      <span class="badge" id="pkBadgePieces">${t.pieces} бр.</span>
+      <span class="badge" id="pkBadgePallets">${t.pallets} палет(а)</span>
+      <span class="badge" id="pkBadgeWeight">${t.weight} kg PKL</span>
+      <button class="btn ghost" onclick="addPackingCarton()">+ Добави кашон</button>
+      <button class="btn ghost" onclick="renumberPackingBoxes()">Преномерирай box №</button>
+      ${opts.allowRegenFromLines?'<button class="btn ghost" onclick="regenerateCartonsFromLines()">Регенерирай от редовете</button>':''}
+      <button class="btn orange" onclick="savePackingChanges()"><span class="spinner"></span>Запази пакинга и обнови файловете</button>
+    </div>
+    <div id="packingTableWrap" class="line-table-wrap pk-wrap">${renderPackingTable(currentCartons,sizes)}</div>
+  `;
+}
+
+function renderPackingTable(rows,sizes){
+  if(!rows||!rows.length)return '<div class="error">Няма кашони в пакинга. Добави кашон ръчно или регенерирай от редовете на поръчката.</div>';
+  return `<table class="pk-table"><thead><tr>
+      <th style="min-width:64px">Box №</th>
+      <th style="min-width:120px">Batch</th>
+      <th style="min-width:160px">Референция</th>
+      <th style="min-width:140px">Цвят</th>
+      ${sizes.map(sz=>`<th class="qty">${escapeHtml(sz)}</th>`).join('')}
+      <th class="qty">Общо</th>
+      <th style="min-width:170px">EAN</th>
+      <th class="qty">Gross kg</th>
+      <th class="qty">PKL kg</th>
+      <th style="min-width:100px">Действия</th>
+    </tr></thead><tbody>${rows.map((r,i)=>packingRowHtml(r,i,sizes)).join('')}</tbody></table>`;
+}
+
+function packingRowHtml(r,i,sizes){
+  return `<tr>
+    <td class="narrow"><input type="number" min="0" step="1" data-pk="box_no" data-idx="${i}" value="${Number(r.box_no||0)}"></td>
+    <td><input data-pk="batch" data-idx="${i}" value="${escapeHtml(r.batch||'')}"></td>
+    <td><input data-pk="reference" data-idx="${i}" value="${escapeHtml(r.reference||'')}"></td>
+    <td><input data-pk="color" data-idx="${i}" value="${escapeHtml(r.color||'')}"></td>
+    ${sizes.map(sz=>`<td class="narrow"><input type="number" min="0" step="1" data-pk="size" data-size="${escapeHtml(sz)}" data-idx="${i}" value="${Number((r.sizes||{})[sz]||0)}"></td>`).join('')}
+    <td class="qty total-cell" data-pk-total="${i}">${Number(r.total_pcs||0)}</td>
+    <td><input data-pk="ean" data-idx="${i}" value="${escapeHtml(r.ean||'')}"></td>
+    <td class="qty" data-pk-gross="${i}">${round2(r.gross_weight)}</td>
+    <td class="qty" data-pk-pl="${i}">${round2(r.pl_weight)}</td>
+    <td><div class="row-actions">
+      <button class="btn ghost" onclick="duplicatePackingCarton(${i})" title="Дублирай / раздели кашона">Дублирай</button>
+      <button class="btn red" onclick="deletePackingCarton(${i})" title="Изтрий кашона">Изтрий</button>
+    </div></td>
+  </tr>`;
+}
+
+function setupPackingDelegation(){
+  document.addEventListener('input',e=>{
+    const el=e.target;
+    if(!el.matches||!el.matches('[data-pk]'))return;
+    const idx=Number(el.dataset.idx);
+    const row=(currentCartons||[])[idx];
+    if(!row)return;
+    const field=el.dataset.pk;
+    if(field==='size'){
+      const sz=el.dataset.size;
+      const q=Math.max(0,Math.round(nval(el.value)));
+      row.sizes=row.sizes||{};
+      if(q>0)row.sizes[sz]=q; else delete row.sizes[sz];
+      row.total_pcs=Object.values(row.sizes).reduce((a,b)=>a+nval(b),0);
+      recomputePackingRowWeights(row);
+      updatePackingRowDom(idx);
+    } else if(field==='box_no'){
+      row.box_no=Math.round(nval(el.value))||0;
+    } else {
+      row[field]=el.value;
+    }
+    markCartonsEdited();
+    updatePackingSummaryDom();
+  });
+}
+
+function recomputePackingRowWeights(row){
+  const tare=Number(value('tare_kg')||1.2)||1.2;
+  const unit=Number(value('unit_kg')||1.3)||1.3;
+  const pkl=Number(value('pl_unit_kg')||0.75)||0.75;
+  const total=nval(row.total_pcs);
+  row.gross_weight=round2(tare+total*unit);
+  row.pl_weight=round2(total*pkl);
+}
+
+function updatePackingRowDom(idx){
+  const row=(currentCartons||[])[idx];
+  if(!row)return;
+  const totalCell=document.querySelector(`[data-pk-total="${idx}"]`);
+  if(totalCell)totalCell.textContent=Number(row.total_pcs||0);
+  const grossCell=document.querySelector(`[data-pk-gross="${idx}"]`);
+  if(grossCell)grossCell.textContent=round2(row.gross_weight);
+  const plCell=document.querySelector(`[data-pk-pl="${idx}"]`);
+  if(plCell)plCell.textContent=round2(row.pl_weight);
+}
+
+function updatePackingSummaryDom(){
+  const t=packingTotals();
+  const map={
+    pkBadgeCartons:t.cartons+' кашона',
+    pkBadgePieces:t.pieces+' бр.',
+    pkBadgePallets:t.pallets+' палет(а)',
+    pkBadgeWeight:t.weight+' kg PKL',
+    kpiCartonsVal:t.cartons,
+    kpiPalletsVal:t.pallets,
+    kpiPklKgVal:t.weight
+  };
+  Object.entries(map).forEach(([id,val])=>{const el=document.getElementById(id); if(el)el.textContent=val;});
+}
+
+function markCartonsEdited(){
+  cartonsEdited=true;
+  const banner=document.getElementById('pkEditedBanner');
+  if(banner)banner.classList.add('show');
+}
+
+function rerenderPackingTable(){
+  const wrap=document.getElementById('packingTableWrap');
+  if(!wrap)return;
+  wrap.innerHTML=renderPackingTable(currentCartons,packingSizes());
+  updatePackingSummaryDom();
+}
+
+function nextBoxNo(){
+  if(!currentCartons||!currentCartons.length)return 1;
+  return Math.max(...currentCartons.map(c=>Number(c.box_no||0)))+1;
+}
+
+function addPackingCarton(){
+  if(!currentJob)return;
+  currentCartons=currentCartons||[];
+  currentCartons.push({line_index:null,batch:'',reference:'',color:'',box_no:nextBoxNo(),sizes:{},total_pcs:0,ean:'',gross_weight:0,pl_weight:0});
+  markCartonsEdited();
+  rerenderPackingTable();
+}
+
+function duplicatePackingCarton(i){
+  const src=(currentCartons||[])[i];
+  if(!src)return;
+  const copy=JSON.parse(JSON.stringify(src));
+  copy.box_no=Number(src.box_no||0)+1;
+  currentCartons.splice(i+1,0,copy);
+  markCartonsEdited();
+  rerenderPackingTable();
+}
+
+function deletePackingCarton(i){
+  if(!(currentCartons||[])[i])return;
+  if(!confirm('Да изтрия ли този кашон от пакинга?'))return;
+  currentCartons.splice(i,1);
+  markCartonsEdited();
+  rerenderPackingTable();
+}
+
+function renumberPackingBoxes(){
+  if(!currentCartons||!currentCartons.length)return;
+  const seen={};
+  currentCartons.forEach(c=>{
+    const key=`${c.line_index??''}|${c.batch||''}|${c.reference||''}|${c.color||''}`;
+    seen[key]=(seen[key]||0)+1;
+    c.box_no=seen[key];
+  });
+  markCartonsEdited();
+  rerenderPackingTable();
+}
+
+function regenerateCartonsFromLines(){
+  if(!currentJob)return;
+  if(cartonsEdited&&!confirm('Това ще презапише всички ръчни промени в пакинга с автоматично изчислени кашони от редовете на поръчката. Продължи?'))return;
+  cartonsEdited=false;
+  refreshLiveOrderView();
+}
+
+function rebuildEditedOrderGuarded(){
+  if(cartonsEdited&&!confirm('Пакингът е редактиран ръчно. Обновяването от редовете на поръчката ще презапише тези промени с автоматично изчислени кашони. Продължи?'))return;
+  return rebuildEditedOrder();
+}
+
+async function savePackingChanges(){
+  if(!currentJob)return;
+  if(!currentCartons||!currentCartons.length)return showError('Пакингът е празен - добави поне един кашон с количества преди да запазиш.');
+  const btn=document.querySelector('.pk-toolbar .btn.orange');
+  const body={
+    job_id:currentJob.job_id,
+    cartons:currentCartons,
+    tare_kg:value('tare_kg')||currentJob.settings?.tare_kg||1.2,
+    unit_kg:value('unit_kg')||currentJob.settings?.unit_kg||1.3,
+    pl_unit_kg:value('pl_unit_kg')||currentJob.settings?.pl_unit_kg||0.75,
+    pallet_capacity:value('pallet_capacity')||currentJob.settings?.pallet_capacity||16,
+    shipment_date:value('shipment_date')||currentJob.settings?.shipment_date||'',
+    identification_code:value('identification_code')||currentJob.settings?.identification_code||''
+  };
+  if(btn){btn.disabled=true;btn.classList.add('busy');}
+  try{
+    const res=await fetch('/api/rebuild/cartons',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(!data.ok)throw new Error(data.error||'Грешка при запис на пакинга.');
+    applyPackingSaveResult(data);
+  }catch(err){showError(err.message)}
+  finally{if(btn){btn.disabled=false;btn.classList.remove('busy');}}
+}
+
+function applyPackingSaveResult(data){
+  currentJob=data;
+  currentDownloads=data.downloads||{};
+  currentIndividual=data.individual_downloads||[];
+  currentWarnings=(data.summary||{}).warnings||[];
+  currentCartons=JSON.parse(JSON.stringify(data.preview?.cartons||[]));
+  cartonsEdited=false;
+  dirty=false;
+  if(resultsFlavor==='order'){
+    refreshLiveOrderView();
+  } else {
+    refreshPLView();
+  }
+}
+
+function downloadMultiple(urls){
+  (urls||[]).filter(Boolean).forEach((url,idx)=>{
+    setTimeout(()=>{const a=document.createElement('a'); a.href=url; a.download=''; document.body.appendChild(a); a.click(); a.remove();}, idx*450);
+  });
+}
+function downloadBoth(xlsx,labelsXlsx){downloadMultiple([xlsx,labelsXlsx]);}
+
+/* ---------------------------------------------------------------------
+   Result tabs + carton label preview (mirrors the generated labels Excel)
+--------------------------------------------------------------------- */
+function resultsTabsHtml(tabs){
+  const names={lines:'Редове на поръчката',pack:'Пакинг',labels:'Превю на етикети'};
+  return `<div class="rtabs">${tabs.map(t=>`<button class="rtab ${resultsTab===t?'active':''}" onclick="setResultsTab('${t}')">${names[t]}</button>`).join('')}</div>`;
+}
+function setResultsTab(tab){
+  resultsTab=tab;
+  document.querySelectorAll('.rtab').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick')==="setResultsTab('"+tab+"')"));
+  document.querySelectorAll('.rview').forEach(v=>v.classList.toggle('show',v.dataset.view===tab));
+  if(tab==='labels')renderLabelPreview();
+}
+function activeSizesSorted(c){
+  const act=Object.entries(c.sizes||{}).filter(([k,q])=>nval(q)>0).map(([k])=>k);
+  const idx=k=>{const i=SIZE_ORDER.indexOf(k);return i<0?999:i};
+  return act.map((k,i)=>[k,i]).sort((a,b)=>(idx(a[0])-idx(b[0]))||(a[1]-b[1])).map(x=>x[0]);
+}
+function eanForSize(c,size){
+  const eans=String(c.ean||'').replace(/\n/g,',').split(',').map(x=>x.trim()).filter(Boolean);
+  const i=activeSizesSorted(c).indexOf(size);
+  return i>=0&&i<eans.length?eans[i]:'';
+}
+function labelGroupKey(c){return c.line_index!=null?'L'+c.line_index:'B'+(c.batch||'')+'|'+(c.color||'')}
+function labelPositions(){
+  const counts={},pos=[];
+  (currentCartons||[]).forEach(c=>{const k=labelGroupKey(c);counts[k]=(counts[k]||0)+1;});
+  const seen={};
+  (currentCartons||[]).forEach(c=>{const k=labelGroupKey(c);seen[k]=(seen[k]||0)+1;pos.push([seen[k],counts[k]]);});
+  return pos;
+}
+function labelIdent(){return value('identification_code')||currentJob?.settings?.identification_code||currentJob?.summary?.identification_code||''}
+function labelHtml(c,position,total){
+  const md=(currentJob?.preview?.metadata)||{};
+  const shipper=(md.shipper||DEFAULTS.shipper||'').split(/\r?\n/).filter(Boolean).slice(0,4).join('\n');
+  const receiver=(md.receiver||DEFAULTS.receiver||'').split(/\r?\n/).filter(Boolean).slice(0,4).join('\n');
+  const product=c.reference||md.product_name||'';
+  const batch=[c.batch||'',product].filter(Boolean).join(' ');
+  const gross=Number(c.gross_weight);
+  const grossTxt=Number.isFinite(gross)?gross.toFixed(1)+' KG':'';
+  const sizes=activeSizesSorted(c);
+  const ident=labelIdent();
+  const eanBlock=sizes.map(sz=>{
+    const e=eanForSize(c,sz);
+    if(!e)return `<div class="lb-miss">EAN липсва · ${escapeHtml(sz)}</div>`;
+    const q=`ean=${encodeURIComponent(e)}&color=${encodeURIComponent(c.color||'')}&size=${encodeURIComponent(sz)}`;
+    return `<img src="/api/barcode/ean?${q}" alt="${escapeHtml(e)}" onerror="this.outerHTML='<div class=&quot;lb-miss&quot;>EAN невалиден · ${escapeHtml(sz)}<br>${escapeHtml(e)}</div>'">`;
+  }).join('');
+  return `<div class="lb-sheet">
+    <div class="lb-top"><b>ÉTIQUETTE COLIS</b><span>ASPHALTE LOGISTICS</span></div>
+    <div class="lb-row">
+      <div class="lb-cell"><div class="lb-k">Destinataire / Consignee</div><div class="lb-v">${escapeHtml(receiver)}</div></div>
+      <div class="lb-cell"><div class="lb-k">N° OF (Batch)</div><div class="lb-v blue">${escapeHtml(batch)}</div><div class="lb-k">N° colis / Carton</div><div class="lb-v big">${position} of ${total}</div></div>
+      <div class="lb-cell"><div class="lb-k">Référence model</div><div class="lb-v">${escapeHtml(product)}</div><div class="lb-k">Poids brut / Gross weight</div><div class="lb-v big red">${escapeHtml(grossTxt)}</div></div>
+    </div>
+    <div class="lb-row">
+      <div class="lb-cell"><div class="lb-k">Expéditeur / Shipper</div><div class="lb-v grey">${escapeHtml(shipper)}</div></div>
+      <div class="lb-cell"><div class="lb-k">Audit / Contrôle qualité</div><span class="lb-choice">☑ CHOIX 1</span><span class="lb-choice off">☐ CHOIX 2</span></div>
+      <div class="lb-cell"><div class="lb-k">Audit status</div><span class="lb-pass">PASS</span></div>
+    </div>
+    <div class="lb-k">Distribution quantités / Sizes breakdown</div>
+    <table class="lb-sizes"><thead><tr><th>Référence</th><th>Coloris</th>${sizes.map(sz=>`<th>${escapeHtml(sz)}</th>`).join('')}<th>Total pcs</th></tr></thead>
+    <tbody><tr><td class="l">${escapeHtml(product)}</td><td class="l">${escapeHtml(c.color||'')}</td>${sizes.map(sz=>`<td class="on">${nval(c.sizes[sz])}</td>`).join('')}<td class="tot">${nval(c.total_pcs)}</td></tr></tbody></table>
+    <div class="lb-bottom">
+      <div><div class="lb-k">Identification code</div><div class="lb-v">${escapeHtml(ident)}</div>${ident?`<img class="lb-idimg" src="/api/barcode/ident?value=${encodeURIComponent(ident)}" alt="" onerror="this.style.display='none'">`:''}</div>
+      <div class="lb-eans">${eanBlock||'<div class="lb-miss">Няма количества</div>'}</div>
+    </div>
+  </div>`;
+}
+function renderLabelPreview(){
+  const wrap=document.getElementById('labelPreviewWrap');
+  if(!wrap)return;
+  const rows=currentCartons||[];
+  if(!rows.length){wrap.innerHTML='<div class="error">Няма кашони за превю.</div>';return;}
+  lbIdx=Math.max(0,Math.min(lbIdx,rows.length-1));
+  const pos=labelPositions();
+  const opts=rows.map((c,i)=>`<option value="${i}" ${i===lbIdx?'selected':''}>#${i+1} · кутия ${escapeHtml(String(c.box_no||''))} · ${escapeHtml(c.color||'')} · ${nval(c.total_pcs)} бр.${eanMissing(c)?' · без EAN':''}</option>`).join('');
+  wrap.innerHTML=`<div class="lb-nav">
+      <button class="btn ghost" onclick="lbStep(-1)">‹ Предишен</button>
+      <select onchange="lbIdx=Number(this.value);renderLabelPreview()">${opts}</select>
+      <button class="btn ghost" onclick="lbStep(1)">Следващ ›</button>
+      <span class="small">Превюто следва текущата таблица (и неотбелязаните промени). Excel файловете се обновяват с “Запази пакинга”.</span>
+    </div>${labelHtml(rows[lbIdx],pos[lbIdx][0],pos[lbIdx][1])}`;
+}
+function eanMissing(c){return activeSizesSorted(c).some(sz=>!eanForSize(c,sz))}
+function lbStep(d){lbIdx+=d;renderLabelPreview();}
+
+fetch('/api/defaults').then(r=>r.json()).then(d=>{DEFAULTS=d}).catch(()=>{});
+/* The server closes itself when this page/window is closed (it watches this stream). */
+try{new EventSource('/api/lifecycle')}catch(e){}
+function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]))}
+setupRealtimeInputs();
+setupDrops();
+placeSettings('order');
+setupPackingDelegation();
+</script>
+</body>
+</html>

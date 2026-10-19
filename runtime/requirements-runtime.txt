@@ -1,0 +1,11 @@
+# Пакети за вградения Python (обединени от ACNE, ASPHALTE и COURREGES)
+openpyxl>=3.1.5
+pypdf>=5.9.0
+Flask>=3.0.0
+Werkzeug>=3.0.0
+PyMuPDF>=1.24.0
+pytesseract>=0.3.10
+Pillow>=10.0.0
+reportlab>=4.0.0
+python-barcode>=0.15.1
+xlrd>=2.0.1

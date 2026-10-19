@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "dior",
+  "name": "Dior",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 60,
+  "summary": "Dior PL и label генератор",
+  "requires": [
+    "Dior source PDF и/или Excel файл"
+  ],
+  "note": "Може да се заредят няколко файла. Работете през upload бутона вътре в Dior генератора.",
+  "formats": [
+    "PDF",
+    "XLSX"
+  ]
+}

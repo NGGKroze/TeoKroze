@@ -1,0 +1,47 @@
+{
+  "title": "AMI Paris – генератор на етикети",
+  "subtitle": "PKL + баркодове → етикети по кашони (PDF)",
+  "hide": [
+    "#ui-wrapper > header"
+  ],
+  "side": [
+    {
+      "title": "1. Файлове",
+      "move": [
+        "#drop-zone"
+      ]
+    },
+    {
+      "card": false,
+      "move": [
+        "#workspace > div.lg\\:col-span-3 > div"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "sel": "#guide-toggle-btn",
+      "kind": "secondary",
+      "side": "left"
+    },
+    {
+      "sel": "#action-buttons",
+      "kind": "secondary",
+      "side": "right"
+    }
+  ],
+  "style": [
+    {
+      "sel": "#action-buttons button",
+      "kind": "secondary"
+    },
+    {
+      "sel": "#export-pdf-btn",
+      "kind": "primary"
+    },
+    {
+      "sel": "#generate-btn",
+      "kind": "primary"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "title": "COURRÈGES – опаковъчни листове и етикети",
+  "subtitle": "PDF поръчки (с OCR) или готов PL → опаковъчни листове (Excel) и етикети",
+  "hide": [
+    "body > header"
+  ],
+  "side": [
+    {
+      "card": false,
+      "move": [
+        "main > .grid > aside.panel"
+      ]
+    }
+  ],
+  "style": [
+    {
+      "sel": "aside .actions .btn:not(.secondary):not(.light)",
+      "kind": "primary"
+    },
+    {
+      "sel": "aside .actions .btn.secondary, aside .actions .btn.light",
+      "kind": "secondary"
+    }
+  ],
+  "actions": []
+}

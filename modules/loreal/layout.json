@@ -1,0 +1,26 @@
+{
+  "title": "L’Oréal – генератор на опаковъчни листове",
+  "subtitle": "Valentino, Prada и Biotherm → опаковъчни листове и етикети",
+  "hide": [
+    "section.bg-white.shadow-xl > header"
+  ],
+  "side": [
+    {
+      "title": "Режим",
+      "move": [
+        "section.flex.flex-wrap.gap-3.border-b"
+      ]
+    },
+    {
+      "card": false,
+      "move": [
+        "#rawWorkflowPanel",
+        "#changesWorkflowPanel",
+        "#pradaWorkflowPanel",
+        "#biothermWorkflowPanel",
+        "#pradaEditWorkflowPanel"
+      ]
+    }
+  ],
+  "actions": []
+}

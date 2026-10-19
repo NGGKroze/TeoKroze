@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A4 Portrait Duplex Carton Label Generator</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="vendor/cdn.tailwindcss.com/tailwindcss.js"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="vendor/cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- SheetJS (Excel Parser) -->
+  <script src="vendor/cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- Tailwind Custom Config for Elegant Color Palette -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f4f6fa',
+              100: '#e9edf5',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Premium glassmorphism scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Screen Preview Page Layout Wrapper - Styled as A4 Portrait (1 / 1.4142 aspect ratio) */
+    .screen-page-preview {
+      width: 100%;
+      max-width: 440px;
+      aspect-ratio: 1 / 1.4142; /* Portrait aspect ratio */
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.04);
+      transition: all 0.3s ease;
+    }
+
+    .screen-page-preview:hover {
+      border-color: #94a3b8;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+    }
+
+    /* Miniature Label View inside Dashboard Portrait Grid */
+    .preview-label-card {
+      width: 100%;
+      height: 47%; /* Splits the space vertically in half */
+      background: white;
+      box-sizing: border-box;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+
+  <!-- Header Banner -->
+  <header class="bg-brand-900 text-white shadow-md no-print shrink-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-white/10 p-2 rounded-lg">
+          <i class="fa-solid fa-tags text-2xl text-brand-500"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">Duplex Carton Label Engine</h1>
+          <p class="text-xs text-slate-300">Creates 10x15cm portrait labels printed vertically on A4 Portrait sheets</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs bg-emerald-500/20 text-emerald-400 font-medium px-2.5 py-1 rounded-full border border-emerald-500/30">
+          <i class="fa-solid fa-file-pdf mr-1"></i> Perfect PDF Exporter Active
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-1 flex flex-col lg:flex-row gap-8 no-print">
+    
+    <!-- Left Sidebar: Controls & Customization -->
+    <aside class="w-full lg:w-[380px] shrink-0 flex flex-col gap-6">
+      
+      <!-- Drag & Drop Upload Zone -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h2 class="text-sm font-semibold uppercase text-slate-400 tracking-wider mb-3">
+          <i class="fa-solid fa-file-excel mr-2 text-brand-500"></i>1. Import Packing List
+        </h2>
+        
+        <div id="dropzone" class="border-2 border-dashed border-slate-300 hover:border-brand-500 hover:bg-brand-50/50 rounded-lg p-6 text-center cursor-pointer transition-all duration-200 group relative">
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" class="hidden">
+          <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-400 group-hover:text-brand-500 mb-2 transition-colors"></i>
+          <p class="text-sm font-medium text-slate-700">Drag & Drop Packing List</p>
+          <p class="text-xs text-slate-400 mt-1">Accepts Excel (.xlsx, .xls) or CSV</p>
+          <div class="mt-3 flex justify-center gap-2">
+            <button id="loadSampleBtn" class="text-xs text-brand-600 hover:text-brand-700 font-semibold underline">
+              Or Load Interactive Demo Data
+            </button>
+          </div>
+        </div>
+
+        <div id="fileInfo" class="hidden mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2 truncate">
+            <i class="fa-solid fa-file-circle-check text-emerald-500 text-lg"></i>
+            <div class="truncate">
+              <p class="font-semibold text-slate-700 truncate" id="fileName">packing_list.xlsx</p>
+              <p class="text-slate-400" id="fileSize">14.5 KB</p>
+            </div>
+          </div>
+          <button id="removeFileBtn" class="text-slate-400 hover:text-rose-500 p-1" title="Clear file">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- Label Styling & Customizer Panel -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col gap-5">
+        <h2 class="text-sm font-semibold uppercase text-slate-400 tracking-wider">
+          <i class="fa-solid fa-sliders mr-2 text-brand-500"></i>2. Label Settings
+        </h2>
+
+        <!-- Brand/Middle Strip Header -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-slate-600">Brand Banner / Middle Strip Header</label>
+          <input type="text" id="brandHeader" value="STOCK AZ - MAISON STELLA & SUZIE" 
+            class="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-bold">
+        </div>
+
+        <!-- Recipient / To Field -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-slate-600">Recipient Details (TO)</label>
+          <input type="text" id="recipientName" value="SARL MARMAX" placeholder="Company Name"
+            class="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none font-bold">
+          <textarea id="recipientAddr" rows="2" placeholder="Street Address, City, Country"
+            class="text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none text-slate-600">Stock AZ c/o Stella et Suzie Rue du Nauron 79180 Chauray – France</textarea>
+        </div>
+
+        <!-- Sender / From Field -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-slate-600">Sender Details (FROM)</label>
+          <input type="text" id="senderName" value="PELINTEX BULGARIA" placeholder="Company Name"
+            class="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none font-bold">
+          <textarea id="senderAddr" rows="2" placeholder="Street Address, City, Country"
+            class="text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none text-slate-600">5 HRISTO BOTEV 7000 RUSE - BULGARIA</textarea>
+        </div>
+
+        <hr class="border-slate-100">
+
+        <!-- Layout Controls -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-slate-600">Box Numbering</label>
+            <select id="numberingFormat" class="text-xs border border-slate-200 rounded-lg px-2.5 py-2 outline-none">
+              <option value="style">Style-Specific</option>
+              <option value="global">Global Total</option>
+            </select>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-slate-600">Weight Rounding</label>
+            <select id="weightRounding" class="text-xs border border-slate-200 rounded-lg px-2.5 py-2 outline-none">
+              <option value="2">2 Decimals</option>
+              <option value="3">3 Decimals</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-semibold text-slate-600">Font Scaling Factor</label>
+            <span class="text-xs font-mono font-bold text-brand-600" id="fontScaleDisplay">0.95x</span>
+          </div>
+          <input type="range" id="fontScaleSlider" min="0.75" max="1.2" step="0.05" value="0.95" 
+            class="w-full accent-brand-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg appearance-none">
+          <p class="text-[10px] text-slate-400 mt-0.5">Adjust scaling to keep labels perfectly aligned</p>
+        </div>
+      </section>
+
+      <!-- Print Scope & Filter Action -->
+      <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col gap-4">
+        <h2 class="text-sm font-semibold uppercase text-slate-400 tracking-wider">
+          <i class="fa-solid fa-print mr-2 text-brand-500"></i>3. Print Control
+        </h2>
+
+        <!-- Active Style Selector -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-slate-600">Filter & Rename Styles</label>
+          <div id="styleCheckboxes" class="max-h-48 overflow-y-auto border border-slate-200 rounded-lg p-2 flex flex-col gap-1.5 bg-slate-50">
+            <p class="text-xs text-slate-400 italic p-1">No file parsed yet</p>
+          </div>
+        </div>
+
+        <!-- Custom Carton Number Range -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-semibold text-slate-600">Custom Box Index Range</label>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
+              <span class="text-xs text-slate-400 uppercase">Min</span>
+              <input type="number" id="cartonRangeMin" value="1" min="1" class="bg-transparent text-sm w-full outline-none font-semibold text-slate-700">
+            </div>
+            <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
+              <span class="text-xs text-slate-400 uppercase">Max</span>
+              <input type="number" id="cartonRangeMax" value="999" min="1" class="bg-transparent text-sm w-full outline-none font-semibold text-slate-700">
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-400">Restrict range to save paper/file size</p>
+        </div>
+
+        <!-- Major Action Button -->
+        <div class="flex flex-col gap-3 mt-2">
+          <button id="downloadPdfBtn" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg px-4 py-3.5 shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-sm font-extrabold uppercase tracking-wide">
+            <i class="fa-solid fa-file-pdf text-lg animate-pulse"></i> Print & Save A4 Portrait PDF
+          </button>
+        </div>
+
+        <!-- Professional Vector Printing Guidelines -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3.5 text-[11px] text-blue-800 leading-relaxed mt-1">
+          <p class="font-bold mb-1 flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-blue-600"></i>Print Settings Checklist:</p>
+          <ul class="list-disc pl-4 space-y-1">
+            <li>Select <strong>"Save as PDF"</strong> or your laser label printer in the destination menu.</li>
+            <li>Change layout to <strong>Portrait</strong>.</li>
+            <li>Set margins to <strong>None</strong>.</li>
+            <li>Check the box for <strong>Background Graphics</strong> to preserve solid tables.</li>
+          </ul>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- Right Workspace Area: Live Preview Dashboard -->
+    <section class="flex-1 flex flex-col gap-6 font-sans">
+
+      <!-- Summary Dashboard Bar -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex flex-col gap-1">
+          <h2 class="text-lg font-bold text-slate-800">A4 Portrait Sheet Pagination Preview</h2>
+          <p class="text-xs text-slate-500" id="summaryCounter">Showing 0 sheets from 0 packing list entries</p>
+        </div>
+        
+        <!-- Live Search Field -->
+        <div class="relative w-full md:w-64">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input type="text" id="searchQuery" placeholder="Search Style, PO, Color, Box..." 
+            class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-4 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-brand-500 transition-all">
+        </div>
+      </div>
+
+      <!-- Live Statistics Cards -->
+      <div id="statsSection" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-3">
+          <div class="bg-brand-50 text-brand-600 p-2.5 rounded-lg text-lg"><i class="fa-solid fa-shirt"></i></div>
+          <div>
+            <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Total Styles</p>
+            <p class="text-base font-extrabold text-slate-800" id="statStyles">0</p>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-3">
+          <div class="bg-indigo-50 text-indigo-600 p-2.5 rounded-lg text-lg"><i class="fa-solid fa-boxes-stacked"></i></div>
+          <div>
+            <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Total Cartons</p>
+            <p class="text-base font-extrabold text-slate-800" id="statBoxes">0</p>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-3">
+          <div class="bg-emerald-50 text-emerald-600 p-2.5 rounded-lg text-lg"><i class="fa-solid fa-clipboard-list"></i></div>
+          <div>
+            <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Total Garments</p>
+            <p class="text-base font-extrabold text-slate-800" id="statGarments">0</p>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-3">
+          <div class="bg-amber-50 text-amber-600 p-2.5 rounded-lg text-lg"><i class="fa-solid fa-weight-hanging"></i></div>
+          <div>
+            <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Total G.Weight</p>
+            <p class="text-base font-extrabold text-slate-800" id="statWeight">0.0 kg</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Labels Grid Container (A4 Portrait sheets layout previews) -->
+      <div id="labelsPreviewContainer" class="grid grid-cols-1 md:grid-cols-2 gap-8 min-h-[400px] items-start">
+        <!-- Inside layout is generated dynamically by JavaScript -->
+        
+        <!-- Default State: Empty Dropzone Guide -->
+        <div class="col-span-full bg-white rounded-xl border border-slate-200 p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
+          <div class="w-16 h-16 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-2xl mb-4 shadow-inner">
+            <i class="fa-solid fa-file-import"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-700">No Packing List Loaded</h3>
+          <p class="text-xs text-slate-400 max-w-sm mt-1.5 mx-auto">Drop your shipping excel spreadsheet, or trigger the demo database to browse standard box layouts instantly.</p>
+          <button id="midSectionDemoTrigger" class="mt-4 bg-brand-50 text-brand-600 hover:bg-brand-100 font-bold text-xs rounded-lg px-4 py-2 border border-brand-100 transition-colors">
+            <i class="fa-solid fa-play mr-1.5"></i> Play with Interactive Demo
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-auto no-print shrink-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-400 gap-2">
+      <p>© 2026 Packing List Label System. Designed for high-speed carton sorting.</p>
+      <div class="flex gap-4">
+        <span>No servers. 100% Client-Side Safe.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Loading & Processing Modal -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center text-white font-medium opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-2xl flex flex-col items-center text-center max-w-xs">
+      <div class="relative w-16 h-16 mb-4">
+        <!-- Concentric modern spinners -->
+        <div class="absolute inset-0 rounded-full border-4 border-brand-500/20"></div>
+        <div class="absolute inset-0 rounded-full border-4 border-t-brand-500 animate-spin"></div>
+      </div>
+      <h3 class="text-base font-bold mb-1" id="loadingTitle">Processing Files</h3>
+      <p class="text-xs text-slate-400 leading-relaxed" id="loadingSubtitle">Extracting sheets, styles, and creating label previews...</p>
+    </div>
+  </div>
+
+  <!-- Toast Notification Area -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 max-w-md w-full pointer-events-none">
+    <!-- Interactive toast items generated on execution -->
+  </div>
+
+  <!-- Client-Side Javascript Core Logic -->
+  <script>
+    // Global State management
+    let parsedData = null;
+    let selectedStyles = new Set();
+    let labelCustomizations = {
+      brandHeader: "STOCK AZ - MAISON STELLA & SUZIE",
+      fromName: "PELINTEX BULGARIA",
+      fromAddr: "5 HRISTO BOTEV 7000 RUSE - BULGARIA",
+      toName: "SARL MARMAX",
+      toAddr: "Stock AZ c/o Stella et Suzie Rue du Nauron 79180 Chauray – France",
+      numberingFormat: "style", // 'style' or 'global'
+      weightRounding: "2", // '2' or '3'
+      fontScale: 0.95
+    };
+
+    // DOM Element Cache Variables (Globally declared to prevent ReferenceError)
+    let brandHeaderInput, senderNameInput, senderAddrText, recipientNameInput, recipientAddrText;
+    let numberingFormatSelect, weightRoundingSelect, fontScaleSlider, fontScaleDisplay;
+    let styleCheckboxesContainer, cartonRangeMinInput, cartonRangeMaxInput, searchQueryInput;
+    let statsSection, statStyles, statBoxes, statGarments, statWeight;
+    let fileInput, dropzone, fileInfo, fileNameEl, fileSizeEl, removeFileBtn, loadSampleBtn, midSectionDemoTrigger;
+
+    // Preloaded Demo Database representing the files: FLEURS DE SAFRAN PL & maquette box.xlsx
+    const DEMO_PACKING_LIST = {
+      fromInfo: {
+        name: "PELINTEX BULGARIA",
+        address: "5 HRISTO BOTEV, 7000 RUSE - BULGARIA"
+      },
+      toInfo: {
+        name: "SARL MARMAX",
+        address: "Stock AZ c/o Stella et Suzie Rue du Nauron 79180 Chauray – France"
+      },
+      styles: [
+        {
+          name: "ROBE ATHALYS",
+          po: "P04144",
+          description: "LADIES' DRESS",
+          sizes: [
+            { name: "XS", index: 0 },
+            { name: "S", index: 1 },
+            { name: "M", index: 2 },
+            { name: "L", index: 3 },
+            { name: "XL", index: 4 }
+          ],
+          totalCartonsCount: 24,
+          cartons: [
+            // Cartons 1 to 6 (XS = 25)
+            ...Array.from({length: 6}, (_, i) => ({
+              cartonIndex: i + 1,
+              styleName: "ROBE ATHALYS",
+              po: "P04144",
+              description: "LADIES' DRESS",
+              color: "FLEURS DE SAFRAN",
+              sizes: { "XS": 25, "S": 0, "M": 0, "L": 0, "XL": 0 },
+              totalQty: 25,
+              grossWeight: 11.53, // Extracted exactly from maquette box.xlsx
+              netWeight: 10.33
+            })),
+            // Cartons 7 to 12 (S = 25)
+            ...Array.from({length: 6}, (_, i) => ({
+              cartonIndex: i + 7,
+              styleName: "ROBE ATHALYS",
+              po: "P04144",
+              description: "LADIES' DRESS",
+              color: "FLEURS DE SAFRAN",
+              sizes: { "XS": 0, "S": 25, "M": 0, "L": 0, "XL": 0 },
+              totalQty: 25,
+              grossWeight: 11.53,
+              netWeight: 10.33
+            })),
+            // Cartons 13 to 18 (M = 25)
+            ...Array.from({length: 6}, (_, i) => ({
+              cartonIndex: i + 13,
+              styleName: "ROBE ATHALYS",
+              po: "P04144",
+              description: "LADIES' DRESS",
+              color: "FLEURS DE SAFRAN",
+              sizes: { "XS": 0, "S": 0, "M": 25, "L": 0, "XL": 0 },
+              totalQty: 25,
+              grossWeight: 11.53,
+              netWeight: 10.33
+            })),
+            // Cartons 19 to 24 (L = 25)
+            ...Array.from({length: 6}, (_, i) => ({
+              cartonIndex: i + 19,
+              styleName: "ROBE ATHALYS",
+              po: "P04144",
+              description: "LADIES' DRESS",
+              color: "FLEURS DE SAFRAN",
+              sizes: { "XS": 0, "S": 0, "M": 0, "L": 25, "XL": 0 },
+              totalQty: 25,
+              grossWeight: 11.53,
+              netWeight: 10.33
+            }))
+          ]
+        },
+        {
+          name: "CHEMISIER PIETRA",
+          po: "P04144",
+          description: "LADIES' SHIRT",
+          sizes: [
+            { name: "XS", index: 0 },
+            { name: "S", index: 1 },
+            { name: "M", index: 2 },
+            { name: "L", index: 3 },
+            { name: "XL", index: 4 },
+            { name: "XXL", index: 5 }
+          ],
+          totalCartonsCount: 15,
+          cartons: [
+            {
+              cartonIndex: 1,
+              styleName: "CHEMISIER PIETRA",
+              po: "P04144",
+              description: "LADIES' SHIRT",
+              color: "FLEURS DE SAFRAN",
+              sizes: { "XS": 50, "S": 0, "M": 0, "L": 0, "XL": 0, "XXL": 0 },
+              totalQty: 50,
+              grossWeight: 9.9,
+              netWeight: 8.7
+            },
+            {
+              cartonIndex: 2,
+              styleName: "CHEMISIER PIETRA",
+              po: "P04144",
+              description: "LADIES' SHIRT",
+              color: "FLEURS DE SAFRAN",
+              sizes: { "XS": 0, "S": 50, "M": 0, "L": 0, "XL": 0, "XXL": 0 },
+              totalQty: 50,
+              grossWeight: 9.9,
+              netWeight: 8.7
+            },
+            {
+              cartonIndex: 3,
+              styleName: "CHEMISIER PIETRA",
+              po: "P04144",
+              description: "LADIES' SHIRT",
+              color: "FLEURS DE SAFRAN",
+              sizes: { "XS": 0, "S": 0, "M": 45, "L": 0, "XL": 0, "XXL": 0 },
+              totalQty: 45,
+              grossWeight: 9.03,
+              netWeight: 7.83
+            },
+            {
+              cartonIndex: 4,
+              styleName: "CHEMISIER PIETRA",
+              po: "P04144",
+              description: "LADIES' SHIRT",
+              color: "FLEURS DE SAFRAN",
+              sizes: { "XS": 0, "S": 0, "M": 0, "L": 50, "XL": 0, "XXL": 0 },
+              totalQty: 50,
+              grossWeight: 9.9,
+              netWeight: 8.7
+            },
+            {
+              cartonIndex: 5,
+              styleName: "CHEMISIER PIETRA",
+              po: "P04144",
+              description: "LADIES' SHIRT",
+              color: "FLEURS DE SAFRAN",
+              sizes: { "XS": 0, "S": 0, "M": 0, "L": 0, "XL": 33, "XXL": 0 },
+              totalQty: 33,
+              grossWeight: 6.94,
+              netWeight: 5.74
+            },
+            // Dynamic mixed size box
+            {
+              cartonIndex: 6,
+              styleName: "CHEMISIER PIETRA",
+              po: "P04144",
+              description: "LADIES' SHIRT",
+              color: "FLEURS DE SAFRAN",
+              sizes: { "XS": 18, "S": 0, "M": 5, "L": 0, "XL": 18, "XXL": 0 },
+              totalQty: 41,
+              grossWeight: 8.33,
+              netWeight: 7.13
+            },
+            // Boxes 7-15 filled dynamically
+            ...Array.from({length: 9}, (_, i) => ({
+              cartonIndex: i + 7,
+              styleName: "CHEMISIER PIETRA",
+              po: "P04144",
+              description: "LADIES' SHIRT",
+              color: "FLEURS DE SAFRAN",
+              sizes: { "XS": 10, "S": 10, "M": 10, "L": 10, "XL": 5, "XXL": 0 },
+              totalQty: 45,
+              grossWeight: 9.15,
+              netWeight: 7.95
+            }))
+          ]
+        }
+      ]
+    };
+
+    // Modal Notification Toast Utility
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      let bgStyle = 'bg-slate-800 border-slate-700 text-white';
+      let icon = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+      
+      if (type === 'error') {
+        bgStyle = 'bg-rose-900/90 border-rose-800 text-white';
+        icon = '<i class="fa-solid fa-triangle-exclamation text-rose-300"></i>';
+      } else if (type === 'info') {
+        bgStyle = 'bg-slate-800 border-brand-500 text-white';
+        icon = '<i class="fa-solid fa-info-circle text-brand-400"></i>';
+      }
+
+      toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto ${bgStyle}`;
+      toast.innerHTML = `
+        <span class="text-lg shrink-0">${icon}</span>
+        <p class="text-xs font-semibold flex-1 leading-normal">${message}</p>
+        <button class="text-slate-400 hover:text-white shrink-0 ml-1.5 focus:outline-none text-sm">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      `;
+
+      const closeBtn = toast.querySelector('button');
+      const dismiss = () => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      };
+      closeBtn.addEventListener('click', dismiss);
+
+      container.appendChild(toast);
+      
+      // Animate appearance
+      setTimeout(() => {
+        toast.classList.remove('opacity-0', 'translate-y-2');
+      }, 50);
+
+      // Auto dismiss after duration
+      setTimeout(dismiss, 5000);
+    }
+
+    // Interactive load state controllers
+    function setLoaderState(visible, title = "Processing", subtitle = "Please wait...") {
+      loadingTitle.textContent = title;
+      loadingSubtitle.textContent = subtitle;
+      if (visible) {
+        loadingOverlay.classList.remove('pointer-events-none', 'opacity-0');
+        loadingOverlay.classList.add('opacity-100');
+      } else {
+        loadingOverlay.classList.add('pointer-events-none', 'opacity-0');
+        loadingOverlay.classList.remove('opacity-100');
+      }
+    }
+
+    // Prepopulate system with interactive mock-up
+    function loadDemoData() {
+      setLoaderState(true, "Compiling Demo Data", "Restoring box-maquette and fleurs de safran packing list...");
+      
+      setTimeout(() => {
+        parsedData = JSON.parse(JSON.stringify(DEMO_PACKING_LIST)); // deep clone
+        
+        // Setup initial selected styles
+        selectedStyles.clear();
+        parsedData.styles.forEach(style => selectedStyles.add(style.name));
+        
+        // Update Sidepanel customization defaults from Demo
+        brandHeaderInput.value = "STOCK AZ - MAISON STELLA & SUZIE";
+        senderNameInput.value = parsedData.fromInfo.name;
+        senderAddrText.value = parsedData.fromInfo.address;
+        recipientNameInput.value = parsedData.toInfo.name;
+        recipientAddrText.value = parsedData.toInfo.address;
+        
+        // Update internal layout variables
+        updateCustomizationsFromInputs();
+        
+        // Show files panel as mocked
+        dropzone.classList.add('hidden');
+        fileInfo.classList.remove('hidden');
+        fileNameEl.textContent = "FLEURS DE SAFRAN PL _Stella and Suzie.xlsx (DEMO)";
+        fileSizeEl.textContent = "24.8 KB • 39 Total Boxes";
+        
+        // Populate filters & workspace stats
+        buildStyleCheckboxes();
+        updateDashboardStats();
+        renderLabelsGrid();
+        
+        setLoaderState(false);
+        showToast("Demo Data injected successfully. Use settings panel to customize addresses and fonts!", "success");
+      }, 500);
+    }
+
+    // Reset Excel system state back to default
+    function clearFile() {
+      parsedData = null;
+      selectedStyles.clear();
+      fileInput.value = '';
+      
+      // UI Reset
+      fileInfo.classList.add('hidden');
+      dropzone.classList.remove('hidden');
+      statsSection.classList.add('hidden');
+      styleCheckboxesContainer.innerHTML = '<p class="text-xs text-slate-400 italic p-1">No file parsed yet</p>';
+      
+      labelsPreviewContainer.innerHTML = `
+        <div class="col-span-full bg-white rounded-xl border border-slate-200 p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
+          <div class="w-16 h-16 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-2xl mb-4 shadow-inner">
+            <i class="fa-solid fa-file-import"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-700">No Packing List Loaded</h3>
+          <p class="text-xs text-slate-400 max-w-sm mt-1.5 mx-auto">Drop your shipping excel spreadsheet, or trigger the demo database to browse standard box layouts instantly.</p>
+          <button id="midSectionDemoTrigger" class="mt-4 bg-brand-50 text-brand-600 hover:bg-brand-100 font-bold text-xs rounded-lg px-4 py-2 border border-brand-100 transition-colors">
+            <i class="fa-solid fa-play mr-1.5"></i> Play with Interactive Demo
+          </button>
+        </div>
+      `;
+      
+      // Bind event listeners again for the new elements
+      document.getElementById('midSectionDemoTrigger').addEventListener('click', loadDemoData);
+      summaryCounter.textContent = "Showing 0 sheets from 0 packing list entries";
+      
+      showToast("Workspace cleared. Ready for next packing list spreadsheet.", "info");
+    }
+
+    // Sidebar inputs live synchronization logic
+    function updateCustomizationsFromInputs() {
+      labelCustomizations.brandHeader = brandHeaderInput.value;
+      labelCustomizations.fromName = senderNameInput.value;
+      labelCustomizations.fromAddr = senderAddrText.value;
+      labelCustomizations.toName = recipientNameInput.value;
+      labelCustomizations.toAddr = recipientAddrText.value;
+      labelCustomizations.numberingFormat = numberingFormatSelect.value;
+      labelCustomizations.weightRounding = weightRoundingSelect.value;
+      labelCustomizations.fontScale = parseFloat(fontScaleSlider.value);
+
+      // Realtime rebuild preview without recalculating data parsing
+      if (parsedData) {
+        renderLabelsGrid();
+      }
+    }
+
+    // Populate Dynamic Checked Elements for Style Selection Filters with Manual Editor Mode
+    function buildStyleCheckboxes() {
+      if (!parsedData) return;
+      
+      styleCheckboxesContainer.innerHTML = '';
+      parsedData.styles.forEach((style, styleIdx) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = "flex items-center justify-between gap-2 p-1.5 hover:bg-slate-100 rounded transition-colors";
+        
+        const isSelected = selectedStyles.has(style.name);
+        const checkedAttr = isSelected ? 'checked' : '';
+        
+        rowDiv.innerHTML = `
+          <!-- Read & Toggle Mode -->
+          <div class="flex items-center gap-2 flex-1 min-w-0" id="style-read-${styleIdx}">
+            <input type="checkbox" value="${style.name}" ${checkedAttr} class="rounded text-brand-600 focus:ring-brand-500 w-4 h-4 cursor-pointer shrink-0">
+            <div class="flex-1 truncate">
+              <span class="truncate block font-bold text-xs text-slate-700" title="${style.name}">${style.name}</span>
+              <span class="text-[10px] text-slate-400 font-normal block">PO: ${style.po} • ${style.cartons.length} boxes</span>
+            </div>
+          </div>
+          
+          <!-- Edit Mode (Hidden initially) -->
+          <div class="hidden flex items-center gap-1 flex-1" id="style-edit-${styleIdx}">
+            <input type="text" value="${style.name}" class="w-full text-xs border border-slate-300 rounded px-2 py-1 focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none font-bold">
+            <button class="text-emerald-600 hover:text-emerald-700 p-1 text-xs shrink-0" title="Save">
+              <i class="fa-solid fa-check"></i>
+            </button>
+            <button class="text-slate-400 hover:text-slate-600 p-1 text-xs shrink-0" title="Cancel">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          
+          <!-- Edit Button -->
+          <button class="text-slate-400 hover:text-brand-600 p-1 shrink-0" id="btn-edit-trigger-${styleIdx}" title="Rename Style">
+            <i class="fa-solid fa-pen-to-square text-xs"></i>
+          </button>
+        `;
+        
+        const readDiv = rowDiv.querySelector(`#style-read-${styleIdx}`);
+        const editDiv = rowDiv.querySelector(`#style-edit-${styleIdx}`);
+        const editTriggerBtn = rowDiv.querySelector(`#btn-edit-trigger-${styleIdx}`);
+        
+        const checkbox = readDiv.querySelector('input[type="checkbox"]');
+        const editInput = editDiv.querySelector('input[type="text"]');
+        const saveBtn = editDiv.querySelector('.text-emerald-600');
+        const cancelBtn = editDiv.querySelector('.text-slate-400');
+        
+        // Toggle Selection Event
+        checkbox.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            selectedStyles.add(style.name);
+          } else {
+            selectedStyles.delete(style.name);
+          }
+          renderLabelsGrid();
+        });
+        
+        // Show Edit Input
+        editTriggerBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          readDiv.classList.add('hidden');
+          editDiv.classList.remove('hidden');
+          editTriggerBtn.classList.add('hidden');
+          editInput.focus();
+          editInput.select();
+        });
+        
+        // Cancel Editing
+        cancelBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          editInput.value = style.name;
+          readDiv.classList.remove('hidden');
+          editDiv.classList.add('hidden');
+          editTriggerBtn.classList.remove('hidden');
+        });
+        
+        // Save Rename Function
+        const saveRename = () => {
+          const newName = editInput.value.trim().toUpperCase();
+          if (!newName) {
+            showToast("Style name cannot be empty!", "error");
+            return;
+          }
+          
+          const oldName = style.name;
+          if (newName === oldName) {
+            // No change
+            readDiv.classList.remove('hidden');
+            editDiv.classList.add('hidden');
+            editTriggerBtn.classList.remove('hidden');
+            return;
+          }
+          
+          // Rename in State
+          style.name = newName;
+          style.cartons.forEach(carton => {
+            carton.styleName = newName;
+          });
+          
+          // Rename in Selection Set
+          if (selectedStyles.has(oldName)) {
+            selectedStyles.delete(oldName);
+            selectedStyles.add(newName);
+          }
+          
+          showToast(`Renamed style "${oldName}" to "${newName}"`, "success");
+          
+          // Re-render components
+          buildStyleCheckboxes();
+          renderLabelsGrid();
+          updateDashboardStats();
+        };
+        
+        saveBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          saveRename();
+        });
+        
+        editInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.stopPropagation();
+            saveRename();
+          } else if (e.key === 'Escape') {
+            e.stopPropagation();
+            editInput.value = style.name;
+            readDiv.classList.remove('hidden');
+            editDiv.classList.add('hidden');
+            editTriggerBtn.classList.remove('hidden');
+          }
+        });
+        
+        styleCheckboxesContainer.appendChild(rowDiv);
+      });
+    }
+
+    // Dashboard Statistics Metrics Calculator
+    function updateDashboardStats() {
+      if (!parsedData) return;
+      
+      statsSection.classList.remove('hidden');
+      
+      const totalStyles = parsedData.styles.length;
+      let totalBoxes = 0;
+      let totalQty = 0;
+      let totalGW = 0;
+      
+      parsedData.styles.forEach(style => {
+        totalBoxes += style.cartons.length;
+        style.cartons.forEach(ctn => {
+          totalQty += ctn.totalQty;
+          totalGW += ctn.grossWeight;
+        });
+      });
+      
+      statStyles.textContent = totalStyles;
+      statBoxes.textContent = totalBoxes;
+      statGarments.textContent = totalQty.toLocaleString();
+      statWeight.textContent = totalGW.toFixed(1) + ' kg';
+    }
+
+    // Filter labels correctly based on sidebar filters & query search
+    function getFilteredLabels() {
+      if (!parsedData) return [];
+      
+      const min = parseInt(cartonRangeMinInput.value) || 1;
+      const max = parseInt(cartonRangeMaxInput.value) || 9999;
+      const search = searchQueryInput.value.toLowerCase().trim();
+      
+      const list = [];
+      let globalBoxCounter = 0;
+      
+      parsedData.styles.forEach(style => {
+        const isStyleSelected = selectedStyles.has(style.name);
+        
+        style.cartons.forEach(carton => {
+          globalBoxCounter++;
+          
+          if (!isStyleSelected) return;
+          if (carton.cartonIndex < min || carton.cartonIndex > max) return;
+          
+          // Match search query
+          if (search) {
+            const matchStyle = style.name.toLowerCase().includes(search);
+            const matchPO = style.po.toLowerCase().includes(search);
+            const matchColor = carton.color.toLowerCase().includes(search);
+            const matchBoxNo = String(carton.cartonIndex).includes(search);
+            
+            // Check matching size
+            let matchSize = false;
+            Object.keys(carton.sizes).forEach(size => {
+              if (size.toLowerCase().includes(search) && carton.sizes[size] > 0) {
+                matchSize = true;
+              }
+            });
+            
+            if (!matchStyle && !matchPO && !matchColor && !matchBoxNo && !matchSize) return;
+          }
+          
+          list.push({
+            ...carton,
+            globalIndex: globalBoxCounter,
+            globalTotal: parsedData.styles.reduce((sum, s) => sum + s.cartons.length, 0),
+            styleTotalBoxes: style.totalCartonsCount,
+            styleSizes: style.sizes
+          });
+        });
+      });
+      
+      return list;
+    }
+
+    // Process uploaded file
+    function handleFile(file) {
+      if (!file) return;
+      
+      const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+      const isCsv = file.name.endsWith('.csv');
+      
+      if (!isExcel && !isCsv) {
+        showToast("Unsupported file type! Please upload an Excel (.xlsx/.xls) or CSV file.", "error");
+        return;
+      }
+
+      setLoaderState(true, "Reading Spreadsheet", `Parsing sheet streams from ${file.name}...`);
+      
+      const _normalizerReader = new FileReader();
+      _normalizerReader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          const results = parsePackingListRows(rows);
+          
+          if (!results || results.styles.length === 0) {
+            throw new Error("No style listings or carton grids found. Ensure your excel matches standard logistics layouts.");
+          }
+
+          parsedData = results;
+          
+          // Pre-populate selections
+          selectedStyles.clear();
+          parsedData.styles.forEach(style => selectedStyles.add(style.name));
+          
+          // Fill sidebar form coordinates from sheet if parsed
+          if (parsedData.fromInfo && parsedData.fromInfo.name) {
+            senderNameInput.value = parsedData.fromInfo.name;
+            if (parsedData.fromInfo.address) senderAddrText.value = parsedData.fromInfo.address;
+          }
+          if (parsedData.toInfo && parsedData.toInfo.name) {
+            recipientNameInput.value = parsedData.toInfo.name;
+            if (parsedData.toInfo.address) recipientAddrText.value = parsedData.toInfo.address;
+          }
+          
+          // Synchronize customization states
+          updateCustomizationsFromInputs();
+          
+          // Render files panel detail
+          dropzone.classList.add('hidden');
+          fileInfo.classList.remove('hidden');
+          fileNameEl.textContent = file.name;
+          
+          // Format size strings
+          const totalBoxesCount = parsedData.styles.reduce((sum, s) => sum + s.cartons.length, 0);
+          fileSizeEl.textContent = `${(file.size / 1024).toFixed(1)} KB • ${totalBoxesCount} Total Boxes Found`;
+
+          // Refresh Dashboard metrics and controls
+          buildStyleCheckboxes();
+          updateDashboardStats();
+          renderLabelsGrid();
+          
+          setLoaderState(false);
+          showToast(`File imported successfully! Extracted ${parsedData.styles.length} apparel styles and ${totalBoxesCount} total boxes.`, "success");
+          
+        } catch (err) {
+          console.error(err);
+          setLoaderState(false);
+          showToast(`Parser Error: ${err.message}`, "error");
+        }
+      };
+      
+      _normalizerReader.onerror = function() {
+        setLoaderState(false);
+        showToast("Fatal file reader failure. File could be locked or corrupted.", "error");
+      };
+      
+      _normalizerReader.readAsArrayBuffer(file);
+    }
+
+    // Core Intelligent Parser Logic (Handles Excel and dense CSV row lists)
+    function parsePackingListRows(rows) {
+      const styles = [];
+      let currentStyle = null;
+      
+      let fromInfo = { name: 'PELINTEX BULGARIA', address: '5 HRISTO BOTEV 7000 RUSE - BULGARIA' };
+      let toInfo = { name: 'SARL MARMAX', address: 'Stock AZ c/o Stella et Suzie Rue du Nauron 79180 Chauray – France' };
+      
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i] || [];
+        
+        // Solve the sparse array hole issue by normalizing the row array into a dense array of strings
+        const rowStrClean = Array.from({ length: row.length }, (_, idx) => {
+          const cell = row[idx];
+          return cell !== undefined && cell !== null ? String(cell).trim().toUpperCase() : '';
+        });
+
+        const rowStrJoined = rowStrClean.join(' ');
+        
+        // Extract FROM/Expéditeur details
+        if (rowStrJoined.includes('EXPÉDITEUR') || rowStrJoined.includes('FROM :') || rowStrJoined.includes('SENDER')) {
+          let fromLines = [];
+          for (let k = 0; k < 4; k++) {
+            const nextRow = rows[i + k] || [];
+            const val = String(nextRow[0] || '').trim();
+            if (val && !val.toUpperCase().includes('EXPÉDITEUR') && !val.toUpperCase().includes('FROM')) {
+              fromLines.push(val);
+            }
+          }
+          if (fromLines.length > 0) {
+            fromInfo.name = fromLines[0];
+            fromInfo.address = fromLines.slice(1).join(', ');
+          }
+        }
+        
+        // Extract TO/Destinataire details
+        if (rowStrJoined.includes('DESTINATAIRE') || rowStrJoined.includes('TO :') || rowStrJoined.includes('DELIVER TO')) {
+          let toLines = [];
+          for (let k = 0; k < 5; k++) {
+            const nextRow = rows[i + k] || [];
+            for (let c = 0; c < nextRow.length; c++) {
+              const val = String(nextRow[c] || '').trim();
+              if (val && !val.toUpperCase().includes('DESTINATAIRE') && 
+                  (val.toUpperCase().includes('STOCK') || val.toUpperCase().includes('CHAURAY') || val.toUpperCase().includes('STELLA') || val.toUpperCase().includes('MARMAX'))) {
+                toLines.push(val);
+              }
+            }
+          }
+          if (toLines.length > 0) {
+            toInfo.name = toLines[0];
+            toInfo.address = toLines.slice(1).join(', ');
+          }
+        }
+
+        // Detect Apparel style blocks (STYLE NO:)
+        let styleHeaderIndex = -1;
+        for (let c = 0; c < row.length; c++) {
+          const cellVal = String(row[c] || '').trim();
+          if (cellVal.toUpperCase().startsWith('STYLE NO') || cellVal.toUpperCase().startsWith('STYLE:')) {
+            styleHeaderIndex = c;
+            break;
+          }
+        }
+        
+        if (styleHeaderIndex !== -1) {
+          let styleText = '';
+          for (let c = styleHeaderIndex; c < row.length; c++) {
+            if (row[c]) styleText += ' ' + row[c];
+          }
+          styleText = styleText.trim().replace(/\s+/g, ' ');
+          
+          let cleanText = styleText.replace(/STYLE\s*NO\s*:?/i, '').replace(/STYLE\s*:?/i, '').trim();
+          
+          let styleName = 'UNKNOWN STYLE';
+          let po = 'UNKNOWN PO';
+          
+          // Split on word bound P/O indicator to allow capital letters like P in PIETRA or PANTALON without truncation
+          let poIndex = cleanText.search(/\bP\/?O\b/i);
+          if (poIndex !== -1) {
+            styleName = cleanText.substring(0, poIndex).trim();
+            let poPart = cleanText.substring(poIndex);
+            let poMatch = poPart.match(/\bP\/?O\s*:?\s*([A-Z0-9_-]+)/i);
+            if (poMatch) {
+              po = poMatch[1].trim();
+            }
+          } else {
+            styleName = cleanText;
+          }
+          
+          if (!styleName || styleName === 'UNKNOWN STYLE') {
+            styleName = cleanText; // fallback to complete text if regex match is empty
+          }
+
+          // Extract Description
+          let description = '';
+          for (let k = 1; k <= 3; k++) {
+            const nextRow = rows[i + k] || [];
+            const nextRowStr = nextRow.map(c => String(c || '')).join(' ').toUpperCase();
+            if (nextRowStr.includes('DESCRIPTION')) {
+              for (let c = 0; c < nextRow.length; c++) {
+                const val = String(nextRow[c] || '').trim();
+                if (val && !val.toUpperCase().includes('DESCRIPTION')) {
+                  description = val;
+                  break;
+                }
+              }
+              break;
+            }
+          }
+          
+          currentStyle = {
+            name: styleName,
+            po: po,
+            description: description || 'LADIES\' GARMENTS',
+            sizes: [],
+            cartons: [],
+            totalCartonsCount: 0,
+            headerRowIndex: -1,
+            colorColIndex: -1,
+            ctnColIndex: -1,
+            qtyColIndex: -1,
+            gwColIndex: -1,
+            nwColIndex: -1
+          };
+          styles.push(currentStyle);
+          continue;
+        }
+        
+        // Find Table Header Row (containing sizes, weights, carton IDs)
+        if (currentStyle && currentStyle.headerRowIndex === -1) {
+          const cnoIndex = rowStrClean.findIndex(val => val && (val.includes('C/NO') || val.includes('C.NO') || val.includes('CARTON')));
+          if (cnoIndex !== -1) {
+            currentStyle.headerRowIndex = i;
+            
+            // Map indexes with defensive protection
+            currentStyle.colorColIndex = rowStrClean.findIndex(val => val && (val.includes('COL.') || val.includes('COLOR') || val.includes('COULEUR')));
+            currentStyle.ctnColIndex = rowStrClean.findIndex(val => val && (val === 'CTN' || val.includes('CARTONS') || val.includes('BOXES')));
+            currentStyle.qtyColIndex = rowStrClean.findIndex(val => val && (val.includes('QTY/CTN') || val.includes('PCS/CTN') || val.includes('QUANTITY/')));
+            currentStyle.gwColIndex = rowStrClean.findIndex(val => val && (val.includes('G.W') || val.includes('GROSS WEIGHT') || val.includes('BRUT') || val.includes('G.WEIGHT')));
+            currentStyle.nwColIndex = rowStrClean.findIndex(val => val && (val.includes('N.W') || val.includes('NET WEIGHT') || val.includes('N.WEIGHT')));
+            
+            // Identify size columns
+            const startSearch = currentStyle.colorColIndex !== -1 ? currentStyle.colorColIndex + 1 : cnoIndex + 1;
+            const endSearch = currentStyle.ctnColIndex !== -1 ? currentStyle.ctnColIndex : row.length;
+            
+            for (let c = startSearch; c < endSearch; c++) {
+              const val = String(row[c] || '').trim();
+              if (val && !val.toUpperCase().includes('COL.') && !val.toUpperCase().includes('QTY') && !val.toUpperCase().includes('C/NO')) {
+                currentStyle.sizes.push({
+                  name: val,
+                  index: c
+                });
+              }
+            }
+            continue;
+          }
+        }
+        
+        // Parse individual carton rows
+        if (currentStyle && currentStyle.headerRowIndex !== -1) {
+          const firstCellVal = String(row[0] || '').trim();
+          if (!firstCellVal) continue;
+          
+          // Break block on TOTAL line
+          if (firstCellVal.toUpperCase().startsWith('TOTAL')) {
+            let maxCartonNum = 0;
+            currentStyle.cartons.forEach(c => {
+              if (c.cartonIndex > maxCartonNum) maxCartonNum = c.cartonIndex;
+            });
+            currentStyle.totalCartonsCount = maxCartonNum;
+            currentStyle = null; // Unbind until next style
+            continue;
+          }
+          
+          const startNum = parseInt(firstCellVal);
+          if (isNaN(startNum)) continue; // Not a carton data row
+          
+          // Determine Carton range
+          let rowNumbers = [];
+          for (let c = 0; c < 4; c++) {
+            const val = parseInt(String(row[c] || '').trim());
+            if (!isNaN(val)) rowNumbers.push(val);
+          }
+          
+          let startCarton = startNum;
+          let endCarton = startNum;
+          
+          if (rowNumbers.length >= 2) {
+            let hasSeparator = false;
+            for (let c = 0; c < 4; c++) {
+              const valStr = String(row[c] || '').toLowerCase();
+              if (valStr.includes('to') || valStr.includes('-') || valStr.includes('à')) {
+                hasSeparator = true;
+                break;
+              }
+            }
+            if (hasSeparator) {
+              startCarton = Math.min(...rowNumbers);
+              endCarton = Math.max(...rowNumbers);
+            } else {
+              const cell2Val = parseInt(String(row[2] || '').trim());
+              if (!isNaN(cell2Val) && cell2Val >= startNum) {
+                startCarton = startNum;
+                endCarton = cell2Val;
+              }
+            }
+          }
+          
+          const ctnCount = endCarton - startCarton + 1;
+          if (ctnCount <= 0) continue;
+          
+          // Extract active color
+          let color = '';
+          if (currentStyle.colorColIndex !== -1) {
+            color = String(row[currentStyle.colorColIndex] || '').trim();
+          }
+          if (!color) {
+            if (currentStyle.cartons.length > 0) {
+              color = currentStyle.cartons[currentStyle.cartons.length - 1].color;
+            } else {
+              color = 'FLEURS DE SAFRAN';
+            }
+          }
+          
+          // Read size grid quantities
+          const sizeQtyMap = {};
+          let cartonQtySum = 0;
+          currentStyle.sizes.forEach(size => {
+            const qty = parseFloat(String(row[size.index] || '').trim()) || 0;
+            sizeQtyMap[size.name] = qty;
+            cartonQtySum += qty;
+          });
+          
+          // Safe fallback for single non-size listed box rows
+          if (cartonQtySum === 0 && currentStyle.qtyColIndex !== -1) {
+            cartonQtySum = parseFloat(String(row[currentStyle.qtyColIndex] || '').trim()) || 0;
+            if (currentStyle.sizes.length > 0) {
+              sizeQtyMap[currentStyle.sizes[0].name] = cartonQtySum;
+            } else {
+              currentStyle.sizes.push({ name: 'ONESIZE', index: -1 });
+              sizeQtyMap['ONESIZE'] = cartonQtySum;
+            }
+          }
+          
+          // Weights extraction
+          let totalGW = 0;
+          let totalNW = 0;
+          if (currentStyle.gwColIndex !== -1) {
+            totalGW = parseFloat(String(row[currentStyle.gwColIndex] || '').replace(/[^\d.]/g, '')) || 0;
+          }
+          if (currentStyle.nwColIndex !== -1) {
+            totalNW = parseFloat(String(row[currentStyle.nwColIndex] || '').replace(/[^\d.]/g, '')) || 0;
+          }
+          
+          const gwPerCtn = totalGW > 0 ? (totalGW / ctnCount) : 11.53;
+          const nwPerCtn = totalNW > 0 ? (totalNW / ctnCount) : 10.33;
+          
+          // Expand Range into individual boxes
+          for (let cartonIdx = startCarton; cartonIdx <= endCarton; cartonIdx++) {
+            currentStyle.cartons.push({
+              cartonIndex: cartonIdx,
+              styleName: currentStyle.name,
+              po: currentStyle.po,
+              description: currentStyle.description,
+              color: color,
+              sizes: { ...sizeQtyMap },
+              totalQty: cartonQtySum,
+              grossWeight: gwPerCtn,
+              netWeight: nwPerCtn
+            });
+          }
+        }
+      }
+      
+      // Cleanup open styles (if no final Total row parsed)
+      styles.forEach(style => {
+        if (style.totalCartonsCount === 0) {
+          let maxCartonNum = 0;
+          style.cartons.forEach(c => {
+            if (c.cartonIndex > maxCartonNum) maxCartonNum = c.cartonIndex;
+          });
+          style.totalCartonsCount = maxCartonNum;
+        }
+      });
+      
+      return {
+        styles: styles,
+        fromInfo: fromInfo,
+        toInfo: toInfo
+      };
+    }
+
+    // Build standard industrial label template matching 'maquette box.xlsx' & screenshot
+    function buildLabelHTML(label, scale = 1.0) {
+      if (!label) return '';
+      
+      const precision = parseInt(labelCustomizations.weightRounding);
+      const gwFormatted = label.grossWeight.toFixed(precision);
+      const nwFormatted = label.netWeight.toFixed(precision);
+      
+      // Box count formula calculation
+      let boxNoStr = '';
+      if (labelCustomizations.numberingFormat === 'global') {
+        boxNoStr = `${label.globalIndex}/${label.globalTotal}`;
+      } else {
+        boxNoStr = `${label.cartonIndex}/${label.styleTotalBoxes}`;
+      }
+
+      // Generate Size row columns - Match the original maquette structure with custom borders
+      const sizeHeaderCols = label.styleSizes.map((size, idx) => {
+        const isLast = idx === label.styleSizes.length - 1;
+        const borderRight = isLast ? '' : 'border-right: 2.5px solid black;';
+        return `
+          <td style="padding: 4px; ${borderRight} font-weight: 900; font-size: calc(11px * ${scale}); text-transform: uppercase; text-align: center; font-family: sans-serif; background-color: #fafafa;">${size.name}</td>
+        `;
+      }).join('');
+
+      // Display the carton's quantity only under the correct active size column!
+      const sizeValCols = label.styleSizes.map((size, idx) => {
+        const val = label.sizes[size.name] || 0;
+        const activeClass = val > 0 ? `font-weight: 900; background-color: #e2e8f0; font-size: calc(15px * ${scale});` : `color: transparent; font-size: calc(10px * ${scale});`;
+        const isLast = idx === label.styleSizes.length - 1;
+        const borderRight = isLast ? '' : 'border-right: 2.5px solid black;';
+        return `
+          <td style="padding: 5px; ${borderRight} text-align: center; ${activeClass}">${val > 0 ? val : '&nbsp;'}</td>
+        `;
+      }).join('');
+
+      return `
+        <div style="font-family: Arial, Helvetica, sans-serif; color: black; line-height: 1.15; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; background-color: white;">
+          
+          <!-- TABLE 1: TO/FROM ADDRESS DETAILS (Separate standalone table) -->
+          <table style="width: 100%; border-collapse: collapse; border: 3px solid black; margin-bottom: 0px; table-layout: fixed;">
+            <tr>
+              <td style="width: 15%; padding: 6px 8px; border-right: 2.5px solid black; border-bottom: 2.5px solid black; font-weight: 900; font-size: calc(11px * ${scale}); vertical-align: top; text-align: left;">TO :</td>
+              <td style="width: 85%; padding: 6px 8px; border-bottom: 2.5px solid black; font-size: calc(11px * ${scale}); vertical-align: top; text-align: left;">
+                <strong style="font-size: calc(12px * ${scale}); text-transform: uppercase; display: block; margin-bottom: 2px;">${labelCustomizations.toName || 'SARL MARMAX'}</strong>
+                <span style="font-size: calc(9.5px * ${scale}); color: #111; display: block; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; max-height: 32px;">${labelCustomizations.toAddr || 'Stock AZ c/o Stella et Suzie Rue du Nauron 79180 Chauray – France'}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="width: 15%; padding: 6px 8px; border-right: 2.5px solid black; font-weight: 900; font-size: calc(11px * ${scale}); vertical-align: top; text-align: left;">FROM :</td>
+              <td style="width: 85%; padding: 6px 8px; font-size: calc(11px * ${scale}); vertical-align: top; text-align: left;">
+                <strong style="font-size: calc(12px * ${scale}); text-transform: uppercase; display: block; margin-bottom: 2px;">${labelCustomizations.fromName || 'PELINTEX BULGARIA'}</strong>
+                <span style="font-size: calc(9.5px * ${scale}); color: #111; display: block; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; max-height: 24px;">${labelCustomizations.fromAddr || '5 HRISTO BOTEV 7000 RUSE - BULGARIA'}</span>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Reduced margin between TO/FROM table and details matrix table -->
+          <div style="height: 6px; min-height: 6px;"></div>
+
+          <!-- TABLE 2: COMBINED INDUSTRIAL ATTRIBUTES, SIZES, AND BOX STATS (A single seamless matrix block with strict colgroup alignment) -->
+          <table style="width: 100%; border-collapse: collapse; border: 3px solid black; table-layout: fixed;">
+            <colgroup>
+              <col style="width: 30%;">
+              <col style="width: 70%;">
+            </colgroup>
+            
+            <!-- BRAND HEADER ROW -->
+            <tr>
+              <td colspan="2" style="background-color: white; color: black; font-weight: 900; text-align: center; padding: 10px 6px; border-bottom: 3px solid black; font-size: calc(14px * ${scale}); text-transform: uppercase; letter-spacing: 1px;">
+                ${labelCustomizations.brandHeader || 'STOCK AZ - MAISON STELLA & SUZIE'}
+              </td>
+            </tr>
+            
+            <!-- ORDER / PO ROW -->
+            <tr>
+              <td style="font-weight: 900; padding: 7px 8px; border-right: 3px solid black; border-bottom: 2.5px solid black; text-transform: uppercase; background-color: #fafafa; font-size: calc(11px * ${scale}); text-align: left;">ORDER / PO:</td>
+              <td style="font-weight: 900; font-size: calc(15px * ${scale}); padding: 7px 8px; border-bottom: 2.5px solid black; text-transform: uppercase; letter-spacing: 0.5px; text-align: left;">${label.po}</td>
+            </tr>
+            
+            <!-- ART / NAME ROW -->
+            <tr>
+              <td style="font-weight: 900; padding: 7px 8px; border-right: 3px solid black; border-bottom: 2.5px solid black; text-transform: uppercase; background-color: #fafafa; font-size: calc(11px * ${scale}); text-align: left;">ART / NAME:</td>
+              <td style="font-weight: 900; font-size: calc(13px * ${scale}); padding: 7px 8px; border-bottom: 2.5px solid black; text-transform: uppercase; text-align: left;">${label.styleName}</td>
+            </tr>
+            
+            <!-- COLOR ROW -->
+            <tr>
+              <td style="font-weight: 900; padding: 7px 8px; border-right: 3px solid black; border-bottom: 2.5px solid black; text-transform: uppercase; background-color: #fafafa; font-size: calc(11px * ${scale}); text-align: left;">COLOR:</td>
+              <td style="font-weight: 900; font-size: calc(13px * ${scale}); padding: 7px 8px; border-bottom: 2.5px solid black; text-transform: uppercase; text-align: left;">${label.color}</td>
+            </tr>
+            
+            <!-- SIZE ROW -->
+            <tr>
+              <td style="font-weight: 900; padding: 7px 8px; border-right: 3px solid black; border-bottom: 2.5px solid black; text-transform: uppercase; background-color: #fafafa; font-size: calc(11px * ${scale}); text-align: left;">SIZE :</td>
+              <td style="padding: 0; border-bottom: 2.5px solid black; vertical-align: middle;">
+                <table style="width: 100%; height: 100%; border-collapse: collapse; border: none; table-layout: fixed;">
+                  <tr>
+                    ${sizeHeaderCols}
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            
+            <!-- QUANTITY ROW -->
+            <tr>
+              <td style="font-weight: 900; padding: 7px 8px; border-right: 3px solid black; border-bottom: 2.5px solid black; text-transform: uppercase; background-color: #fafafa; font-size: calc(11px * ${scale}); text-align: left;">QUANTITY :</td>
+              <td style="padding: 0; border-bottom: 2.5px solid black; vertical-align: middle;">
+                <table style="width: 100%; height: 100%; border-collapse: collapse; border: none; table-layout: fixed;">
+                  <tr>
+                    ${sizeValCols}
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            
+            <!-- BOX NO ROW -->
+            <tr>
+              <td style="font-weight: 900; padding: 7px 8px; border-right: 3px solid black; border-bottom: 2.5px solid black; text-transform: uppercase; background-color: #fafafa; font-size: calc(11px * ${scale}); text-align: left;">BOX NO:</td>
+              <td style="font-weight: 900; font-size: calc(16px * ${scale}); padding: 7px 8px; border-bottom: 2.5px solid black; text-transform: uppercase; color: black; text-align: left;">${boxNoStr}</td>
+            </tr>
+            
+            <!-- BOX WEIGHT ROW (NET ON TOP, GROSS ON BOTTOM) -->
+            <tr>
+              <td style="font-weight: 900; padding: 7px 8px; border-right: 3px solid black; text-transform: uppercase; background-color: #fafafa; font-size: calc(11px * ${scale}); text-align: left;">BOX WEIGHT:</td>
+              <td style="padding: 5px 8px; vertical-align: middle; text-align: left;">
+                <div style="display: flex; flex-direction: column; gap: 3px; width: 100%;">
+                  <!-- NET WEIGHT ON TOP -->
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span style="font-size: calc(10px * ${scale}); font-weight: bold; color: #555;">NET:</span>
+                    <span style="font-size: calc(13px * ${scale}); font-weight: 900;">${nwFormatted} <span style="font-size: calc(10px * ${scale}); font-weight: bold; color: #555;">KGS</span></span>
+                  </div>
+                  <div style="border-top: 1px dashed #ccc; margin: 1px 0;"></div>
+                  <!-- GROSS WEIGHT ON BOTTOM -->
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span style="font-size: calc(10px * ${scale}); font-weight: bold; color: #555;">GROSS:</span>
+                    <span style="font-size: calc(13px * ${scale}); font-weight: 900;">${gwFormatted} <span style="font-size: calc(10px * ${scale}); font-weight: bold; color: #555;">KGS</span></span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </table>
+          
+        </div>
+      `;
+    }
+
+    // Render interactive side-by-side card sheets in workspace preview (A4 Portrait vertical stacking)
+    function renderLabelsGrid() {
+      const filteredLabels = getFilteredLabels();
+      
+      if (filteredLabels.length === 0) {
+        summaryCounter.textContent = `Showing 0 A4 print sheets`;
+        labelsPreviewContainer.innerHTML = `
+          <div class="col-span-full bg-white rounded-xl border border-slate-200 p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
+            <div class="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center text-lg mb-3">
+              <i class="fa-solid fa-filter"></i>
+            </div>
+            <h3 class="text-sm font-bold text-slate-700">No Matching Cartons</h3>
+            <p class="text-xs text-slate-400 mt-1">Adjust your search query, box range or check your style selection checkboxes.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Group into pages (2 labels per page stacked vertically)
+      const pages = [];
+      for (let i = 0; i < filteredLabels.length; i += 2) {
+        pages.push(filteredLabels.slice(i, i + 2));
+      }
+
+      // Update indicators
+      summaryCounter.textContent = `Showing ${pages.length} A4 Portrait sheet previews (${filteredLabels.length} total labels)`;
+      
+      labelsPreviewContainer.innerHTML = '';
+      
+      pages.forEach((pageLabels, pageIdx) => {
+        const outerSheet = document.createElement('div');
+        outerSheet.className = 'screen-page-preview';
+        
+        // Assemble top stacked label template
+        const topLabel = pageLabels[0];
+        const topCard = document.createElement('div');
+        topCard.className = 'preview-label-card';
+        topCard.innerHTML = buildLabelHTML(topLabel, labelCustomizations.fontScale * 0.9);
+        
+        const topBadge = document.createElement('div');
+        topBadge.className = "absolute top-1.5 right-1.5 bg-brand-900 text-white font-mono text-[9px] px-1.5 py-0.5 rounded shadow-sm z-10 font-bold border border-brand-700";
+        topBadge.innerHTML = `BOX ${topLabel.cartonIndex}`;
+        topCard.appendChild(topBadge);
+        outerSheet.appendChild(topCard);
+
+        // Visual scissor cutoff divider
+        const divider = document.createElement('div');
+        divider.className = "w-full flex items-center justify-center gap-2 py-1 select-none shrink-0";
+        divider.innerHTML = `
+          <div class="flex-1 border-t border-dashed border-slate-300"></div>
+          <span class="text-[9px] text-slate-400 font-bold tracking-wider flex items-center gap-1">
+            <i class="fa-solid fa-scissors"></i> CUT HERE (A4 MIDPOINT)
+          </span>
+          <div class="flex-1 border-t border-dashed border-slate-300"></div>
+        `;
+        outerSheet.appendChild(divider);
+
+        // Assemble bottom stacked label template
+        if (pageLabels[1]) {
+          const bottomLabel = pageLabels[1];
+          const bottomCard = document.createElement('div');
+          bottomCard.className = 'preview-label-card';
+          bottomCard.innerHTML = buildLabelHTML(bottomLabel, labelCustomizations.fontScale * 0.9);
+          
+          const bottomBadge = document.createElement('div');
+          bottomBadge.className = "absolute top-1.5 right-1.5 bg-brand-900 text-white font-mono text-[9px] px-1.5 py-0.5 rounded shadow-sm z-10 font-bold border border-brand-700";
+          bottomBadge.innerHTML = `BOX ${bottomLabel.cartonIndex}`;
+          bottomCard.appendChild(bottomBadge);
+          outerSheet.appendChild(bottomCard);
+        } else {
+          // Empty slot for perfect alignment split
+          const emptyCard = document.createElement('div');
+          emptyCard.className = 'preview-label-card border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-slate-400 text-xs italic font-medium';
+          emptyCard.innerHTML = `<i class="fa-solid fa-scissors mr-1.5"></i>Empty Slot`;
+          outerSheet.appendChild(emptyCard);
+        }
+
+        labelsPreviewContainer.appendChild(outerSheet);
+      });
+    }
+
+    // Assemble isolated raw HTML string of the entire document landscape layout
+    function buildPrintingAreaHTML() {
+      const filteredLabels = getFilteredLabels();
+      let chunks = [];
+      for (let i = 0; i < filteredLabels.length; i += 2) {
+        chunks.push(filteredLabels.slice(i, i + 2));
+      }
+
+      return chunks.map(chunk => {
+        const label1 = chunk[0];
+        const label2 = chunk[1] || null;
+
+        return `
+          <div class="print-page">
+            <!-- Top Label Wrapper -->
+            <div class="print-label-wrap">
+              ${buildLabelHTML(label1, labelCustomizations.fontScale * 1.35)}
+            </div>
+            <!-- Bottom Label Wrapper -->
+            ${label2 ? `
+              <div class="print-label-wrap">
+                ${buildLabelHTML(label2, labelCustomizations.fontScale * 1.35)}
+              </div>
+            ` : `
+              <div class="print-label-wrap" style="border: none; visibility: hidden;"></div>
+            `}
+          </div>
+        `;
+      }).join('\n');
+    }
+
+    // Modern isolated sandbox printer (Fixes duplicate empty sheets completely)
+    function generatePDF() {
+      if (!parsedData) {
+        showToast("Please load a packing list spreadsheet first!", "error");
+        return;
+      }
+
+      const filteredLabels = getFilteredLabels();
+      if (filteredLabels.length === 0) {
+        showToast("No active carton entries fit your current filter scope!", "error");
+        return;
+      }
+
+      const totalA4Sheets = Math.ceil(filteredLabels.length / 2);
+      setLoaderState(true, "Launching sandbox printer...", "Preparing layout pages...");
+
+      setTimeout(() => {
+        // Create an isolated printable window to bypass the canvas iframe sandbox styles completely
+        const printWindow = window.open('', '_blank', 'width=1100,height=850');
+        
+        if (!printWindow) {
+          setLoaderState(false);
+          showToast("A popup blocker prevented the generation! Please allow popups for this site.", "error");
+          return;
+        }
+
+        // Build 100% self-contained sandbox document with precise landscape variables
+        const selfContainedHTML = `
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <title>Labels Print Sandbox</title>
+            <style>
+              @page {
+                size: A4 portrait;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                background-color: white;
+                font-family: Arial, Helvetica, sans-serif;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .print-page {
+                width: 210mm;
+                height: 297mm;
+                box-sizing: border-box;
+                padding: 10mm 15mm;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                align-items: center;
+                overflow: hidden;
+                background-color: white;
+                page-break-inside: avoid;
+              }
+              /* Avoid final trailing page generation */
+              .print-page:not(:last-child) {
+                page-break-after: always;
+                break-after: page;
+              }
+              .print-label-wrap {
+                width: 100%;
+                height: 135mm;
+                box-sizing: border-box;
+                padding: 6mm 8mm;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                background-color: white;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+              }
+              td, th {
+                border-color: black !important;
+              }
+            </style>
+          </head>
+          <body>
+            ${buildPrintingAreaHTML()}
+          </body>
+          </html>
+        `;
+
+        printWindow.document.write(selfContainedHTML);
+        printWindow.document.close();
+
+        setLoaderState(false);
+        showToast("Print sandbox opened! Set destination to 'Save as PDF' (Portrait), set Margins to 'None' and Scale to 'Default' or '100%'.", "success");
+
+        // Execute browser printer preview trigger
+        setTimeout(() => {
+          printWindow.focus();
+          printWindow.print();
+        }, 300);
+
+      }, 200);
+    }
+
+    // Setup Event Listeners
+    function init() {
+      // Initialize DOM Cache (Properly resolving reference errors)
+      brandHeaderInput = document.getElementById('brandHeader');
+      senderNameInput = document.getElementById('senderName');
+      senderAddrText = document.getElementById('senderAddr');
+      recipientNameInput = document.getElementById('recipientName');
+      recipientAddrText = document.getElementById('recipientAddr');
+      numberingFormatSelect = document.getElementById('numberingFormat');
+      weightRoundingSelect = document.getElementById('weightRounding');
+      fontScaleSlider = document.getElementById('fontScaleSlider');
+      fontScaleDisplay = document.getElementById('fontScaleDisplay');
+      styleCheckboxesContainer = document.getElementById('styleCheckboxes');
+      cartonRangeMinInput = document.getElementById('cartonRangeMin');
+      cartonRangeMaxInput = document.getElementById('cartonRangeMax');
+      searchQueryInput = document.getElementById('searchQuery');
+      statsSection = document.getElementById('statsSection');
+      statStyles = document.getElementById('statStyles');
+      statBoxes = document.getElementById('statBoxes');
+      statGarments = document.getElementById('statGarments');
+      statWeight = document.getElementById('statWeight');
+      fileInput = document.getElementById('fileInput');
+      dropzone = document.getElementById('dropzone');
+      fileInfo = document.getElementById('fileInfo');
+      fileNameEl = document.getElementById('fileName');
+      fileSizeEl = document.getElementById('fileSize');
+      removeFileBtn = document.getElementById('removeFileBtn');
+      loadSampleBtn = document.getElementById('loadSampleBtn');
+      midSectionDemoTrigger = document.getElementById('midSectionDemoTrigger');
+      labelsPreviewContainer = document.getElementById('labelsPreviewContainer');
+
+      // Drag & Drop event bindings
+      dropzone.addEventListener('click', () => fileInput.click());
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('border-brand-500', 'bg-brand-50/50');
+      });
+      dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('border-brand-500', 'bg-brand-50/50');
+      });
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-brand-500', 'bg-brand-50/50');
+        if (e.dataTransfer.files.length > 0) {
+          handleFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handleFile(e.target.files[0]);
+        }
+      });
+
+      // Interactive actions
+      removeFileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearFile();
+      });
+
+      loadSampleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        loadDemoData();
+      });
+
+      midSectionDemoTrigger.addEventListener('click', loadDemoData);
+
+      // Realtime customization live-update triggers
+      [brandHeaderInput, senderNameInput, senderAddrText, recipientNameInput, recipientAddrText].forEach(el => {
+        el.addEventListener('input', updateCustomizationsFromInputs);
+      });
+
+      [numberingFormatSelect, weightRoundingSelect].forEach(el => {
+        el.addEventListener('change', updateCustomizationsFromInputs);
+      });
+
+      fontScaleSlider.addEventListener('input', (e) => {
+        fontScaleDisplay.textContent = parseFloat(e.target.value).toFixed(2) + 'x';
+        updateCustomizationsFromInputs();
+      });
+
+      // Filter and query change triggers
+      searchQueryInput.addEventListener('input', renderLabelsGrid);
+      cartonRangeMinInput.addEventListener('input', renderLabelsGrid);
+      cartonRangeMaxInput.addEventListener('input', renderLabelsGrid);
+
+      // Major action handler
+      downloadPdfBtn.addEventListener('click', generatePDF);
+
+      // Prevent negative values or weird range limits
+      cartonRangeMinInput.addEventListener('change', () => {
+        if (parseInt(cartonRangeMinInput.value) < 1) cartonRangeMinInput.value = 1;
+        if (parseInt(cartonRangeMinInput.value) > parseInt(cartonRangeMaxInput.value)) {
+          cartonRangeMaxInput.value = cartonRangeMinInput.value;
+        }
+      });
+      cartonRangeMaxInput.addEventListener('change', () => {
+        if (parseInt(cartonRangeMaxInput.value) < parseInt(cartonRangeMinInput.value)) {
+          cartonRangeMinInput.value = cartonRangeMaxInput.value;
+        }
+      });
+    }
+
+    // Setup fallback / demo preloading initially
+    window.onload = init;
+  </script>
+</body>
+</html>

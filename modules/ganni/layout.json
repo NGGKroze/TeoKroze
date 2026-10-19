@@ -1,0 +1,14 @@
+{
+  "title": "GANNI – генератор на етикети",
+  "subtitle": "Опаковъчен лист (XLSX/CSV) → етикети за кашони",
+  "hide": ["#ui-panel > div > div:first-child"],
+  "side": [
+    { "title": "1. Файл", "move": ["#drop-zone", "#error-msg"] },
+    { "title": "2. Настройки", "move": ["#loc-code<", "#ship-to<", "#include-address-labels<"] }
+  ],
+  "actions": [
+    { "sel": "#reset-btn", "kind": "danger", "side": "left" },
+    { "sel": "#print-btn", "kind": "secondary", "side": "right" },
+    { "sel": "#export-pdf-btn", "kind": "primary", "side": "right" }
+  ]
+}

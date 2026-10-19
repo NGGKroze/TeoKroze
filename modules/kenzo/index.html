@@ -1,0 +1,1977 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KENZO Packing Lists + Print Labels by Reference</title>
+  <script src="vendor/cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="vendor/cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="vendor/cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="vendor/cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <style>
+    :root {
+      --ink:#111;
+      --muted:#6b7280;
+      --soft:#f5f5f5;
+      --line:#d1d5db;
+      --blue:#0ea5e9;
+      --green:#16a34a;
+      --red:#dc2626;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family: Arial, Helvetica, sans-serif; color:var(--ink); background:#f3f4f6; }
+    header { background:#111827; color:white; padding:18px 24px; }
+    header h1 { margin:0; font-size:22px; letter-spacing:.02em; }
+    header p { margin:6px 0 0; color:#d1d5db; font-size:13px; }
+    main { max-width:1280px; margin:0 auto; padding:18px; }
+    .panel { background:white; border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.06); padding:16px; margin-bottom:16px; }
+    .drop { border:2px dashed #9ca3af; border-radius:14px; padding:24px; text-align:center; background:#fafafa; cursor:pointer; transition:.15s; }
+    .drop.drag { background:#e0f2fe; border-color:#0284c7; }
+    .drop strong { display:block; font-size:18px; margin-bottom:6px; }
+    .source-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .drop.excel { border-color:#86a789; background:#f6fff7; }
+    .drop.excel.drag { background:#dcfce7; border-color:#16a34a; }
+    .source-tag { display:inline-block; margin-top:8px; padding:3px 8px; border-radius:999px; background:#e5e7eb; font-size:11px; font-weight:bold; color:#374151; }
+    .editor-panel { display:none; }
+    .editor-order { border:1px solid #d1d5db; border-radius:12px; margin-top:12px; overflow:hidden; background:#fff; }
+    .editor-order-head { background:#f8fafc; border-bottom:1px solid #d1d5db; padding:12px; }
+    .editor-meta-grid { display:grid; grid-template-columns:repeat(5,minmax(130px,1fr)); gap:8px; margin-top:10px; }
+    .editor-meta-grid label { font-size:11px; }
+    .editor-table-wrap { overflow:auto; max-height:520px; }
+    .editor-table { min-width:930px; font-size:12px; }
+    .editor-table th { position:sticky; top:0; z-index:1; background:#e5e7eb; }
+    .editor-table td { padding:4px; }
+    .editor-table input { border-radius:5px; padding:5px 6px; font-size:12px; min-width:62px; }
+    .editor-table input[data-field=ean] { min-width:128px; }
+    .editor-table input[data-field=size] { min-width:70px; }
+    .editor-table input[data-field=weight] { min-width:78px; }
+    .editor-row-delete { background:#dc2626; padding:6px 9px; font-size:12px; }
+    .editor-order-foot { display:flex; gap:8px; flex-wrap:wrap; padding:10px 12px; border-top:1px solid #e5e7eb; background:#fafafa; }
+    .editor-help { margin-top:8px; color:#4b5563; font-size:12px; }
+    .editor-dirty { color:#b45309; font-weight:bold; }
+    @media (max-width:900px) { .source-grid { grid-template-columns:1fr; } .editor-meta-grid { grid-template-columns:1fr 1fr; } }
+    .hint { font-size:12px; color:var(--muted); }
+    .grid { display:grid; grid-template-columns: repeat(6, minmax(130px, 1fr)); gap:10px; align-items:end; }
+    label { display:block; font-size:12px; font-weight:bold; color:#374151; margin-bottom:4px; }
+    input, select, textarea { width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:9px 10px; font-size:14px; background:white; }
+    input[type=checkbox] { width:auto; transform:translateY(1px); }
+    button { border:0; border-radius:10px; padding:10px 14px; font-weight:bold; cursor:pointer; background:#111827; color:white; }
+    button.secondary { background:#e5e7eb; color:#111827; }
+    button.success { background:var(--green); }
+    button.warn { background:#f59e0b; }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+    .buttons { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    .ref-actions { display:none; margin-top:14px; border-top:1px solid #e5e7eb; padding-top:14px; }
+    .ref-actions h3 { margin:0 0 10px; font-size:16px; }
+    .ref-card { border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin-top:10px; background:#fafafa; }
+    .ref-card-title { font-weight:bold; margin-bottom:8px; }
+    .ref-card-title span { color:var(--muted); font-weight:normal; }
+    .ref-card .buttons { margin-top:8px; }
+    .ref-card button { font-size:13px; padding:9px 11px; }
+    .ref-help { color:var(--muted); font-size:12px; margin:6px 0 0; }
+    .print-target { display:none; background:white; color:#000; font-family:Arial,Helvetica,sans-serif; }
+    .status { margin-top:12px; padding:10px 12px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; font-size:13px; white-space:pre-wrap; }
+    .status.ok { border-color:#bbf7d0; background:#f0fdf4; }
+    .status.bad { border-color:#fecaca; background:#fef2f2; }
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    .tabs button { background:#e5e7eb; color:#111827; padding:8px 12px; }
+    .tabs button.active { background:#111827; color:white; }
+    .tab { display:none; }
+    .tab.active { display:block; }
+    table { border-collapse:collapse; width:100%; font-size:12px; }
+    th, td { border:1px solid #d1d5db; padding:5px 6px; text-align:center; }
+    th { background:#f3f4f6; }
+    td.left, th.left { text-align:left; }
+    .summary-cards { display:grid; grid-template-columns: repeat(6, minmax(120px,1fr)); gap:10px; margin-bottom:12px; }
+    .card { border:1px solid #e5e7eb; border-radius:12px; padding:12px; background:#fff; }
+    .card b { display:block; font-size:22px; }
+    .card span { color:var(--muted); font-size:12px; }
+    .warnline { color:#92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:10px; margin-top:10px; font-size:13px; }
+    .label-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    .address-preview { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:0 0 6px; }
+    .address-preview .addr { min-height:54px; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.25; font-size:12px; }
+    .preview-date { text-align:left; margin:4px 0 4px; font-size:12px; }
+
+    /* Preview labels */
+    .preview-scroll { overflow:auto; background:#e5e7eb; padding:14px; border-radius:12px; max-height:720px; }
+    .label-page { width:210mm; min-height:297mm; background:white; margin:0 auto 12px; padding:7mm; page-break-after:always; }
+    .box-label-page { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(3, 1fr); gap:5mm 12mm; }
+    .box-label { border:1.8px solid #000; display:flex; flex-direction:column; overflow:hidden; height:91mm; background:white; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .box-title { height:17mm; flex:0 0 17mm; display:flex; justify-content:center; align-items:center; font-size:34pt; font-weight:bold; line-height:1; border-bottom:1.6px solid #000; }
+    .box-title.small { font-size:28pt; }
+    .box-row { min-height:5.5mm; flex:0 0 5.5mm; display:flex; justify-content:center; align-items:center; border-bottom:1px solid #000; font-size:10.2pt; line-height:1.05; padding:0.7mm 1mm; text-align:center; }
+    .box-row.ean-row { overflow:hidden; text-overflow:clip; letter-spacing:-0.03mm; padding-left:0.6mm; padding-right:0.6mm; line-height:1.02; }
+    .box-row.ean-row.ean-1 { font-size:10.0pt; white-space:nowrap; }
+    .box-row.ean-row.ean-2 { font-size:9.0pt; white-space:nowrap; }
+    .box-row.ean-row.ean-3,
+    .box-row.ean-row.ean-4 { flex:0 0 8mm; min-height:8mm; font-size:7.9pt; flex-direction:column; white-space:normal; gap:0.15mm; padding-top:0.35mm; padding-bottom:0.35mm; }
+    .ean-line { display:block; width:100%; text-align:center; white-space:nowrap; }
+    .size-head { background:#b7b7b7 !important; font-weight:normal; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .size-table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:9pt; margin:0; border:1px solid #000 !important; }
+    .box-label .size-table td { border:1px solid #000 !important; padding:0; height:5.5mm; text-align:center; vertical-align:middle; line-height:1; background:#fff; font-size:9pt; box-sizing:border-box; }
+    .box-label .size-table .size-head,
+    .box-label .size-table .size-value { background:#b7b7b7 !important; font-weight:normal; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .box-label .size-table .size-qty { background:#fff !important; }
+    .barcode-area { flex:1 1 auto; min-height:24mm; padding:1mm 2mm 2.4mm; box-sizing:border-box; overflow:hidden; }
+    .barcode-area.single { display:flex; align-items:center; justify-content:center; }
+    .barcode-area.double { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); align-items:center; justify-items:center; gap:2mm; }
+    .barcode-area.multi { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); grid-template-rows:repeat(2, minmax(0, 1fr)); align-items:center; justify-items:center; gap:0.8mm 2mm; }
+    .barcode-slot { width:100%; height:100%; min-width:0; min-height:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .barcode-slot svg { display:block; max-width:100%; max-height:100%; transform:translateY(-1px); overflow:visible; }
+    .shipping-label-page { display:grid; grid-template-rows:repeat(6, 1fr); gap:3mm; }
+    .shipping-label { height:43mm; background:white; page-break-inside:avoid; overflow:hidden; }
+    .shipping-table { width:100%; height:43mm; border-collapse:collapse !important; table-layout:fixed; border:1.8px solid #000 !important; margin:0; background:white; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .shipping-table td { border:1.35px solid #000 !important; padding:0; text-align:center; vertical-align:middle; background:white; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .shipping-date-row td { height:8mm; font-weight:bold; font-size:10pt; }
+    .shipping-mid-row td { height:22mm; }
+    .shipping-bottom-row td { height:10mm; font-weight:bold; font-size:9pt; line-height:1.1; }
+    .shipping-of { font-size:14pt; font-weight:bold; line-height:1.2; }
+    .shipping-bar { text-align:center; }
+    .shipping-bar svg { max-width:66mm; height:auto; }
+    .pallet-label-page { display:grid; grid-template-rows:repeat(2, 1fr); gap:12mm; }
+    .pallet-label { border:1.8px solid #000; height:78mm; background:white; page-break-inside:avoid; }
+    .pallet-date { height:8mm; display:flex; align-items:center; justify-content:center; border-bottom:1.4px solid #000; font-weight:bold; }
+    .pallet-address { height:44mm; display:grid; grid-template-columns:1fr 1fr; border-bottom:1.4px solid #000; }
+    .pallet-address > div { padding:3mm; text-align:center; font-size:10pt; line-height:1.35; display:flex; flex-direction:column; justify-content:center; }
+    .pallet-address > div:first-child { border-right:1.4px solid #000; }
+    .pallet-bottom { height:26mm; display:grid; grid-template-columns:1fr 1fr 1fr; }
+    .pallet-bottom > div { border-right:1.4px solid #000; display:grid; grid-template-columns:1.3fr .7fr; }
+    .pallet-bottom > div:last-child { border-right:0; }
+    .pallet-bottom span { display:flex; align-items:center; justify-content:center; text-align:center; font-size:11pt; font-weight:bold; padding:1mm; }
+    .pallet-bottom span:nth-child(1), .pallet-bottom span:nth-child(2) { border-bottom:1px solid #000; }
+
+    @media print {
+      @page { size:A4 portrait; margin:0; }
+      body { background:white; }
+      body[data-print="selected"] header,
+      body[data-print="selected"] main { display:none !important; }
+      body[data-print="selected"] #printTarget { display:block !important; margin:0; padding:0; }
+      body:not([data-print="selected"]) header,
+      body:not([data-print="selected"]) main > .panel:not(.print-source),
+      body:not([data-print="selected"]) .label-toolbar,
+      body:not([data-print="selected"]) .tabs { display:none !important; }
+      main { padding:0; max-width:none; }
+      .print-source { display:block !important; border:0; box-shadow:none; padding:0; margin:0; }
+      .preview-scroll { overflow:visible; max-height:none; padding:0; background:white; border-radius:0; }
+      .tab { display:none !important; }
+      body[data-print="box"] #tab-box,
+      body[data-print="shipping"] #tab-shipping,
+      body[data-print="pallet"] #tab-pallet,
+      body[data-print="pl"] #tab-pl { display:block !important; }
+      .label-page { margin:0 !important; box-shadow:none; page-break-after:always; break-after:page; }
+      .label-page:last-child { page-break-after:auto !important; break-after:auto !important; }
+      .no-print { display:none !important; }
+    }
+  </style>
+</head>
+<body data-print="">
+<header>
+  <h1>KENZO Packing Lists + Printable Labels</h1>
+  <p>Create packing lists from a KENZO order PDF, or load an existing Excel packing list to generate labels only. Packing data can be edited directly before export or printing.</p>
+</header>
+<main>
+  <section class="panel">
+    <div class="source-grid">
+      <div id="drop" class="drop">
+        <strong>1. Drop KENZO order PDF</strong>
+        <span>Create packing lists and labels from the order pages</span>
+        <div class="source-tag">PDF → PL + DN + labels</div>
+        <input id="fileInput" type="file" accept="application/pdf,.pdf" hidden>
+      </div>
+      <div id="excelDrop" class="drop excel">
+        <strong>2. Drop existing packing list Excel</strong>
+        <span>Use a manual or previously generated PL to create labels only</span>
+        <div class="source-tag">XLSX → labels + editable PL</div>
+        <input id="excelInput" type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" multiple hidden>
+      </div>
+    </div>
+    <div class="status" id="status">Waiting for a KENZO PDF or packing-list XLSX...</div>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-head"><span id="progressStep">Ready</span><span id="progressPct">0%</span></div>
+      <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="progress-note" id="progressNote"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 style="margin-top:0;font-size:18px;">Settings</h2>
+    <div class="hint" style="margin:-4px 0 10px;color:#166534;font-weight:bold;">PDF input creates packing lists automatically. Excel input preserves the existing carton rows for label generation. Labels are separated by reference and printed/saved as PDF.</div>
+    <div class="grid">
+      <div>
+        <label for="shipmentDate">Shipment date</label>
+        <input id="shipmentDate" type="date">
+      </div>
+      <div>
+        <label for="boxCapacity">Pieces per full carton</label>
+        <input id="boxCapacity" type="number" min="1" value="20">
+      </div>
+      <div>
+        <label for="palletCapacity">Cartons per pallet</label>
+        <input id="palletCapacity" type="number" min="1" value="20">
+      </div>
+      <div>
+        <label for="unitWeight">Weight per piece (kg)</label>
+        <input id="unitWeight" type="number" step="0.01" value="0.40">
+      </div>
+      <div>
+        <label for="cartonTare">Carton tare (kg)</label>
+        <input id="cartonTare" type="number" step="0.01" value="0.85">
+      </div>
+      <div>
+        <label for="cartonMode">Cartonisation mode</label>
+        <select id="cartonMode">
+          <option value="kenzo" selected>KENZO sample: only 19+1 mixed</option>
+          <option value="strict">Strict: no mixed cartons</option>
+          <option value="fill">Optimise: fill remainders from next sizes</option>
+        </select>
+      </div>
+    </div>
+    <div class="buttons">
+      <button id="rebuildBtn" class="secondary" disabled>Auto-rebuild boxes using settings</button>
+      <button id="xlsxBtn" class="success" disabled>Download ALL Packing Lists (.xlsx ZIP)</button>
+    </div>
+    <div id="referenceActions" class="ref-actions"></div>
+    <div class="warnline">
+      Rules: every reference has its own PL/DN workbook and its own shipping, box and pallet label print actions. PDF orders can be cartonised automatically; imported Excel packing lists and manual edits preserve the box, pallet and gross-weight values entered in the editor.
+    </div>
+  </section>
+
+  <section class="panel editor-panel" id="editorPanel">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0;font-size:18px;">Packing List Editor</h2>
+        <div class="editor-help">Edit pallet/box numbers, sizes, EAN codes, quantities and gross weights. Click <b>Apply edits</b> to refresh the packing list and all label previews.</div>
+      </div>
+      <div class="buttons" style="margin-top:0;">
+        <button id="applyEditorBtn" class="success" disabled>Apply edits and refresh labels</button>
+        <button id="autoCartonizeBtn" class="secondary" disabled>Auto-rebuild boxes from size totals</button>
+      </div>
+    </div>
+    <div id="editorDirty" class="editor-help"></div>
+    <div id="packingEditor"></div>
+  </section>
+
+  <section class="panel" id="summaryPanel" style="display:none;">
+    <div class="summary-cards" id="summaryCards"></div>
+    <div id="ordersView"></div>
+  </section>
+
+  <section class="panel print-source" id="previewPanel" style="display:none;">
+    <div class="label-toolbar no-print">
+      <h2 style="margin:0;font-size:18px;">Preview</h2>
+      <span class="hint">General preview. Use the reference-specific print buttons above/below for clean browser Save as PDF label output.</span>
+    </div>
+    <div class="tabs no-print">
+      <button class="active" data-tab="tab-pl">Packing List Preview</button>
+      <button data-tab="tab-shipping">Shipping Labels</button>
+      <button data-tab="tab-box">Box Labels</button>
+      <button data-tab="tab-pallet">Pallet Labels</button>
+    </div>
+    <div id="tab-pl" class="tab active"><div class="preview-scroll"><div id="plPreview"></div></div></div>
+    <div id="tab-shipping" class="tab"><div class="preview-scroll"><div id="shippingPreview"></div></div></div>
+    <div id="tab-box" class="tab"><div class="preview-scroll"><div id="boxPreview"></div></div></div>
+    <div id="tab-pallet" class="tab"><div class="preview-scroll"><div id="palletPreview"></div></div></div>
+  </section>
+</main>
+<section id="printTarget" class="print-target"></section>
+
+<script>
+(() => {
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  const el = id => document.getElementById(id);
+  const state = { rawText: '', orders: [], cartons: [], pallets: [], sourceType:'', editorDirty:false };
+  const ORIGINAL_DOCUMENT_TITLE = document.title;
+  const LABEL_OUTPUT_MODE = 'browser-print-by-reference';
+
+  const DEFAULT_SHIPPER = [
+    'PELINTEX BULGARIA',
+    '5 HRISTO BOTEV BLVD',
+    '7000 RUSE',
+    'BULGARIA'
+  ];
+  const DEFAULT_CONSIGNEE = [
+    'KENZO chez GEODIS LOGISTICS',
+    'Bâtiment n°4 - EVLO - Quai n°79/80',
+    "Campus d'Evry",
+    '144, route de Corbeil',
+    'Z.I les pièces de la remise',
+    '91004 LISSES - Evry'
+  ];
+
+  function compactShipperLines() {
+    return [
+      'PELINTEX BULGARIA',
+      '5 HRISTO BOTEV BLVD',
+      '7000 RUSE',
+      'BULGARIA'
+    ];
+  }
+
+  function compactConsigneeLines() {
+    return [
+      'KENZO chez GEODIS LOGISTICS',
+      'Bâtiment n°4 - EVLO - Quai n°79/80',
+      '144, route de Corbeil - Z.I les pièces de la remise',
+      '91004 LISSES - Evry'
+    ];
+  }
+
+  function isoToday() {
+    const d = new Date();
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+  }
+  el('shipmentDate').value = isoToday();
+
+  function fmtDateDisplay(iso) {
+    if (!iso) return '';
+    const [y,m,d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+  function fmtDateDot(iso) {
+    if (!iso) return '';
+    const [y,m,d] = iso.split('-');
+    return `${d}.${m}.${y}`;
+  }
+  function round2(n) { return Math.round((Number(n) + Number.EPSILON) * 100) / 100; }
+  function weightFor(qty) {
+    const unit = Number(el('unitWeight').value || 0.40);
+    const tare = Number(el('cartonTare').value || 0.85);
+    return round2(qty * unit + tare);
+  }
+  function setStatus(msg, type='') {
+    const s = el('status');
+    s.textContent = msg;
+    s.className = 'status' + (type ? ' ' + type : '');
+  }
+  function enableOutputs(on) {
+    ['rebuildBtn','xlsxBtn','applyEditorBtn','autoCartonizeBtn'].forEach(id => { const b = el(id); if (b) b.disabled = !on; });
+    document.querySelectorAll('#referenceActions button').forEach(b => b.disabled = !on);
+  }
+
+  function bindDropZone(zone, input, handler) {
+    zone.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => input.files && input.files.length && handler(Array.from(input.files)));
+    ['dragenter','dragover'].forEach(evt => zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(evt => zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.remove('drag'); }));
+    zone.addEventListener('drop', e => {
+      const files = Array.from(e.dataTransfer.files || []);
+      if (files.length) handler(files);
+    });
+  }
+
+  const drop = el('drop');
+  const fileInput = el('fileInput');
+  const excelDrop = el('excelDrop');
+  const excelInput = el('excelInput');
+  bindDropZone(drop, fileInput, files => handleFile(files[0]));
+  bindDropZone(excelDrop, excelInput, files => handleExcelFiles(files.filter(f => /\.xlsx$/i.test(f.name))));
+
+  async function handleFile(file) {
+    try {
+      enableOutputs(false);
+      setStatus(`Reading PDF: ${file.name} ...`);
+      const text = await extractPdfText(file);
+      state.rawText = text;
+      const orders = parseKenzoOrders(text).map((o, i) => ({...o, uid: `${o.orderNo}-${o.reference.replace(/\W+/g,'')}-${i + 1}`}));
+      if (!orders.length) {
+        throw new Error('No KENZO order tables were detected. Try another PDF or send me this file for parser adjustment.');
+      }
+      state.orders = orders;
+      state.sourceType = 'pdf';
+      state.editorDirty = false;
+      rebuildAll();
+      const packText = orders.length === 1 ? '1 separate packing list' : `${orders.length} separate packing lists`;
+      setStatus(`Parsed ${orders.length} order/style reference(s), ${orders.reduce((a,o)=>a+o.lines.length,0)} size lines, ${orders.reduce((a,o)=>a+o.totalQty,0)} pcs. Use the distinct buttons below: download each packing list as Excel, then print/save each label type per reference.`, 'ok');
+      enableOutputs(true);
+    } catch (err) {
+      console.error(err);
+      setStatus('Error: ' + err.message, 'bad');
+    }
+  }
+
+  async function handleExcelFiles(files) {
+    if (!files.length) {
+      setStatus('Please choose at least one .xlsx packing-list file.', 'bad');
+      return;
+    }
+    if (!window.ExcelJS) {
+      setStatus('ExcelJS did not load. Check internet access or CDN blocking.', 'bad');
+      return;
+    }
+    try {
+      enableOutputs(false);
+      setStatus(`Reading ${files.length} packing-list Excel file(s)...`);
+      const parsedOrders = [];
+      const parsedCartons = [];
+      const warnings = [];
+      let uidCounter = 1;
+
+      for (const file of files) {
+        const result = await parsePackingWorkbook(file, uidCounter);
+        uidCounter += result.orders.length;
+        parsedOrders.push(...result.orders);
+        parsedCartons.push(...result.cartons);
+        warnings.push(...result.warnings.map(w => `${file.name}: ${w}`));
+      }
+      if (!parsedOrders.length || !parsedCartons.length) {
+        throw new Error('No packing-list rows were detected. The worksheet must contain columns for box, order/reference, size and quantity.');
+      }
+
+      state.rawText = '';
+      state.orders = parsedOrders;
+      state.cartons = parsedCartons;
+      state.sourceType = 'excel';
+      state.editorDirty = false;
+      normalizeCartonsAndOrders();
+      refreshFromCurrentCartons(true);
+      enableOutputs(true);
+      const missingEan = state.cartons.flatMap(c => c.lines).filter(l => !/^\d{13}$/.test(String(l.ean || ''))).length;
+      const warningText = [...warnings, missingEan ? `${missingEan} row(s) have a missing or invalid 13-digit EAN; their box-label barcode cannot be generated until corrected in the editor.` : ''].filter(Boolean);
+      setStatus(`Loaded ${state.orders.length} reference(s) from Excel, ${state.cartons.length} cartons and ${state.orders.reduce((a,o)=>a+o.totalQty,0)} pcs. Labels are ready. You can edit the packing data below.${warningText.length ? '\nWarnings:\n- ' + warningText.join('\n- ') : ''}`, warningText.length ? '' : 'ok');
+    } catch (err) {
+      console.error(err);
+      setStatus('Excel error: ' + (err.message || String(err)), 'bad');
+    }
+  }
+
+  function excelCellPrimitive(cell) {
+    if (!cell) return '';
+    let v = cell.value;
+    if (v === null || v === undefined) return '';
+    if (v instanceof Date) return v.toISOString().slice(0,10);
+    if (typeof v === 'object') {
+      if (v.result !== undefined && v.result !== null) v = v.result;
+      else if (Array.isArray(v.richText)) return v.richText.map(x => x.text || '').join('').trim();
+      else if (v.text !== undefined) return String(v.text).trim();
+      else if (v.hyperlink && v.text) return String(v.text).trim();
+      else return '';
+    }
+    if (typeof v === 'number') return Number.isInteger(v) ? String(v) : String(v);
+    return String(v).trim();
+  }
+
+  function excelNumber(v, fallback=null) {
+    if (v === null || v === undefined || v === '') return fallback;
+    const n = Number(String(v).replace(/\s/g,'').replace(',','.'));
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function normalizeHeader(v) {
+    return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+      .replace(/[№°#]/g,' n ').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+  }
+
+  function headerRole(v) {
+    const h = normalizeHeader(v);
+    if (!h) return '';
+    if (/(^| )(pallet|palette)( |$)/.test(h)) return 'pallet';
+    if (/(^| )(n )?(box|carton|colis)( |$)/.test(h) && !/count|quantity|quantite/.test(h)) return 'box';
+    if (/(^| )(order|commande)( |$)/.test(h) && !/total/.test(h)) return 'order';
+    if ((/ref/.test(h) && /color|colour|couleur/.test(h)) || h === 'reference color' || h === 'ref color') return 'refColor';
+    if (h === 'reference' || h === 'ref') return 'refColor';
+    if (/(^| )(size|taille)( |$)/.test(h)) return 'size';
+    if (/(gencod|ean ?13|ean|barcode|code barre)/.test(h)) return 'ean';
+    if (/(^| )(quantity|quantite|qty|qte)( |$)/.test(h) && !/carton/.test(h)) return 'qty';
+    if (/gross/.test(h) || /poids brut/.test(h) || h === 'weight kg' || h === 'gross kg') return 'gross';
+    return '';
+  }
+
+  function findPackingSheetAndHeader(workbook) {
+    const preferred = workbook.worksheets.find(ws => /^pl$/i.test(ws.name.trim())) || null;
+    const sheets = preferred ? [preferred, ...workbook.worksheets.filter(ws => ws !== preferred)] : workbook.worksheets;
+    let best = null;
+    for (const ws of sheets) {
+      const maxRows = Math.min(Math.max(ws.rowCount, 1), 80);
+      const maxCols = Math.min(Math.max(ws.columnCount, 1), 30);
+      for (let r = 1; r <= maxRows; r++) {
+        const map = {};
+        for (let c = 1; c <= maxCols; c++) {
+          const role = headerRole(excelCellPrimitive(ws.getCell(r,c)));
+          if (role && !map[role]) map[role] = c;
+        }
+        const score = ['box','size','qty','order','refColor','ean','gross','pallet'].filter(k => map[k]).length;
+        if (map.box && map.size && map.qty && score >= 5 && (!best || score > best.score)) best = {ws, row:r, map, score};
+      }
+    }
+    return best;
+  }
+
+  function splitReferenceColor(refColor) {
+    const raw = cleanSpaces(refColor || 'MANUAL REFERENCE');
+    let reference = raw;
+    let colorText = '';
+    if (/\//.test(raw)) {
+      const parts = raw.split(/\s*\/\s*/);
+      reference = parts.shift() || raw;
+      colorText = parts.join(' / ');
+    } else {
+      const rm = raw.match(/^(.*?\b[A-Z0-9]{8,})\s+(\d{1,3})\s+(.+)$/i);
+      if (rm) { reference = cleanSpaces(rm[1]); colorText = cleanSpaces(rm[2] + ' ' + rm[3]); }
+    }
+    const cm = colorText.match(/^(\d{1,3})\s*(.*)$/);
+    return {
+      reference: reference || raw,
+      colorCode: cm ? cm[1] : '',
+      colorName: cm ? cleanSpaces(cm[2]) : colorText,
+      refColor: raw
+    };
+  }
+
+  async function parsePackingWorkbook(file, uidStart=1) {
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(await file.arrayBuffer());
+    const found = findPackingSheetAndHeader(wb);
+    if (!found) {
+      const hint = [];
+      wb.eachSheet(ws => {
+        const rows = [];
+        ws.eachRow({ includeEmpty: false }, (row) => { if (rows.length < 60) rows.push(row.values.slice(1).map(v => (v && v.result !== undefined) ? v.result : (v && v.richText ? v.richText.map(x => x.text).join('') : v))); });
+        if (rows.some(r => r.some(c => /^hanging$/i.test(String(c || '').trim())))) hint.push('Лист „' + ws.name + '“: формат „Hanging“ (закачалки) - няма номера на кашони и бруто тегло; етикетите за такъв PL се правят ръчно.');
+        if (window.LPS && LPS.diag) {
+          const r = LPS.diag.analyze(rows, {
+            box: { label: 'N° box', header: [/^n°\s*box$/i, /^box$/i] },
+            order: { label: 'N° order', header: [/^n°\s*order$/i, /^order/i] },
+            ref: { label: 'Ref/color', header: [/ref(erence)?\s*\/?\s*colou?r/i] },
+            size: { label: 'size', header: [/^size$/i] },
+            gencod: { label: 'GENCOD', header: [/gencod|ean/i], type: 'ean' },
+            qty: { label: 'Quantity', header: [/^quantity$|^qty$/i] },
+            gross: { label: 'Gross kg', header: [/gross/i], required: false }
+          });
+          hint.push('Лист „' + ws.name + '“:'); r.lines.forEach(l => hint.push('  ' + l));
+        }
+      });
+      if (window.LPS && LPS.diag) LPS.diag.report('Kenzo: ' + file.name + ' - не е намерена таблица на packing list', hint);
+      throw new Error(`No PL table header found in ${file.name}. Expected columns such as N° box, N° order, Ref/color, size, GENCOD, Quantity and Gross kg.`);
+    }
+    const {ws, row:headerRow, map} = found;
+    const rawRows = [];
+    let blanks = 0;
+    const carry = {pallet:'',box:'',order:'',refColor:'',gross:''};
+    for (let r = headerRow + 1; r <= Math.max(ws.rowCount, headerRow + 1); r++) {
+      const read = role => map[role] ? excelCellPrimitive(ws.getCell(r,map[role])) : '';
+      const row = {
+        pallet: read('pallet'), box: read('box'), order: read('order'), refColor: read('refColor'),
+        size: read('size'), ean: read('ean'), qty: read('qty'), gross: read('gross')
+      };
+      const rowText = Object.values(row).join(' ');
+      if (/total qty|total weight|pallets?|boxes|sous total/i.test(rowText) && !row.size) continue;
+      if (!row.size && !row.qty && !row.box && !row.order && !row.refColor) {
+        blanks++;
+        if (blanks >= 8) break;
+        continue;
+      }
+      blanks = 0;
+      for (const k of Object.keys(carry)) {
+        if (row[k] !== '') carry[k] = row[k];
+        else row[k] = carry[k];
+      }
+      const qty = excelNumber(row.qty, null);
+      if (!row.size || qty === null || qty <= 0) continue;
+      rawRows.push({
+        palletNo: Math.max(1, Math.round(excelNumber(row.pallet, 1))),
+        cartonNo: Math.max(1, Math.round(excelNumber(row.box, rawRows.length + 1))),
+        orderNo: cleanSpaces(row.order || `MANUAL-${uidStart}`),
+        refColor: cleanSpaces(row.refColor || 'MANUAL REFERENCE'),
+        size: cleanSpaces(row.size).toUpperCase(),
+        ean: cleanSpaces(row.ean).replace(/\.0$/,''),
+        qty: Math.round(qty),
+        grossWeight: round2(excelNumber(row.gross, 0) || 0)
+      });
+    }
+    if (!rawRows.length) throw new Error(`The PL table in ${file.name} contains no usable size/quantity rows.`);
+
+    const orderGroups = new Map();
+    for (const r of rawRows) {
+      const key = `${r.orderNo}|${r.refColor}`;
+      if (!orderGroups.has(key)) orderGroups.set(key, []);
+      orderGroups.get(key).push(r);
+    }
+    const orders = [];
+    const cartons = [];
+    const warnings = [];
+    let index = 0;
+    for (const [key, rows] of orderGroups) {
+      const first = rows[0];
+      const split = splitReferenceColor(first.refColor);
+      const uid = `XLSX-${safeFile(first.orderNo)}-${safeFile(split.reference)}-${uidStart + index}`;
+      const lineMap = new Map();
+      for (const r of rows) {
+        const lk = `${r.size}|${r.ean}`;
+        if (!lineMap.has(lk)) lineMap.set(lk, {size:r.size, ean:r.ean, qty:0});
+        lineMap.get(lk).qty += r.qty;
+      }
+      const order = {
+        uid, orderNo:first.orderNo, reference:split.reference, productName:split.reference,
+        hsCode:'', colorCode:split.colorCode, colorName:split.colorName, refColor:first.refColor,
+        lines:Array.from(lineMap.values()), totalQty:rows.reduce((a,x)=>a+x.qty,0), totalFromPdf:null, parsedOk:true
+      };
+      orders.push(order);
+      const cartonGroups = new Map();
+      for (const r of rows) {
+        const ck = String(r.cartonNo);
+        if (!cartonGroups.has(ck)) cartonGroups.set(ck, {palletNo:r.palletNo, cartonNo:r.cartonNo, grossWeight:r.grossWeight, lines:[]});
+        const c = cartonGroups.get(ck);
+        if (!c.grossWeight && r.grossWeight) c.grossWeight = r.grossWeight;
+        c.lines.push({size:r.size, ean:r.ean, qty:r.qty});
+      }
+      for (const c of cartonGroups.values()) {
+        const totalQty = c.lines.reduce((a,x)=>a+x.qty,0);
+        cartons.push({
+          orderUid:uid, orderNo:order.orderNo, reference:order.reference, productName:order.productName,
+          colorCode:order.colorCode, colorName:order.colorName, refColor:order.refColor,
+          allSizes:order.lines.map(x=>x.size), lines:c.lines, palletNo:c.palletNo, cartonNo:c.cartonNo,
+          totalQty, grossWeight:c.grossWeight || weightFor(totalQty), totalCartons:0, type:''
+        });
+      }
+      index++;
+    }
+    return {orders, cartons, warnings};
+  }
+
+  async function extractPdfText(file) {
+    if (!window.pdfjsLib) throw new Error('pdf.js did not load. Check internet access or CDN blocking.');
+    const data = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data }).promise;
+    let text = '';
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      const items = content.items.map(it => ({ str: it.str || '', x: it.transform[4], y: it.transform[5] }))
+        .sort((a,b) => Math.abs(b.y - a.y) > 2 ? b.y - a.y : a.x - b.x);
+      let lastY = null;
+      let pageText = '';
+      for (const it of items) {
+        if (!it.str.trim()) continue;
+        if (lastY !== null && Math.abs(it.y - lastY) > 2) pageText += '\n';
+        else if (pageText && !pageText.endsWith('\n')) pageText += ' ';
+        pageText += it.str.trim();
+        lastY = it.y;
+      }
+      // KENZO PDFs often contain long terms of service after each order.
+      // Only keep pages containing an actual order table (for the current file: pages 1 and 6).
+      if (/ORDER\s+FORM\s+-\s*No\s*\d{5,}/i.test(pageText)) {
+        text += pageText + '\n\n---PAGE ' + p + '---\n\n';
+      }
+    }
+    if (!text.trim()) throw new Error('No ORDER FORM pages were found in this PDF.');
+    return text;
+  }
+
+  function parseKenzoOrders(text) {
+    const orderStarts = [];
+    const orderRe = /ORDER\s+FORM\s+-\s*No\s*(\d{5,})/gi;
+    let m;
+    while ((m = orderRe.exec(text))) orderStarts.push({ index: m.index, orderNo: m[1] });
+
+    const blocks = [];
+    for (let i = 0; i < orderStarts.length; i++) {
+      const start = orderStarts[i].index;
+      const end = i + 1 < orderStarts.length ? orderStarts[i+1].index : text.length;
+      blocks.push({ orderNo: orderStarts[i].orderNo, text: text.slice(start, end) });
+    }
+
+    const orders = [];
+    for (const b of blocks) {
+      const block = b.text;
+      const lines = block.split(/\r?\n/).map(x => cleanSpaces(x)).filter(Boolean);
+
+      let styleIdx = -1;
+      let styleMatch = null;
+      for (let i = 0; i < lines.length; i++) {
+        const mm = lines[i].match(/^(\d{3}\s+[A-Z0-9]{8,})(?:\s+(.+))?$/i);
+        if (mm && /HS\s*Code/i.test(lines.slice(i, Math.min(i + 8, lines.length)).join(' '))) {
+          styleIdx = i;
+          styleMatch = mm;
+          break;
+        }
+      }
+      if (styleIdx === -1) continue;
+
+      const reference = cleanSpaces(styleMatch[1]).toUpperCase();
+      const productParts = [];
+      if (styleMatch[2] && !/^HS\s*Code/i.test(styleMatch[2])) productParts.push(styleMatch[2]);
+      for (let j = styleIdx + 1; j < Math.min(styleIdx + 7, lines.length); j++) {
+        if (/^HS\s*Code/i.test(lines[j])) break;
+        if (/^(\d{1,3}\s+)?[A-Z][A-Z0-9 .'-]+$/.test(lines[j])) productParts.push(lines[j]);
+      }
+      const productName = cleanSpaces(productParts.join(' '));
+
+      const hsIdx = lines.findIndex((x, idx) => idx > styleIdx && /^HS\s*Code/i.test(x));
+      const hsCodeMatch = block.match(/HS\s*Code\s*(\d{6,})/i);
+      const hsCode = hsCodeMatch ? hsCodeMatch[1] : '';
+      let colorCode = '', colorName = '';
+      if (hsIdx >= 0) {
+        for (let j = hsIdx; j < Math.min(hsIdx + 10, lines.length); j++) {
+          let line = lines[j].replace(/^HS\s*Code\s*\d+\s*/i, '').trim();
+          let mm = line.match(/^(\d{1,3})\s+([A-Z][A-Z ]+?)(?:\s+\d|$)/);
+          if (mm) { colorCode = mm[1]; colorName = cleanSpaces(mm[2]); break; }
+          if (!colorCode && /^\d{1,3}$/.test(line)) {
+            colorCode = line;
+            for (let k = j + 1; k < Math.min(j + 4, lines.length); k++) {
+              if (/^[A-Z][A-Z ]+$/.test(lines[k])) { colorName = cleanSpaces(lines[k]); break; }
+            }
+            break;
+          }
+        }
+      }
+      if (!colorCode) {
+        const cm = block.match(/\b(\d{1,3})\s+(NOIR|BLACK|BLANC|WHITE|BLUE|NAVY|RED|GREEN|BEIGE|GREY|GRAY)\b/i);
+        if (cm) { colorCode = cm[1]; colorName = cm[2].toUpperCase(); }
+      }
+
+      const sizeLines = extractKenzoSizeLines(lines);
+      if (!sizeLines.length) continue;
+
+      const totalFromRows = sizeLines.reduce((a, x) => a + x.qty, 0);
+      const totalMatch = block.match(/ORD\s+TOTAL:\s+TOTAL:\s*(\d+)/i) || block.match(/STYLE\s+TOTAL\s*:\s*[^\n]*?\s(\d{1,6})\s+TOTAL:/i);
+      const totalFromPdf = totalMatch ? Number(totalMatch[1]) : null;
+
+      orders.push({
+        orderNo: b.orderNo,
+        reference,
+        productName: productName || reference,
+        hsCode,
+        colorCode,
+        colorName,
+        refColor: `${reference}${colorCode || colorName ? ' / ' : ''}${colorCode ? colorCode + ' ' : ''}${colorName || ''}`.trim(),
+        lines: sizeLines,
+        totalQty: totalFromRows,
+        totalFromPdf,
+        parsedOk: !totalFromPdf || totalFromPdf === totalFromRows
+      });
+    }
+    return orders;
+  }
+
+  function extractKenzoSizeLines(lines) {
+    const out = [];
+    const seen = new Set();
+    const isSizeToken = (t) => {
+      const u = String(t).toUpperCase();
+      if (/^(XS|S|M|L|XL|XXL|XXXL)$/.test(u)) return true;
+      if (/^\d{1,3}$/.test(u)) {
+        const n = Number(u);
+        return n >= 24 && n <= 64;
+      }
+      return false;
+    };
+    const isQtyToken = (t) => /^\d+$/.test(t) && Number(t) > 0 && Number(t) < 100000;
+
+    for (let i = 0; i < lines.length; i++) {
+      const em = lines[i].match(/\b(\d{13})\b/);
+      if (!em) continue;
+      const ean = em[1];
+      let chunk = lines[i].slice(lines[i].indexOf(ean));
+      for (let j = i + 1; j < Math.min(i + 8, lines.length); j++) {
+        if (/\b\d{13}\b/.test(lines[j])) break;
+        if (/COLOR\s+TOTAL|STYLE\s+TOTAL|ORD\s+TOTAL|ORDER\s+FORM/i.test(lines[j])) break;
+        chunk += ' ' + lines[j];
+      }
+      const tail = chunk.slice(chunk.indexOf(ean) + ean.length);
+      const tokens = tail.match(/XXXL|XXL|XL|XS|[SML]|\d+[,.]\d+|\d+/gi) || [];
+      if (!tokens.length) continue;
+
+      const priceIdx = tokens.findIndex(t => /^\d+[,.]\d+$/.test(t));
+      let qty = null, size = null;
+
+      if (priceIdx > -1) {
+        const before = tokens.slice(0, priceIdx).filter(t => /^\d+$/.test(t) || /^(XS|S|M|L|XL|XXL|XXXL)$/i.test(t));
+        const after = tokens.slice(priceIdx + 1);
+        if (before.length >= 2 && isSizeToken(before[0]) && isQtyToken(before[1])) {
+          size = String(before[0]).toUpperCase();
+          qty = Number(before[1]);
+        } else if (before.length >= 1 && isQtyToken(before[0])) {
+          qty = Number(before[0]);
+          const afterSizes = after.map(t => String(t).toUpperCase()).filter(isSizeToken);
+          if (afterSizes.length) size = afterSizes[afterSizes.length - 1];
+        }
+        if (!size) {
+          const beforeSize = before.map(t => String(t).toUpperCase()).find(isSizeToken);
+          if (beforeSize && (!qty || String(beforeSize) !== String(qty))) size = beforeSize;
+        }
+      }
+
+      if (qty === null || !size) {
+        let qtyIdx = -1;
+        for (let t = 0; t < tokens.length; t++) {
+          if (isQtyToken(tokens[t]) && !isSizeToken(tokens[t])) { qty = Number(tokens[t]); qtyIdx = t; break; }
+        }
+        if (qtyIdx > -1) {
+          for (let t = qtyIdx + 1; t < tokens.length; t++) {
+            const tok = String(tokens[t]).toUpperCase();
+            if (isSizeToken(tok)) { size = tok; break; }
+          }
+        }
+      }
+
+      if (qty !== null && size) {
+        const key = `${ean}|${size}|${qty}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push({ ean, qty, size });
+        }
+      }
+    }
+    return out;
+  }
+
+  function cleanSpaces(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
+
+  function rebuildAll() {
+    const capacity = Math.max(1, Number(el('boxCapacity').value || 20));
+    const palletCap = Math.max(1, Number(el('palletCapacity').value || 20));
+    const mode = el('cartonMode').value;
+    state.cartons = cartonize(state.orders, capacity, palletCap, mode);
+    normalizeCartonsAndOrders();
+    refreshFromCurrentCartons(true);
+  }
+
+  function refreshFromCurrentCartons(renderEditor=true) {
+    const palletCap = Math.max(1, Number(el('palletCapacity').value || 20));
+    state.pallets = buildPallets(state.cartons, palletCap);
+    renderSummary();
+    renderPackingPreview();
+    renderShippingLabels();
+    renderBoxLabels();
+    renderPalletLabels();
+    renderBarcodes();
+    buildReferenceActions();
+    if (renderEditor) renderPackingEditor();
+    el('summaryPanel').style.display = 'block';
+    el('previewPanel').style.display = 'block';
+    el('editorPanel').style.display = 'block';
+  }
+
+  function normalizeCartonsAndOrders() {
+    const capacity = Math.max(1, Number(el('boxCapacity').value || 20));
+    const orderIndex = new Map(state.orders.map((o,i)=>[o.uid,i]));
+    state.cartons.sort((a,b) => (orderIndex.get(a.orderUid)||0) - (orderIndex.get(b.orderUid)||0) || Number(a.cartonNo||0) - Number(b.cartonNo||0));
+    for (const order of state.orders) {
+      const list = state.cartons.filter(c => c.orderUid === order.uid);
+      const lineMap = new Map();
+      const sizeOrder = [];
+      for (const c of list) {
+        c.orderNo = order.orderNo;
+        c.reference = order.reference;
+        c.productName = order.productName;
+        c.colorCode = order.colorCode;
+        c.colorName = order.colorName;
+        c.refColor = order.refColor;
+        c.palletNo = Math.max(1, Math.round(Number(c.palletNo) || 1));
+        c.cartonNo = Math.max(1, Math.round(Number(c.cartonNo) || 1));
+        c.lines = (c.lines || []).filter(x => Number(x.qty) > 0).map(x => ({size:cleanSpaces(x.size).toUpperCase(), ean:cleanSpaces(x.ean), qty:Math.max(1,Math.round(Number(x.qty)||0))}));
+        c.totalQty = c.lines.reduce((a,x)=>a+x.qty,0);
+        c.grossWeight = Number.isFinite(Number(c.grossWeight)) && Number(c.grossWeight) > 0 ? round2(Number(c.grossWeight)) : weightFor(c.totalQty);
+        c.type = c.totalQty < capacity ? 'INCOMPLETE' : (c.lines.length > 1 ? 'MIXED' : 'FULL');
+        for (const line of c.lines) {
+          const key = `${line.size}|${line.ean}`;
+          if (!lineMap.has(key)) { lineMap.set(key,{size:line.size,ean:line.ean,qty:0}); sizeOrder.push(key); }
+          lineMap.get(key).qty += line.qty;
+        }
+      }
+      const maxBox = list.reduce((m,c)=>Math.max(m,Number(c.cartonNo)||0),0);
+      const totalCartons = Math.max(list.length, maxBox);
+      const allSizes = [];
+      for (const key of sizeOrder) {
+        const size = lineMap.get(key).size;
+        if (!allSizes.includes(size)) allSizes.push(size);
+      }
+      for (const c of list) { c.totalCartons = totalCartons; c.allSizes = allSizes.slice(); }
+      order.lines = sizeOrder.map(k => lineMap.get(k));
+      order.totalQty = order.lines.reduce((a,x)=>a+x.qty,0);
+      order.parsedOk = true;
+    }
+  }
+
+  function cartonize(orders, capacity, palletCap, mode) {
+    const cartons = [];
+    for (const order of orders) {
+      const orderCartons = [];
+      const sizes = order.lines.map(x => ({...x}));
+      if (mode === 'fill') cartonizeFill(order, sizes, capacity, orderCartons);
+      else cartonizeSample(order, sizes, capacity, orderCartons, mode);
+      orderCartons.forEach((c, idx) => {
+        c.cartonNo = idx + 1;
+        c.totalCartons = orderCartons.length;
+        c.palletNo = Math.ceil((idx + 1) / palletCap);
+        c.totalQty = c.lines.reduce((a,x)=>a+x.qty,0);
+        c.grossWeight = weightFor(c.totalQty);
+        c.type = c.totalQty < capacity ? 'INCOMPLETE' : (c.lines.length > 1 ? 'MIXED' : 'FULL');
+      });
+      cartons.push(...orderCartons);
+    }
+    return cartons;
+  }
+
+  function newCarton(order, lines) {
+    return {
+      orderUid: order.uid,
+      orderNo: order.orderNo,
+      reference: order.reference,
+      productName: order.productName,
+      colorCode: order.colorCode,
+      colorName: order.colorName,
+      refColor: order.refColor,
+      allSizes: order.lines.map(x => x.size),
+      lines: lines.map(x => ({ size:x.size, ean:x.ean, qty:x.qty }))
+    };
+  }
+
+  function cartonizeSample(order, sizes, capacity, cartons, mode) {
+    for (let i = 0; i < sizes.length; i++) {
+      const item = sizes[i];
+      while (item.qty >= capacity) {
+        cartons.push(newCarton(order, [{...item, qty: capacity}]));
+        item.qty -= capacity;
+      }
+      if (item.qty > 0) {
+        if (mode === 'kenzo' && item.qty === capacity - 1 && sizes[i+1] && sizes[i+1].qty > 0) {
+          sizes[i+1].qty -= 1;
+          cartons.push(newCarton(order, [{...item}, {...sizes[i+1], qty:1}]));
+          item.qty = 0;
+        } else {
+          cartons.push(newCarton(order, [{...item}]));
+          item.qty = 0;
+        }
+      }
+    }
+  }
+
+  function cartonizeFill(order, sizes, capacity, cartons) {
+    let box = [];
+    let remaining = capacity;
+    for (const item of sizes) {
+      while (item.qty > 0) {
+        const take = Math.min(item.qty, remaining);
+        box.push({...item, qty: take});
+        item.qty -= take;
+        remaining -= take;
+        if (remaining === 0) {
+          cartons.push(newCarton(order, box));
+          box = [];
+          remaining = capacity;
+        }
+      }
+    }
+    if (box.length) cartons.push(newCarton(order, box));
+  }
+
+  function buildPallets(cartons, palletCap) {
+    const pallets = [];
+    for (const order of state.orders) {
+      const orderCartons = cartons.filter(c => c.orderUid === order.uid);
+      const palletNos = Array.from(new Set(orderCartons.map(c => Math.max(1, Math.round(Number(c.palletNo)||1))))).sort((a,b)=>a-b);
+      const totalPallets = palletNos.length ? Math.max(palletNos.length, Math.max(...palletNos)) : 0;
+      for (const p of palletNos) {
+        const list = orderCartons.filter(c => Number(c.palletNo) === p);
+        pallets.push({
+          orderUid: order.uid,
+          orderNo: order.orderNo,
+          reference: order.reference,
+          refColor: order.refColor,
+          palletNo: p,
+          totalPallets,
+          cartons: list,
+          cartonCount: list.length,
+          grossWeight: round2(list.reduce((a,c)=>a+c.grossWeight,0))
+        });
+      }
+    }
+    return pallets;
+  }
+
+  function getOrderCartons(order) {
+    return state.cartons.filter(c => !order || c.orderUid === order.uid);
+  }
+
+  function getOrderPallets(order) {
+    return state.pallets.filter(p => !order || p.orderUid === order.uid);
+  }
+
+  function aggregateDN(order=null) {
+    const map = new Map();
+    const orders = order ? [order] : state.orders;
+    for (const o of orders) {
+      for (const l of o.lines) {
+        const key = `${o.orderNo}|${o.refColor}|${l.size}|${l.ean}`;
+        if (!map.has(key)) map.set(key, { orderNo:o.orderNo, refColor:o.refColor, size:l.size, ean:l.ean, qty:0 });
+        map.get(key).qty += l.qty;
+      }
+    }
+    return Array.from(map.values());
+  }
+
+  function renderSummary() {
+    const totalQty = state.orders.reduce((a,o)=>a+o.totalQty,0);
+    const totalWeight = round2(state.cartons.reduce((a,c)=>a+c.grossWeight,0));
+    const cards = [
+      ['Orders', state.orders.length],
+      ['Total pcs', totalQty],
+      ['Cartons', state.cartons.length],
+      ['Pallets', state.pallets.length],
+      ['Gross kg', totalWeight.toFixed(2)],
+      ['Mixed / Incomplete', `${state.cartons.filter(c=>c.type==='MIXED').length} / ${state.cartons.filter(c=>c.type==='INCOMPLETE').length}`]
+    ];
+    el('summaryCards').innerHTML = cards.map(c => `<div class="card"><b>${c[1]}</b><span>${c[0]}</span></div>`).join('');
+    el('ordersView').innerHTML = state.orders.map(o => `
+      <div class="card" style="margin-bottom:10px;">
+        <b style="font-size:16px;">Order ${esc(o.orderNo)} - ${esc(o.reference)}</b>
+        <span>${esc(o.colorCode)} ${esc(o.colorName)} | ${esc(o.productName)} | ${o.totalQty} pcs</span>
+        <table style="margin-top:8px;"><thead><tr><th>Size</th><th>EAN13</th><th>Qty</th></tr></thead><tbody>
+          ${o.lines.map(l => `<tr><td>${esc(l.size)}</td><td>${esc(l.ean)}</td><td>${l.qty}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+    `).join('');
+  }
+
+  function editorRowHtml(carton, line) {
+    return `<tr class="editor-row">
+      <td><input data-field="pallet" type="number" min="1" step="1" value="${Number(carton.palletNo)||1}"></td>
+      <td><input data-field="box" type="number" min="1" step="1" value="${Number(carton.cartonNo)||1}"></td>
+      <td><input data-field="size" type="text" value="${esc(line.size || '')}"></td>
+      <td><input data-field="ean" type="text" inputmode="numeric" maxlength="13" value="${esc(line.ean || '')}"></td>
+      <td><input data-field="qty" type="number" min="1" step="1" value="${Number(line.qty)||1}"></td>
+      <td><input data-field="weight" type="number" min="0.01" step="0.01" value="${round2(Number(carton.grossWeight)||weightFor(Number(line.qty)||1)).toFixed(2)}"></td>
+      <td><button type="button" class="editor-row-delete">Delete</button></td>
+    </tr>`;
+  }
+
+  function renderPackingEditor() {
+    const root = el('packingEditor');
+    root.innerHTML = state.orders.map(order => {
+      const cartons = getOrderCartons(order).slice().sort((a,b)=>Number(a.cartonNo)-Number(b.cartonNo));
+      const rows = cartons.flatMap(c => c.lines.map(line => editorRowHtml(c,line))).join('');
+      return `<div class="editor-order" data-order-uid="${esc(order.uid)}">
+        <div class="editor-order-head">
+          <b>${esc(order.orderNo)} — ${esc(order.reference)}</b>
+          <div class="editor-meta-grid">
+            <div><label>Order number</label><input class="editor-meta" data-field="orderNo" value="${esc(order.orderNo)}"></div>
+            <div><label>Reference</label><input class="editor-meta" data-field="reference" value="${esc(order.reference)}"></div>
+            <div><label>Product name</label><input class="editor-meta" data-field="productName" value="${esc(order.productName)}"></div>
+            <div><label>Color code</label><input class="editor-meta" data-field="colorCode" value="${esc(order.colorCode)}"></div>
+            <div><label>Color name</label><input class="editor-meta" data-field="colorName" value="${esc(order.colorName)}"></div>
+          </div>
+        </div>
+        <div class="editor-table-wrap">
+          <table class="editor-table">
+            <thead><tr><th>Pallet</th><th>Box</th><th>Size</th><th>EAN13</th><th>Quantity</th><th>Gross kg</th><th>Action</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        <div class="editor-order-foot">
+          <button type="button" class="secondary editor-add-line">Add new carton line</button>
+          <span class="hint">Rows with the same box number are treated as one mixed carton. Gross weight is stored once per box.</span>
+        </div>
+      </div>`;
+    }).join('');
+    state.editorDirty = false;
+    updateEditorDirtyMessage();
+  }
+
+  function updateEditorDirtyMessage() {
+    const n = el('editorDirty');
+    if (!n) return;
+    n.className = state.editorDirty ? 'editor-help editor-dirty' : 'editor-help';
+    n.textContent = state.editorDirty ? 'Unsaved changes — click “Apply edits and refresh labels”.' : 'Editor is synchronized with the packing-list and label previews.';
+  }
+
+  function markEditorDirty() {
+    state.editorDirty = true;
+    updateEditorDirtyMessage();
+  }
+
+  function readEditorValue(section, field) {
+    const input = section.querySelector(`.editor-meta[data-field="${field}"]`);
+    return cleanSpaces(input ? input.value : '');
+  }
+
+  function applyEditorChanges(renderAfter=true) {
+    const newCartons = [];
+    const errors = [];
+    for (const section of el('packingEditor').querySelectorAll('.editor-order')) {
+      const order = state.orders.find(o => o.uid === section.dataset.orderUid);
+      if (!order) continue;
+      order.orderNo = readEditorValue(section,'orderNo') || order.orderNo;
+      order.reference = readEditorValue(section,'reference') || order.reference;
+      order.productName = readEditorValue(section,'productName') || order.reference;
+      order.colorCode = readEditorValue(section,'colorCode');
+      order.colorName = readEditorValue(section,'colorName');
+      order.refColor = `${order.reference}${order.colorCode || order.colorName ? ' / ' : ''}${order.colorCode ? order.colorCode + ' ' : ''}${order.colorName}`.trim();
+
+      const groups = new Map();
+      let rowNo = 0;
+      for (const row of section.querySelectorAll('tbody .editor-row')) {
+        rowNo++;
+        const val = field => row.querySelector(`[data-field="${field}"]`)?.value ?? '';
+        const palletNo = Math.max(1,Math.round(Number(val('pallet'))||1));
+        const cartonNo = Math.max(1,Math.round(Number(val('box'))||0));
+        const size = cleanSpaces(val('size')).toUpperCase();
+        const ean = cleanSpaces(val('ean')).replace(/\D/g,'');
+        const qty = Math.round(Number(val('qty'))||0);
+        const gross = round2(Number(String(val('weight')).replace(',','.'))||0);
+        if (!cartonNo || !size || qty <= 0) {
+          errors.push(`${order.orderNo}: row ${rowNo} requires a valid box number, size and quantity.`);
+          continue;
+        }
+        const key = String(cartonNo);
+        if (!groups.has(key)) groups.set(key,{palletNo,cartonNo,grossWeight:gross,lines:[]});
+        const g = groups.get(key);
+        g.palletNo = palletNo;
+        if (gross > 0) g.grossWeight = gross;
+        g.lines.push({size,ean,qty});
+      }
+      if (!groups.size) errors.push(`${order.orderNo}: at least one packing-list row is required.`);
+      for (const g of Array.from(groups.values()).sort((a,b)=>a.cartonNo-b.cartonNo)) {
+        const totalQty = g.lines.reduce((a,x)=>a+x.qty,0);
+        newCartons.push({
+          orderUid:order.uid, orderNo:order.orderNo, reference:order.reference, productName:order.productName,
+          colorCode:order.colorCode, colorName:order.colorName, refColor:order.refColor,
+          allSizes:[], lines:g.lines, palletNo:g.palletNo, cartonNo:g.cartonNo,
+          totalQty, grossWeight:g.grossWeight || weightFor(totalQty), totalCartons:0, type:''
+        });
+      }
+    }
+    if (errors.length) throw new Error(errors.join('\n'));
+    state.cartons = newCartons;
+    state.sourceType = state.sourceType || 'edited';
+    state.editorDirty = false;
+    normalizeCartonsAndOrders();
+    if (renderAfter) refreshFromCurrentCartons(true);
+    return true;
+  }
+
+  el('packingEditor').addEventListener('input', markEditorDirty);
+  el('packingEditor').addEventListener('click', e => {
+    const del = e.target.closest('.editor-row-delete');
+    if (del) {
+      del.closest('tr')?.remove();
+      markEditorDirty();
+      return;
+    }
+    const add = e.target.closest('.editor-add-line');
+    if (add) {
+      const section = add.closest('.editor-order');
+      const rows = Array.from(section.querySelectorAll('tbody .editor-row'));
+      const maxBox = rows.reduce((m,r)=>Math.max(m,Number(r.querySelector('[data-field="box"]')?.value)||0),0);
+      const nextBox = maxBox + 1;
+      const palletCap = Math.max(1,Number(el('palletCapacity').value||20));
+      const blankCarton = {palletNo:Math.ceil(nextBox/palletCap),cartonNo:nextBox,grossWeight:weightFor(1)};
+      section.querySelector('tbody').insertAdjacentHTML('beforeend',editorRowHtml(blankCarton,{size:'',ean:'',qty:1}));
+      markEditorDirty();
+    }
+  });
+
+  el('applyEditorBtn').addEventListener('click', () => {
+    try {
+      applyEditorChanges(true);
+      setStatus(`Packing-list edits applied. Updated ${state.cartons.length} cartons and refreshed all labels.`, 'ok');
+    } catch (err) {
+      setStatus('Editor error: ' + (err.message || String(err)), 'bad');
+      alert(err.message || String(err));
+    }
+  });
+
+  el('autoCartonizeBtn').addEventListener('click', () => {
+    try {
+      applyEditorChanges(false);
+      rebuildAll();
+      setStatus('Boxes were rebuilt automatically from the edited size totals using the current cartonisation settings.', 'ok');
+    } catch (err) {
+      setStatus('Editor error: ' + (err.message || String(err)), 'bad');
+      alert(err.message || String(err));
+    }
+  });
+
+  function esc(s) { return String(s ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch])); }
+
+  function addressHeaderHtml(title) {
+    const left = compactShipperLines().map(esc).join('<br>');
+    const right = compactConsigneeLines().map(esc).join('<br>');
+    return `
+      <div class="address-preview">
+        <div class="addr">${left}</div>
+        <div class="addr">${right}</div>
+      </div>
+      <div class="preview-date"><b>DATE</b>&nbsp;&nbsp;&nbsp; ${fmtDateDisplay(el('shipmentDate').value)}</div>
+      <h3 style="text-align:center; margin:6px 0 12px;">${esc(title)}</h3>`;
+  }
+
+  function renderPackingPreview() {
+    el('plPreview').innerHTML = state.orders.map(order => {
+      const orderCartons = getOrderCartons(order);
+      const rows = [];
+      for (const c of orderCartons) {
+        for (const line of c.lines) rows.push({ c, line, mixed:c.lines.length > 1 });
+      }
+      const dnRows = aggregateDN(order);
+      const totalQty = orderCartons.reduce((a,c)=>a+c.totalQty,0);
+      const totalWeight = orderCartons.reduce((a,c)=>a+c.grossWeight,0).toFixed(2);
+      return `
+        <div class="pl-doc">
+          ${addressHeaderHtml('LISTE DE COLISAGE / PACKING-LIST')}
+          <table>
+            <thead><tr><th>N° Pallet</th><th>N° box</th><th>N° order</th><th>Ref/color</th><th>size</th><th>GENCOD</th><th>Quantity</th><th>Gross kg</th></tr></thead>
+            <tbody>${rows.map(r => `<tr style="${r.mixed?'color:#0098ff;':''}"><td>${r.c.palletNo}</td><td>${r.c.cartonNo}</td><td>${esc(r.c.orderNo)}</td><td class="left">${esc(r.c.refColor)}</td><td>${esc(r.line.size)}</td><td>${esc(r.line.ean)}</td><td>${r.line.qty}</td><td>${r.c.grossWeight.toFixed(2)}</td></tr>`).join('')}</tbody>
+            <tfoot><tr><th colspan="6" style="text-align:right;">Total qty</th><th>${totalQty}</th><th>${totalWeight}</th></tr></tfoot>
+          </table>
+          <div style="height:22px;"></div>
+          ${addressHeaderHtml('BON DE LIVRAISON / DELIVERY NOTE')}
+          <table>
+            <thead><tr><th>N° Order</th><th>REFERENCE / COLOR</th><th>SIZE</th><th>GENCOD</th><th>QTY</th></tr></thead>
+            <tbody>${dnRows.map(r => `<tr><td>${esc(r.orderNo)}</td><td class="left">${esc(r.refColor)}</td><td>${esc(r.size)}</td><td>${esc(r.ean)}</td><td>${r.qty}</td></tr>`).join('')}</tbody>
+            <tfoot><tr><th colspan="4" style="text-align:right;">Total qty</th><th>${dnRows.reduce((a,r)=>a+r.qty,0)}</th></tr></tfoot>
+          </table>
+        </div>`;
+    }).join('');
+  }
+
+  function shippingLabelsMarkup(order, includeDivider=false) {
+    const date = fmtDateDot(el('shipmentDate').value);
+    const pages = chunk(getOrderCartons(order), 6).map(page => `
+      <div class="label-page shipping-label-page">
+        ${page.map(c => `
+          <div class="shipping-label">
+            <table class="shipping-table">
+              <colgroup><col style="width:30%;"><col style="width:20%;"><col style="width:30%;"><col style="width:20%;"></colgroup>
+              <tr class="shipping-date-row"><td colspan="2">Date of shipment:</td><td colspan="2">${esc(date)}</td></tr>
+              <tr class="shipping-mid-row">
+                <td colspan="2" class="shipping-of">OF number<br>(order number)</td>
+                <td colspan="2" class="shipping-bar"><svg data-code128="${esc('91' + c.orderNo)}" data-text="${esc('(91)' + c.orderNo)}"></svg></td>
+              </tr>
+              <tr class="shipping-bottom-row">
+                <td>N° du colis<br>Carton count</td><td>${c.cartonNo}/${c.totalCartons}</td>
+                <td>Qty ${c.totalQty}</td><td>Poids Brut<br>${c.grossWeight.toFixed(2)} kg</td>
+              </tr>
+            </table>
+          </div>`).join('')}
+      </div>`).join('');
+    return `${includeDivider ? `<div class="order-divider no-print">${esc(order.orderNo)} — ${esc(order.refColor)} — Shipping labels</div>` : ''}${pages}`;
+  }
+
+  function boxLabelsMarkup(order, includeDivider=false) {
+    const pages = chunk(getOrderCartons(order), 6).map(page => `
+      <div class="label-page box-label-page">
+        ${page.map(c => renderBoxLabel(c)).join('')}
+      </div>`).join('');
+    return `${includeDivider ? `<div class="order-divider no-print">${esc(order.orderNo)} — ${esc(order.refColor)} — Box labels</div>` : ''}${pages}`;
+  }
+
+  function palletLabelsMarkup(orders=state.orders, includeDivider=false) {
+    const date = fmtDateDisplay(el('shipmentDate').value);
+    return orders.map(order => {
+      const pages = chunk(getOrderPallets(order), 2).map(page => `
+        <div class="label-page pallet-label-page">
+          ${page.map(p => `
+            <div class="pallet-label">
+              <div class="pallet-date">Date of shipment : ${esc(date)}</div>
+              <div class="pallet-address">
+                <div>Expéditeur / ship from :<br><b>${DEFAULT_SHIPPER[0]}</b><br>${DEFAULT_SHIPPER.slice(1).map(esc).join('<br>')}</div>
+                <div>Destinataire / ship to :<br><b>GEODIS LOGISTICS</b><br><b>Bâtiment n°4 - EVLO - Quais/Docks n°79/80</b><br><b>144. route de Corbeil - Z.I. Les Pièces de la Remise</b><br><b>91004 LISSES - Evry</b></div>
+              </div>
+              <div class="pallet-bottom">
+                <div><span>N° de palette</span><span>${p.palletNo}/${p.totalPallets}</span><span>Carton count</span><span></span></div>
+                <div><span>Poids Brut</span><span>${p.grossWeight.toFixed(0)} kg</span><span>Gross Weight</span><span></span></div>
+                <div><span>Quantité de cartons</span><span>${p.cartonCount}</span><span>Carton quantity</span><span></span></div>
+              </div>
+            </div>`).join('')}
+        </div>`).join('');
+      return `${includeDivider ? `<div class="order-divider no-print">${esc(order.orderNo)} — ${esc(order.refColor)} — Pallet labels</div>` : ''}${pages}`;
+    }).join('');
+  }
+
+  function renderShippingLabels() {
+    el('shippingPreview').innerHTML = state.orders.map(order => shippingLabelsMarkup(order, true)).join('') || '';
+  }
+
+  function renderBoxLabels() {
+    el('boxPreview').innerHTML = state.orders.map(order => boxLabelsMarkup(order, true)).join('') || '';
+  }
+
+  function formatEanHuman(ean) {
+    const s = String(ean || '').replace(/\D/g, '');
+    if (s.length === 13) return `${s.slice(0,1)} ${s.slice(1,7)} ${s.slice(7)}`;
+    return String(ean || '');
+  }
+
+  function renderBoxLabel(c) {
+    const title = c.type === 'FULL' ? c.lines[0].size : c.type;
+    const titleCls = String(title).length > 7 ? ' small' : '';
+    const allSizes = c.allSizes.length ? c.allSizes : Array.from(new Set(c.lines.map(l=>l.size)));
+    // A manually edited carton can contain more than one row for the same size/EAN.
+    // Sum repeated size rows and show/print each distinct EAN only once. Box labels support up to 4 distinct EANs.
+    const qtyBySize = new Map();
+    c.lines.forEach(l => qtyBySize.set(l.size, (qtyBySize.get(l.size) || 0) + Number(l.qty || 0)));
+    const eans = Array.from(new Set(c.lines.map(l => String(l.ean || '').trim()).filter(Boolean))).slice(0, 4);
+    const eanCount = Math.max(1, eans.length);
+    const barcodeClass = eanCount === 1 ? 'barcode-area single' : (eanCount === 2 ? 'barcode-area double' : 'barcode-area multi');
+    const eanText = eanCount <= 2
+      ? `EAN 13 : ${eans.map(esc).join(' / ')}`
+      : `<span class="ean-line">EAN 13 : ${eans.slice(0,2).map(esc).join(' / ')}</span><span class="ean-line">${eans.slice(2,4).map(esc).join(' / ')}</span>`;
+    return `
+      <div class="box-label">
+        <div class="box-title${titleCls}">${esc(title)}</div>
+        <div class="box-row">Reference: ${esc(c.reference)}</div>
+        <div class="box-row ean-row ean-${Math.min(eanCount,4)}">${eanText}</div>
+        <div class="box-row">Sales unit in the carton : ${c.totalQty}</div>
+        <div class="box-row">Gross weight : ${c.grossWeight.toFixed(2)} kg</div>
+        <div class="box-row">OF number (order number) : ${esc(c.orderNo)}</div>
+        <div class="box-row">Number of cartons : ${c.cartonNo}/${c.totalCartons}</div>
+        <table class="size-table">
+          <tr><td class="size-head" style="background:#b7b7b7 !important; border:1px solid #000 !important;" colspan="${allSizes.length}">Size</td></tr>
+          <tr>${allSizes.map(s=>`<td class="size-value" style="background:#b7b7b7 !important; border:1px solid #000 !important;">${esc(s)}</td>`).join('')}</tr>
+          <tr>${allSizes.map(s=>`<td class="size-qty" style="border:1px solid #000 !important;">${qtyBySize.get(s)||''}</td>`).join('')}</tr>
+        </table>
+        <div class="${barcodeClass}">${eans.map(e => `<div class="barcode-slot"><svg data-ean="${esc(e)}" data-barcode-kind="box" data-count="${eanCount}"></svg></div>`).join('')}</div>
+      </div>`;
+  }
+
+  function renderPalletLabels() {
+    el('palletPreview').innerHTML = palletLabelsMarkup(state.orders, true) || '';
+  }
+
+  function renderBarcodesIn(root=document) {
+    if (!window.JsBarcode) return;
+    root.querySelectorAll('svg[data-ean]').forEach(svg => {
+      const value = svg.getAttribute('data-ean');
+      const kind = svg.getAttribute('data-barcode-kind') || 'default';
+      const count = Math.max(1, parseInt(svg.getAttribute('data-count') || '1', 10) || 1);
+      const opts = { format:'EAN13', margin:0, textMargin:0 };
+      if (kind === 'box') {
+        // Keep each EAN at its native proportions. For mixed cartons with 3-4 EANs,
+        // render a real 2x2 barcode grid instead of squeezing several full-size SVGs into one row.
+        if (count <= 1) Object.assign(opts, { width:1.15, height:34, fontSize:11, textMargin:0 });
+        else if (count === 2) Object.assign(opts, { width:1.05, height:30, fontSize:10, textMargin:0 });
+        else Object.assign(opts, { width:1.00, height:20, fontSize:8, textMargin:0 });
+      } else {
+        Object.assign(opts, { width:1.15, height:42, fontSize:12, textMargin:0 });
+      }
+      try {
+        JsBarcode(svg, value, opts);
+        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      }
+      catch(e) { svg.outerHTML = `<div style="color:red;font-size:10px;">Bad EAN ${esc(value)}</div>`; }
+    });
+    root.querySelectorAll('svg[data-code128]').forEach(svg => {
+      const value = svg.getAttribute('data-code128');
+      const text = svg.getAttribute('data-text') || value;
+      try { JsBarcode(svg, value, { format:'CODE128', width:1.35, height:35, fontSize:11, margin:0, text, textMargin:0 }); }
+      catch(e) { svg.outerHTML = `<div style="color:red;font-size:10px;">Barcode error</div>`; }
+    });
+  }
+
+  function renderBarcodes() {
+    renderBarcodesIn(document);
+  }
+
+  function chunk(arr, size) {
+    const out = [];
+    for (let i=0; i<arr.length; i += size) out.push(arr.slice(i, i+size));
+    return out;
+  }
+
+  function orderShortLabel(order) {
+    return `${order.orderNo} / ${order.reference} / ${order.colorCode || ''} ${order.colorName || ''}`.replace(/\s+/g, ' ').trim();
+  }
+
+  function buildReferenceActions() {
+    const host = el('referenceActions');
+    if (!host) return;
+    if (!state.orders.length) {
+      host.style.display = 'none';
+      host.innerHTML = '';
+      return;
+    }
+    host.style.display = 'block';
+    host.innerHTML = `<h3>Reference-specific actions</h3>
+      <div class="hint" style="margin-bottom:8px;">Each reference/order has its own packing list and its own label print buttons. For labels, click the button and choose <b>Save as PDF</b> in the browser print dialog.</div>` + state.orders.map(order => `
+      <div class="ref-card">
+        <div class="ref-card-title">${esc(orderShortLabel(order))} <span>— ${order.totalQty} pcs</span></div>
+        <div class="buttons">
+          <button class="success" data-action="download-pl" data-uid="${esc(order.uid)}">Download Packing List XLSX</button>
+          <button data-action="print-shipping" data-uid="${esc(order.uid)}">Print/Save Shipping Labels PDF</button>
+          <button data-action="print-box" data-uid="${esc(order.uid)}">Print/Save Box Labels PDF</button>
+          <button data-action="print-pallet" data-uid="${esc(order.uid)}">Print/Save Pallet Labels PDF</button>
+        </div>
+        <div class="ref-help">Output for this reference only: ${esc(order.orderNo)} / ${esc(order.reference)} / ${esc(order.colorCode)} ${esc(order.colorName)}.</div>
+      </div>`).join('');
+    host.querySelectorAll('button').forEach(b => b.disabled = !state.orders.length);
+  }
+
+  el('referenceActions').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    if (state.editorDirty) {
+      try { applyEditorChanges(true); }
+      catch (err) { setStatus('Editor error: ' + (err.message || String(err)), 'bad'); alert(err.message || String(err)); return; }
+    }
+    const order = state.orders.find(o => o.uid === btn.dataset.uid);
+    if (!order) return;
+    const action = btn.dataset.action;
+    if (action === 'download-pl') return downloadPackingForOrder(order);
+    if (action === 'print-shipping') return printLabelsForOrder('shipping', order);
+    if (action === 'print-box') return printLabelsForOrder('box', order);
+    if (action === 'print-pallet') return printLabelsForOrder('pallet', order);
+  });
+
+  function labelMarkupForOrder(kind, order) {
+    if (kind === 'shipping') return shippingLabelsMarkup(order, false);
+    if (kind === 'box') return boxLabelsMarkup(order, false);
+    if (kind === 'pallet') return palletLabelsMarkup([order], false);
+    throw new Error('Unknown label type: ' + kind);
+  }
+
+  function printLabelsForOrder(kind, order) {
+    const target = el('printTarget');
+    if (!target) return;
+    const labelName = kind === 'shipping' ? 'Shipping labels' : kind === 'box' ? 'Box labels' : 'Pallet labels';
+    const suggestedName = labelPrintFilename(kind, order);
+    target.innerHTML = labelMarkupForOrder(kind, order);
+    renderBarcodesIn(target);
+    document.title = suggestedName.replace(/\.pdf$/i, '');
+    document.body.setAttribute('data-print', 'selected');
+    setStatus(`Opening print dialog for ${labelName}: ${orderShortLabel(order)}. Suggested PDF name: ${suggestedName}`, 'ok');
+    setTimeout(() => window.print(), 160);
+  }
+
+  window.addEventListener('afterprint', () => {
+    document.body.setAttribute('data-print', '');
+    document.title = ORIGINAL_DOCUMENT_TITLE;
+    const target = el('printTarget');
+    if (target) target.innerHTML = '';
+  });
+
+  document.querySelectorAll('.tabs button').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    el(btn.dataset.tab).classList.add('active');
+  }));
+  el('rebuildBtn').addEventListener('click', () => {
+    if (!state.orders.length) return;
+    try {
+      if (state.editorDirty) applyEditorChanges(false);
+      rebuildAll();
+      setStatus('Cartons rebuilt automatically using the current settings.', 'ok');
+    } catch (err) {
+      setStatus('Editor error: ' + (err.message || String(err)), 'bad');
+      alert(err.message || String(err));
+    }
+  });
+  el('shipmentDate').addEventListener('change', () => state.orders.length && refreshFromCurrentCartons(false));
+  el('boxCapacity').addEventListener('change', () => {
+    if (!state.orders.length || state.editorDirty) return;
+    normalizeCartonsAndOrders();
+    refreshFromCurrentCartons(false);
+  });
+  function exportDateToken() {
+    return (el('shipmentDate').value || isoToday()).replace(/-/g,'');
+  }
+
+  function styleFilePart(order) {
+    const color = safeFile(`${order.colorCode || ''}_${order.colorName || ''}`);
+    return [safeFile(order.orderNo), safeFile(order.reference), color].filter(Boolean).join('_');
+  }
+
+  function ordersFilePart() {
+    return state.orders.map(o => safeFile(o.orderNo)).join('_') || 'KENZO';
+  }
+
+  function packingFilename(order) {
+    return `KENZO_${styleFilePart(order)}_PL_${exportDateToken()}.xlsx`;
+  }
+
+  function labelExcelFilename(kind, order=null) {
+    const map = { shipping:'SHIPPING_LABELS', box:'BOX_LABELS', pallet:'PALLET_LABELS' };
+    const base = kind === 'pallet' && !order
+      ? `KENZO_${ordersFilePart()}_${map[kind]}_${exportDateToken()}`
+      : `KENZO_${styleFilePart(order)}_${map[kind]}_${exportDateToken()}`;
+    return `${base}.xlsx`;
+  }
+
+  function labelPrintFilename(kind, order) {
+    const map = { shipping:'SHIPPING_LABELS', box:'BOX_LABELS', pallet:'PALLET_LABELS' };
+    return `KENZO_${styleFilePart(order)}_${map[kind]}_${exportDateToken()}.pdf`;
+  }
+
+  function requireExcelAndBarcode() {
+    if (!window.ExcelJS) throw new Error('ExcelJS did not load. Check internet access or CDN blocking.');
+    if (!window.JsBarcode) throw new Error('JsBarcode did not load. Check internet access or CDN blocking.');
+  }
+
+  function makeLabelWorkbook(title='KENZO Labels') {
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'KENZO PDF to Excel Packing and Labels HTML';
+    wb.created = new Date();
+    wb.title = title;
+    return wb;
+  }
+
+  function labelBorder(style='thin') {
+    return { top:{style}, left:{style}, bottom:{style}, right:{style} };
+  }
+
+  function labelStyle(cell, opts={}) {
+    cell.font = { name:'Arial', size: opts.size || 10, bold: !!opts.bold, italic: !!opts.italic };
+    cell.alignment = { vertical: opts.valign || 'middle', horizontal: opts.align || 'center', wrapText: opts.wrap !== false };
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:(opts.fill || 'FFFFFFFF').replace('#','FF')} };
+    if (opts.border !== false) cell.border = labelBorder(opts.borderStyle || 'thin');
+  }
+
+  function labelRange(ws, r1, c1, r2, c2, opts={}) {
+    for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) labelStyle(ws.getCell(r, c), opts);
+  }
+
+  function mergeLabel(ws, r1, c1, r2, c2, value, opts={}) {
+    if (r1 !== r2 || c1 !== c2) ws.mergeCells(r1, c1, r2, c2);
+    const cell = ws.getCell(r1, c1);
+    cell.value = value;
+    labelRange(ws, r1, c1, r2, c2, opts);
+    return cell;
+  }
+
+  function applyOuterBorder(ws, r1, c1, r2, c2, style='medium') {
+    for (let c = c1; c <= c2; c++) {
+      const top = ws.getCell(r1, c); top.border = { ...top.border, top:{style} };
+      const bot = ws.getCell(r2, c); bot.border = { ...bot.border, bottom:{style} };
+    }
+    for (let r = r1; r <= r2; r++) {
+      const left = ws.getCell(r, c1); left.border = { ...left.border, left:{style} };
+      const right = ws.getCell(r, c2); right.border = { ...right.border, right:{style} };
+    }
+  }
+
+  function setWidths(ws, widths) {
+    widths.forEach((w, i) => ws.getColumn(i + 1).width = w);
+  }
+
+  function barcodeDataUrl(format, value, opts={}) {
+    // Generate an intentionally high-resolution PNG and let Excel scale it down.
+    // This gives cleaner/sharper barcodes than a small canvas stretched inside the sheet.
+    const canvas = document.createElement('canvas');
+    const base = {
+      format,
+      width: opts.width || (format === 'EAN13' ? 2.4 : 3.4),
+      height: opts.height || (format === 'EAN13' ? 86 : 96),
+      fontSize: opts.fontSize || (format === 'EAN13' ? 22 : 26),
+      margin: opts.margin ?? (format === 'EAN13' ? 10 : 12),
+      displayValue: opts.displayValue !== false,
+      textMargin: opts.textMargin ?? 4,
+      background: '#ffffff',
+      lineColor: '#000000'
+    };
+    if (opts.text) base.text = opts.text;
+    JsBarcode(canvas, value, base);
+    return canvas.toDataURL('image/png');
+  }
+
+  function addBarcode(ws, wb, format, value, r1, c1, r2, c2, opts={}) {
+    const imageId = wb.addImage({ base64: barcodeDataUrl(format, value, opts), extension:'png' });
+    ws.addImage(imageId, {
+      tl: { col: c1 - 1 + (opts.padCol || 0.15), row: r1 - 1 + (opts.padRow || 0.12) },
+      br: { col: c2 - (opts.padCol || 0.15), row: r2 - (opts.padRow || 0.12) },
+      editAs: 'oneCell'
+    });
+  }
+
+  function setupLabelSheet(ws, orientation='portrait') {
+    ws.pageSetup = {
+      paperSize: 9,
+      orientation,
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      horizontalCentered: true,
+      margins: { left:0.25, right:0.25, top:0.25, bottom:0.25, header:0.1, footer:0.1 }
+    };
+    ws.views = [{ showGridLines:false }];
+  }
+
+  async function createShippingLabelWorkbookBuffer(order) {
+    requireExcelAndBarcode();
+    const wb = makeLabelWorkbook('KENZO Shipping Labels');
+    const ws = wb.addWorksheet('Shipping labels');
+    setupLabelSheet(ws, 'portrait');
+    setWidths(ws, [12,12,12,12,12,12,12,12]);
+    const cartons = getOrderCartons(order);
+    let r = 1;
+    cartons.forEach((c, idx) => {
+      drawShippingLabelExcel(wb, ws, c, r);
+      if ((idx + 1) % 6 === 0 && idx + 1 < cartons.length) ws.getRow(r + 5).addPageBreak();
+      r += 6;
+    });
+    ws.pageSetup.printArea = `A1:H${Math.max(1, r-1)}`;
+    return await wb.xlsx.writeBuffer();
+  }
+
+  function drawShippingLabelExcel(wb, ws, c, r) {
+    ws.getRow(r).height = 20;
+    ws.getRow(r+1).height = 18;
+    ws.getRow(r+2).height = 18;
+    ws.getRow(r+3).height = 18;
+    ws.getRow(r+4).height = 30;
+    ws.getRow(r+5).height = 8;
+    mergeLabel(ws, r, 1, r, 4, 'Date of shipment:', {bold:true, size:10});
+    mergeLabel(ws, r, 5, r, 8, fmtDateDot(el('shipmentDate').value), {bold:true, size:10});
+    mergeLabel(ws, r+1, 1, r+3, 4, 'OF number\n(order number)', {bold:true, size:14});
+    mergeLabel(ws, r+1, 5, r+3, 8, '', {border:true});
+    addBarcode(ws, wb, 'CODE128', '91' + c.orderNo, r+1, 5, r+3, 8, { text:'(91)' + c.orderNo, width:3.4, height:96, fontSize:24, margin:10, textMargin:4, padCol:0.25, padRow:0.18 });
+    mergeLabel(ws, r+4, 1, r+4, 2, 'N° du colis\nCarton count', {bold:true, size:9});
+    mergeLabel(ws, r+4, 3, r+4, 4, `${c.cartonNo}/${c.totalCartons}`, {bold:true, size:10});
+    mergeLabel(ws, r+4, 5, r+4, 6, `Qty ${c.totalQty}`, {bold:true, size:10});
+    mergeLabel(ws, r+4, 7, r+4, 8, `Poids Brut\n${c.grossWeight.toFixed(2)} kg`, {bold:true, size:9});
+    applyOuterBorder(ws, r, 1, r+4, 8, 'medium');
+  }
+
+  async function createBoxLabelWorkbookBuffer(order) {
+    requireExcelAndBarcode();
+    const wb = makeLabelWorkbook('KENZO Box Labels');
+    const ws = wb.addWorksheet('Box labels');
+    setupLabelSheet(ws, 'portrait');
+    setWidths(ws, [4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2,2.0,4.2,4.2,4.2,4.2,4.2,4.2,4.2,4.2]);
+    const cartons = getOrderCartons(order);
+    const rowStarts = [1, 19, 37];
+    cartons.forEach((c, idx) => {
+      const pageIdx = idx % 6;
+      const colStart = (pageIdx % 2) === 0 ? 1 : 10;
+      const rowStart = rowStarts[Math.floor(pageIdx / 2)] + Math.floor(idx / 6) * 54;
+      drawBoxLabelExcel(wb, ws, c, rowStart, colStart);
+      if ((idx + 1) % 6 === 0 && idx + 1 < cartons.length) ws.getRow(rowStart + 17).addPageBreak();
+    });
+    const pages = Math.ceil(cartons.length / 6) || 1;
+    ws.pageSetup.fitToHeight = pages;
+    ws.pageSetup.printArea = `A1:Q${pages * 54}`;
+    return await wb.xlsx.writeBuffer();
+  }
+
+  function drawBoxLabelExcel(wb, ws, c, r, c0) {
+    const c1 = c0;
+    const c2 = c0 + 7;
+    const title = c.type === 'FULL' ? c.lines[0].size : c.type;
+    const allSizes = c.allSizes.length ? c.allSizes : Array.from(new Set(c.lines.map(l=>l.size)));
+    const qtyBySize = new Map(c.lines.map(l => [l.size, l.qty]));
+    for (let rr = r; rr <= r + 17; rr++) ws.getRow(rr).height = 14;
+    ws.getRow(r).height = 18; ws.getRow(r+1).height = 18; ws.getRow(r+2).height = 18;
+    ws.getRow(r+12).height = 17; ws.getRow(r+13).height = 17; ws.getRow(r+14).height = 17; ws.getRow(r+15).height = 17;
+
+    mergeLabel(ws, r, c1, r+2, c2, title, {bold:true, size: title.length > 7 ? 26 : 32});
+    mergeLabel(ws, r+3, c1, r+3, c2, `Reference: ${c.reference}`, {size:10, bold:false});
+    mergeLabel(ws, r+4, c1, r+4, c2, `EAN 13 : ${c.lines.map(l=>l.ean).join(' / ')}`, {size:10});
+    mergeLabel(ws, r+5, c1, r+5, c2, `Sales unit in the carton : ${c.totalQty}`, {size:10});
+    mergeLabel(ws, r+6, c1, r+6, c2, `Gross weight : ${c.grossWeight.toFixed(2)} kg`, {size:10});
+    mergeLabel(ws, r+7, c1, r+7, c2, `OF number (order number) : ${c.orderNo}`, {size:10});
+    mergeLabel(ws, r+8, c1, r+8, c2, `Number of cartons : ${c.cartonNo}/${c.totalCartons}`, {size:10});
+    mergeLabel(ws, r+9, c1, r+9, c2, 'Size', {size:10, fill:'FFB7B7B7'});
+
+    labelRange(ws, r+10, c1, r+11, c2, {size:9});
+    const slots = Math.min(8, Math.max(1, allSizes.length));
+    for (let i = 0; i < 8; i++) {
+      const cellSize = ws.getCell(r+10, c1+i);
+      const cellQty = ws.getCell(r+11, c1+i);
+      cellSize.value = allSizes[i] || '';
+      cellQty.value = allSizes[i] ? (qtyBySize.get(allSizes[i]) || '') : '';
+      labelStyle(cellSize, {size:9, fill:'FFB7B7B7'});
+      labelStyle(cellQty, {size:9});
+    }
+
+    // Clean barcode area: no internal Excel cell borders/grid, only one outer barcode-cell border.
+    labelRange(ws, r+12, c1, r+15, c2, {border:false, size:8});
+    applyOuterBorder(ws, r+12, c1, r+15, c2, 'thin');
+    const eans = c.lines.map(l => l.ean);
+    if (eans.length === 1) {
+      addBarcode(ws, wb, 'EAN13', eans[0], r+12, c1, r+15, c2, { width:2.4, height:86, fontSize:20, margin:8, textMargin:3, padCol:0.35, padRow:0.15 });
+    } else if (eans.length === 2) {
+      addBarcode(ws, wb, 'EAN13', eans[0], r+12, c1, r+15, c1+3, { width:1.9, height:74, fontSize:16, margin:6, textMargin:2, padCol:0.2, padRow:0.2 });
+      addBarcode(ws, wb, 'EAN13', eans[1], r+12, c1+4, r+15, c2, { width:1.9, height:74, fontSize:16, margin:6, textMargin:2, padCol:0.2, padRow:0.2 });
+    } else {
+      eans.slice(0,4).forEach((ean, i) => {
+        const cc = c1 + (i % 2) * 4;
+        const rr = r + 12 + Math.floor(i / 2) * 2;
+        addBarcode(ws, wb, 'EAN13', ean, rr, cc, rr+1, cc+3, { width:1.45, height:52, fontSize:12, margin:4, textMargin:1, padCol:0.15, padRow:0.12 });
+      });
+    }
+    applyOuterBorder(ws, r, c1, r+15, c2, 'medium');
+  }
+
+  async function createPalletLabelWorkbookBuffer(orders) {
+    requireExcelAndBarcode();
+    const wb = makeLabelWorkbook('KENZO Pallet Labels');
+    const ws = wb.addWorksheet('Pallet labels');
+    setupLabelSheet(ws, 'portrait');
+    setWidths(ws, [10,10,10,10,10,10,10,10,10,10,10,10]);
+    const pallets = [];
+    for (const order of orders) pallets.push(...getOrderPallets(order));
+    let r = 1;
+    pallets.forEach((pallet, idx) => {
+      drawPalletLabelExcel(ws, pallet, r);
+      if ((idx + 1) % 2 === 0 && idx + 1 < pallets.length) ws.getRow(r + 12).addPageBreak();
+      r += 13;
+    });
+    ws.pageSetup.printArea = `A1:L${Math.max(1, r-1)}`;
+    return await wb.xlsx.writeBuffer();
+  }
+
+  function drawPalletLabelExcel(ws, p, r) {
+    for (let rr = r; rr <= r + 12; rr++) ws.getRow(rr).height = 20;
+    ws.getRow(r).height = 22;
+    for (let rr = r + 1; rr <= r + 7; rr++) ws.getRow(rr).height = 24;
+    for (let rr = r + 8; rr <= r + 11; rr++) ws.getRow(rr).height = 24;
+    ws.getRow(r + 12).height = 10;
+
+    mergeLabel(ws, r, 1, r, 12, `Date of shipment : ${fmtDateDisplay(el('shipmentDate').value)}`, {bold:true, size:11});
+    mergeLabel(ws, r+1, 1, r+7, 6, `Expéditeur / ship from :\n${DEFAULT_SHIPPER[0]}\n${DEFAULT_SHIPPER.slice(1).join('\n')}`, {size:10, bold:true});
+    mergeLabel(ws, r+1, 7, r+7, 12, `Destinataire / ship to :\nGEODIS LOGISTICS\nBâtiment n°4 - EVLO - Quais/Docks n°79/80\n144. route de Corbeil - Z.I. Les Pièces de la Remise\n91004 LISSES - Evry`, {size:10, bold:true});
+    mergeLabel(ws, r+8, 1, r+9, 4, 'N° de palette', {bold:true, size:11});
+    mergeLabel(ws, r+10, 1, r+11, 4, `Carton count     ${p.palletNo}/${p.totalPallets}`, {bold:true, size:11});
+    mergeLabel(ws, r+8, 5, r+9, 8, 'Poids Brut', {bold:true, size:11});
+    mergeLabel(ws, r+10, 5, r+11, 8, `Gross Weight     ${p.grossWeight.toFixed(0)} kg`, {bold:true, size:11});
+    mergeLabel(ws, r+8, 9, r+9, 12, 'Quantité de cartons', {bold:true, size:11});
+    mergeLabel(ws, r+10, 9, r+11, 12, `Carton quantity     ${p.cartonCount}`, {bold:true, size:11});
+    applyOuterBorder(ws, r, 1, r+11, 12, 'medium');
+  }
+
+  async function createLabelWorkbookBuffer(kind, orders) {
+    if (kind === 'shipping') return await createShippingLabelWorkbookBuffer(orders[0]);
+    if (kind === 'box') return await createBoxLabelWorkbookBuffer(orders[0]);
+    if (kind === 'pallet') return await createPalletLabelWorkbookBuffer(orders);
+    throw new Error('Unknown label type: ' + kind);
+  }
+
+  async function downloadLabelWorkbook(kind, orders) {
+    try {
+      const order = orders.length === 1 ? orders[0] : null;
+      setStatus(`Creating ${kind} label Excel: ${order ? orderShortLabel(order) : 'all references'}...`, 'ok');
+      const buf = await createLabelWorkbookBuffer(kind, orders);
+      const filename = labelExcelFilename(kind, order);
+      downloadBlob(new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename);
+      setStatus(`Downloaded ${kind} label Excel: ${filename}`, 'ok');
+    } catch (err) {
+      console.error(err);
+      setStatus('Error: ' + (err.message || String(err)), 'bad');
+      alert(err.message || String(err));
+    }
+  }
+
+  async function downloadAllLabelWorkbooksZip() {
+    if (!window.JSZip) {
+      alert('JSZip did not load.');
+      return;
+    }
+    try {
+      requireExcelAndBarcode();
+      const zip = new JSZip();
+      for (const order of state.orders) {
+        setStatus(`Creating Shipping Label Excel: ${orderShortLabel(order)}...`, 'ok');
+        zip.file(labelExcelFilename('shipping', order), await createShippingLabelWorkbookBuffer(order));
+        setStatus(`Creating Box Label Excel: ${orderShortLabel(order)}...`, 'ok');
+        zip.file(labelExcelFilename('box', order), await createBoxLabelWorkbookBuffer(order));
+      }
+      setStatus('Creating combined Pallet Label Excel...', 'ok');
+      zip.file(labelExcelFilename('pallet', null), await createPalletLabelWorkbookBuffer(state.orders));
+      setStatus('Building labels ZIP...', 'ok');
+      downloadBlob(await zip.generateAsync({type:'blob'}), `KENZO_LABELS_XLSX_${ordersFilePart()}_${exportDateToken()}.zip`);
+      setStatus('Downloaded ZIP with only Excel label files: box, shipping, and pallet .xlsx files.', 'ok');
+    } catch (err) {
+      console.error(err);
+      setStatus('Error: ' + (err.message || String(err)), 'bad');
+      alert(err.message || String(err));
+    }
+  }
+
+  async function downloadAllExcelFilesZip() {
+    if (!window.JSZip) {
+      alert('JSZip did not load.');
+      return;
+    }
+    try {
+      requireExcelAndBarcode();
+      if (!window.ExcelJS) throw new Error('ExcelJS did not load. Check internet access or CDN blocking.');
+      const zip = new JSZip();
+      for (const order of state.orders) {
+        setStatus(`Creating PL Excel: ${orderShortLabel(order)}...`, 'ok');
+        zip.file(packingFilename(order), await createPackingWorkbookBuffer(order));
+        setStatus(`Creating Shipping Label Excel: ${orderShortLabel(order)}...`, 'ok');
+        zip.file(labelExcelFilename('shipping', order), await createShippingLabelWorkbookBuffer(order));
+        setStatus(`Creating Box Label Excel: ${orderShortLabel(order)}...`, 'ok');
+        zip.file(labelExcelFilename('box', order), await createBoxLabelWorkbookBuffer(order));
+      }
+      setStatus('Creating combined Pallet Label Excel...', 'ok');
+      zip.file(labelExcelFilename('pallet', null), await createPalletLabelWorkbookBuffer(state.orders));
+      setStatus('Building final Excel ZIP...', 'ok');
+      downloadBlob(await zip.generateAsync({type:'blob'}), `KENZO_ALL_XLSX_${ordersFilePart()}_${exportDateToken()}.zip`);
+      setStatus('Downloaded ZIP with only Excel files: packing list, box label, shipping label, and pallet label .xlsx files.', 'ok');
+    } catch (err) {
+      console.error(err);
+      setStatus('Error: ' + (err.message || String(err)), 'bad');
+      alert(err.message || String(err));
+    }
+  }
+
+  el('xlsxBtn').addEventListener('click', downloadWorkbook);
+
+  async function downloadPackingForOrder(order) {
+    if (state.editorDirty) applyEditorChanges(true);
+    if (!window.ExcelJS) {
+      alert('ExcelJS did not load. Check internet access or CDN blocking.');
+      return;
+    }
+    const buf = await createPackingWorkbookBuffer(order);
+    downloadBlob(new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), packingFilename(order));
+    setStatus(`Downloaded PL Excel: ${orderShortLabel(order)}`, 'ok');
+  }
+
+  async function downloadWorkbook() {
+    if (state.editorDirty) {
+      try { applyEditorChanges(true); }
+      catch (err) { setStatus('Editor error: ' + (err.message || String(err)), 'bad'); alert(err.message || String(err)); return; }
+    }
+    if (!window.ExcelJS) {
+      alert('ExcelJS did not load. Check internet access or CDN blocking.');
+      return;
+    }
+    if (state.orders.length === 1 || !window.JSZip) {
+      for (const order of state.orders) await downloadPackingForOrder(order);
+      return;
+    }
+
+    const zip = new JSZip();
+    for (const order of state.orders) {
+      const buf = await createPackingWorkbookBuffer(order);
+      zip.file(packingFilename(order), buf);
+    }
+    const blob = await zip.generateAsync({ type:'blob' });
+    downloadBlob(blob, `KENZO_ALL_PL_EXCEL_${ordersFilePart()}_${exportDateToken()}.zip`);
+    setStatus('Downloaded ZIP with all packing list Excel files only.', 'ok');
+  }
+
+  async function createPackingWorkbookBuffer(order) {
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'KENZO PDF to Excel Packing and Labels HTML';
+    wb.created = new Date();
+    const dn = wb.addWorksheet('DN', { pageSetup:{ paperSize:9, orientation:'landscape', fitToPage:true, fitToWidth:1, fitToHeight:0 }});
+    const pl = wb.addWorksheet('PL', { pageSetup:{ paperSize:9, orientation:'landscape', fitToPage:true, fitToWidth:1, fitToHeight:0 }});
+    buildDNSheet(dn, order);
+    buildPLSheet(pl, order);
+    return await wb.xlsx.writeBuffer();
+  }
+
+  function downloadBlob(blob, filename) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
+  function safeFile(s) {
+    return String(s || '').replace(/[^A-Za-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'KENZO';
+  }
+
+  function border(style='thin') {
+    return { top:{style}, left:{style}, bottom:{style}, right:{style} };
+  }
+  function styleCell(cell, opts={}) {
+    cell.font = { name:'Arial', size: opts.size || 10, bold: !!opts.bold, italic: !!opts.italic, color: opts.color ? {argb:opts.color.replace('#','FF')} : undefined };
+    cell.alignment = { vertical:'middle', horizontal: opts.align || 'center', wrapText: opts.wrap !== false };
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFFFFF'} };
+    if (opts.border !== false) cell.border = border(opts.borderStyle || 'thin');
+  }
+  function styleRange(ws, r1, c1, r2, c2, opts={}) {
+    for (let r=r1; r<=r2; r++) for (let c=c1; c<=c2; c++) styleCell(ws.getCell(r,c), opts);
+  }
+
+  function addAddressHeader(ws, isDN) {
+    ws.columns = isDN
+      ? [{width:14},{width:34},{width:10},{width:18},{width:34},{width:14}]
+      : [{width:12},{width:12},{width:14},{width:35},{width:12},{width:18},{width:12},{width:12}];
+
+    const maxCol = isDN ? 6 : 8;
+    const splitCol = isDN ? 3 : 4;
+    const dateRow = 5;
+    const titleRow = 6;
+    const startRow = titleRow + 1;
+
+    ws.mergeCells(1, 1, 4, splitCol);
+    ws.mergeCells(1, splitCol + 1, 4, maxCol);
+
+    const shipCell = ws.getCell(1, 1);
+    const consCell = ws.getCell(1, splitCol + 1);
+    shipCell.value = compactShipperLines().join('\n');
+    consCell.value = compactConsigneeLines().join('\n');
+
+    for (let r = 1; r <= 4; r++) ws.getRow(r).height = 20;
+    ws.getRow(dateRow).height = 18;
+    ws.getRow(titleRow).height = 24;
+
+    styleRange(ws, 1, 1, titleRow, maxCol, { border:false, align:'center', wrap:true });
+    shipCell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+    consCell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+    shipCell.font = { name:'Arial', size:10, bold:true };
+    consCell.font = { name:'Arial', size:10, bold:true };
+
+    ws.getCell(dateRow, 1).value = 'DATE';
+    ws.getCell(dateRow, 1).font = { name:'Arial', size:10, bold:true };
+    ws.getCell(dateRow, 2).value = fmtDateDisplay(el('shipmentDate').value);
+    ws.getCell(dateRow, 2).font = { name:'Arial', size:10 };
+    ws.getCell(dateRow, 1).alignment = { vertical:'middle', horizontal:'left' };
+    ws.getCell(dateRow, 2).alignment = { vertical:'middle', horizontal:'left' };
+
+    ws.mergeCells(titleRow, 1, titleRow, maxCol);
+    ws.getCell(titleRow, 1).value = isDN ? 'BON DE LIVRAISON / DELIVERY NOTE' : 'LISTE DE COLISAGE / PACKING-LIST';
+    ws.getCell(titleRow, 1).alignment = { vertical:'middle', horizontal:'center' };
+    ws.getCell(titleRow, 1).font = { name:'Arial', bold:true, size:16 };
+
+    return startRow;
+  }
+
+  function buildDNSheet(ws, order) {
+    const startRow = addAddressHeader(ws, true);
+    const headers = ['N° Order','REFERENCE / COLOR','SIZE','GENCOD','QTY'];
+    headers.forEach((h,i)=> { const c = ws.getCell(startRow, i+1); c.value=h; styleCell(c,{bold:true}); });
+    const rows = aggregateDN(order);
+    rows.forEach((r,idx)=> {
+      const rr = startRow + 1 + idx;
+      [r.orderNo, r.refColor, r.size, r.ean, r.qty].forEach((v,i)=> { const c=ws.getCell(rr,i+1); c.value=v; styleCell(c,{align:i===1?'left':'center'}); });
+    });
+    let row = startRow + 1 + rows.length;
+    ws.mergeCells(row,1,row,4);
+    ws.getCell(row,1).value = `Sous total Commande OF ${order.orderNo}`;
+    styleCell(ws.getCell(row,1),{bold:true,italic:true,align:'right'});
+    ws.getCell(row,5).value = rows.reduce((a,r)=>a+r.qty,0);
+    styleCell(ws.getCell(row,5),{bold:true});
+  }
+
+  function buildPLSheet(ws, order) {
+    const startRow = addAddressHeader(ws, false);
+    const headers = ['N° Pallet','N° box','N° order','Ref/color','size','GENCOD','Quantity','Gross kg'];
+    headers.forEach((h,i)=> { const c=ws.getCell(startRow, i+1); c.value=h; styleCell(c,{bold:true}); });
+    let rr = startRow + 1;
+    const orderCartons = getOrderCartons(order);
+    for (const carton of orderCartons) {
+      for (const line of carton.lines) {
+        const mixed = carton.lines.length > 1;
+        const vals = [carton.palletNo, carton.cartonNo, carton.orderNo, carton.refColor, line.size, line.ean, line.qty, carton.grossWeight];
+        vals.forEach((v,i)=> { const c = ws.getCell(rr,i+1); c.value=v; styleCell(c,{align:i===3?'left':'center', color:mixed?'#0098FF':undefined}); });
+        rr++;
+      }
+    }
+    const orderPallets = getOrderPallets(order);
+    const totalQty = orderCartons.reduce((a,c)=>a+c.totalQty,0);
+    const totalWeight = round2(orderCartons.reduce((a,c)=>a+c.grossWeight,0));
+    rr += 1;
+    ws.getCell(rr,1).value = `${orderPallets.length} pallet${orderPallets.length === 1 ? '' : 's'}`; styleCell(ws.getCell(rr,1),{border:false});
+    ws.getCell(rr,2).value = `${orderCartons.length}
+boxes`; styleCell(ws.getCell(rr,2),{border:false});
+    ws.getCell(rr,3).value = `Total weight
+KG ${totalWeight.toFixed(0)}`; styleCell(ws.getCell(rr,3),{border:false});
+    ws.getCell(rr,7).value = totalQty; styleCell(ws.getCell(rr,7),{bold:true});
+    ws.getCell(rr+1,7).value = 'Total qty'; styleCell(ws.getCell(rr+1,7),{});
+  }
+})();
+</script>
+</body>
+</html>

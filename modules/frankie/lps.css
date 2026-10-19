@@ -1,0 +1,7 @@
+/* FRANKIE - единна тема */
+@media screen {
+  html[data-lps="frankie"] { --accent:var(--lps-accent); }
+}
+@media screen {
+  html[data-lps="frankie"] main.app { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+}

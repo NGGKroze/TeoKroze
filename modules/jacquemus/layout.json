@@ -1,0 +1,39 @@
+{
+  "title": "JACQUEMUS – генератор на етикети",
+  "subtitle": "Опаковъчен лист + файл с баркодове (Excel) → векторни PDF етикети",
+  "hide": [
+    "#app-ui > header"
+  ],
+  "side": [
+    {
+      "title": "1. Файлове",
+      "move": [
+        "#error-message",
+        "#dropzones-container"
+      ]
+    },
+    {
+      "title": "2. Настройки",
+      "move": [
+        "#toggle-container"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "sel": "#btn-reset",
+      "kind": "danger",
+      "side": "left"
+    },
+    {
+      "sel": "#btn-generate",
+      "kind": "primary",
+      "side": "right"
+    },
+    {
+      "sel": "#btn-print",
+      "kind": "primary",
+      "side": "right"
+    }
+  ]
+}

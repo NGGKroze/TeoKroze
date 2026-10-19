@@ -1,0 +1,5 @@
+@media screen {
+  html[data-lps="chanel"] .max-w-6xl { max-width: none !important; }
+  html[data-lps="chanel"] .lg\:col-span-8 { grid-column: 1 / -1 !important; }
+  html[data-lps="chanel"] .lps-bare > div { margin-bottom: 14px; }
+}

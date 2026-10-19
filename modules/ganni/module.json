@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "ganni",
+  "name": "GANNI",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 90,
+  "summary": "Packing list към labels",
+  "requires": [
+    "GANNI packing list в Excel или CSV"
+  ],
+  "note": "Стандартен процес: качвате PL файла, преглеждате резултата и сваляте етикетите.",
+  "formats": [
+    "XLSX",
+    "XLS",
+    "CSV"
+  ]
+}

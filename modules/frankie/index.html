@@ -1,0 +1,1200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TFS Packing List → Box Label Generator v5</title>
+  <script src="vendor/cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="vendor/cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --ink: #111827;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --panel: #ffffff;
+      --soft: #f8fafc;
+      --accent: #111827;
+      --danger: #b91c1c;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #eef2f7;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    }
+    .app {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .hero {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -0.02em;
+    }
+    .subtle { color: var(--muted); }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 12px 36px rgba(15, 23, 42, .08);
+      padding: 18px;
+      margin: 14px 0;
+    }
+    .dropzone {
+      border: 2px dashed #9ca3af;
+      border-radius: 16px;
+      background: var(--soft);
+      min-height: 132px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 20px;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+    .dropzone.dragover {
+      border-color: #111827;
+      background: #f3f4f6;
+      transform: translateY(-1px);
+    }
+    input[type=file] { display: none; }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 12px;
+      align-items: end;
+    }
+    .field { display: grid; gap: 6px; }
+    .field label { font-size: 12px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: .04em; }
+    .field input, .field select, .table-wrap input {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 9px 10px;
+      font: inherit;
+      background: white;
+    }
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-6 { grid-column: span 6; }
+    .span-12 { grid-column: span 12; }
+    .checkline {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      min-height: 40px;
+      color: #374151;
+    }
+    .checkline input { width: 18px; height: 18px; }
+    .buttonbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    button {
+      border: 0;
+      border-radius: 12px;
+      background: var(--accent);
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+    button.secondary { background: #e5e7eb; color: #111827; }
+    button.ghost { background: transparent; color: #111827; border: 1px solid #cbd5e1; }
+    button.danger { background: var(--danger); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .metric {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .metric strong { display: block; font-size: 24px; }
+    .message {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      display: none;
+    }
+    .message.error { display: block; background: #fee2e2; color: #991b1b; }
+    .message.ok { display: block; background: #dcfce7; color: #166534; }
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      background: #fff;
+    }
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1080px;
+    }
+    table.data th, table.data td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 8px;
+      vertical-align: top;
+      font-size: 13px;
+    }
+    table.data th {
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+      z-index: 1;
+      text-align: left;
+      color: #374151;
+    }
+    table.data input { padding: 7px 8px; border-radius: 8px; font-size: 13px; }
+    .small { font-size: 12px; }
+    .mapping {
+      display: grid;
+      gap: 6px;
+      color: #374151;
+      line-height: 1.45;
+    }
+    .mapping code {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 1px 5px;
+    }
+
+    :root {
+      --page-w: 210mm;
+      --page-h: 297mm;
+      --page-margin-x: 10mm;
+      --page-margin-y: 10mm;
+      --label-gap: 7mm;
+      --border-thin: 1.2pt;
+      --border-thick: 2.4pt;
+      --label-font-size: 26.5pt;
+      --print-safe-inset: 5mm;
+      --label-text-pad-x: 1.2mm;
+      --label-text-pad-y: 0.35mm;
+      --label-fit-safety: 9px;
+    }
+
+    #printArea {
+      background: #e5e7eb;
+      width: 100%;
+      display: grid;
+      justify-items: center;
+      gap: 18px;
+      padding: 18px 0 36px;
+      overflow-x: auto;
+    }
+    .label-page {
+      width: var(--page-w);
+      height: var(--page-h);
+      min-height: var(--page-h);
+      padding: var(--page-margin-y) var(--page-margin-x);
+      background: white;
+      display: flex;
+      flex-direction: column;
+      gap: var(--label-gap);
+      page-break-after: always;
+      break-after: page;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, .15);
+      overflow: hidden;
+    }
+    .label-page:last-child { page-break-after: auto; break-after: auto; }
+    .label-copy {
+      width: 100%;
+      flex: 1 1 0;
+      min-height: 0;
+      overflow: hidden;
+      background: white;
+    }
+    .label-copy.empty {
+      border: 0;
+      visibility: hidden;
+    }
+    .label-table {
+      width: 100%;
+      height: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      font-family: "Arial Narrow", "Aptos Narrow", Arial, Helvetica, sans-serif;
+      color: #000;
+      font-size: var(--label-font-size);
+      line-height: .88;
+      letter-spacing: 0;
+    }
+    .label-table col.c1 { width: 25%; }
+    .label-table col.c2 { width: 13.5%; }
+    .label-table col.c3 { width: 13.5%; }
+    .label-table col.c4 { width: 13.5%; }
+    .label-table col.c5 { width: 24%; }
+    .label-table col.c6 { width: 10.5%; }
+    .label-table tr.r-top { height: 14.3%; }
+    .label-table tr.r-order { height: 14.3%; }
+    .label-table tr.r-blank { height: 14.3%; }
+    .label-table tr.r-ref { height: 14.6%; }
+    .label-table tr.r-color { height: 14.3%; }
+    .label-table tr.r-size { height: 14.1%; }
+    .label-table tr.r-pieces { height: 14.1%; }
+    .label-table td {
+      border: var(--border-thin) solid #000;
+      padding: 0;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
+    }
+    .label-table tr.r-pieces td { border-bottom-width: var(--border-thick); }
+    .label-table tr:first-child td { border-top-width: var(--border-thick); }
+    .label-table td:first-child { border-left-width: var(--border-thick); text-align: left; }
+    .label-table td:last-child { border-right-width: var(--border-thick); }
+    .label-table .cell {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      min-width: 0;
+      white-space: nowrap;
+      padding: var(--label-text-pad-y) var(--label-text-pad-x);
+    }
+    .label-table .center .cell { justify-content: center; text-align: center; }
+    .label-table .left .cell { justify-content: flex-start; text-align: left; }
+    .label-table .value .cell { justify-content: center; text-align: center; }
+    .fit-text {
+      display: inline-block;
+      max-width: none;
+      white-space: nowrap;
+      overflow: visible;
+      text-overflow: clip;
+      min-width: 0;
+      line-height: .88;
+      font-size: var(--label-font-size);
+    }
+    .size-grid {
+      display: grid;
+      height: 100%;
+      align-items: stretch;
+      width: 100%;
+      min-width: 0;
+    }
+    .size-grid span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-left: var(--border-thin) solid #000;
+      padding: var(--label-text-pad-y) 0.7mm;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      line-height: .9;
+      font-size: var(--label-font-size);
+    }
+    .size-grid span:first-child { border-left: 0; }
+    .size-grid .fit-text {
+      font-style: normal;
+      display: inline-block;
+      max-width: none;
+      min-width: 0;
+      overflow: visible;
+      text-overflow: clip;
+    }
+    .no-preview {
+      color: #6b7280;
+      text-align: center;
+      padding: 48px 20px;
+      border: 1px dashed #d1d5db;
+      border-radius: 14px;
+      background: #f9fafb;
+      width: min(740px, 100%);
+    }
+
+    @page { size: A4 portrait; margin: 0 !important; }
+    @media print {
+      html, body {
+        width: auto !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        overflow: visible !important;
+      }
+      body * { visibility: hidden; }
+      #printArea, #printArea * { visibility: visible; }
+      .app, .print-panel {
+        width: auto !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        box-shadow: none !important;
+      }
+      #printArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+        background: #fff !important;
+        overflow: visible !important;
+      }
+      .label-page {
+        width: calc(var(--page-w) - (var(--print-safe-inset) * 2)) !important;
+        height: calc(var(--page-h) - (var(--print-safe-inset) * 2)) !important;
+        min-height: calc(var(--page-h) - (var(--print-safe-inset) * 2)) !important;
+        margin: var(--print-safe-inset) auto !important;
+        box-shadow: none !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+      .label-page:last-child { page-break-after: auto !important; break-after: auto !important; }
+      .no-preview { display: none !important; }
+    }
+    body.pdf-mode { background: #fff; }
+    body.pdf-mode #printArea {
+      width: var(--page-w);
+      margin: 0 auto;
+      padding: 0;
+      display: block;
+      background: #fff;
+      overflow: visible;
+    }
+    body.pdf-mode .label-page {
+      width: calc(var(--page-w) - (var(--print-safe-inset) * 2));
+      height: calc(var(--page-h) - (var(--print-safe-inset) * 2));
+      min-height: calc(var(--page-h) - (var(--print-safe-inset) * 2));
+      margin: var(--print-safe-inset) auto;
+      box-shadow: none;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <h1>TFS Packing List → Box Label Generator</h1>
+      <div class="subtle">Drop Excel packing lists. The app reads each packing-list sheet, builds two-copy box labels, and opens the browser Save as PDF / print dialog with a centered A4 layout. v5 adds print-safe inner padding and conservative print fitting so borders do not clip letters.</div>
+    </section>
+
+    <section class="panel">
+      <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Upload Excel files">
+        <div>
+          <strong>Drop .xls / .xlsx packing lists here</strong><br />
+          <span class="subtle">You can also include an old BOX LABEL template; its color order/carton numbers will be used when possible.</span><br /><br />
+          <button type="button" class="secondary" id="chooseBtn">Choose files</button>
+        </div>
+      </div>
+      <input id="fileInput" type="file" multiple accept=".xls,.xlsx,.xlsm,.csv" />
+      <div id="message" class="message"></div>
+      <div class="summary" id="summary"></div>
+    </section>
+
+    <section class="panel">
+      <div class="controls">
+        <div class="field span-3">
+          <label for="destinationMode">Destination</label>
+          <select id="destinationMode">
+            <option value="auto">Auto from packing list</option>
+            <option value="TFS EU">TFS EU</option>
+            <option value="TFS US">TFS US</option>
+            <option value="WH">WH</option>
+          </select>
+        </div>
+        <div class="field span-3">
+          <label for="orderOverride">Order override</label>
+          <input id="orderOverride" placeholder="Leave blank to use packing list order" />
+        </div>
+        <div class="field span-2">
+          <label for="cartonStart">Carton start</label>
+          <input id="cartonStart" type="number" value="1" min="1" />
+        </div>
+        <div class="field span-4">
+          <label for="sortMode">Sort / numbering</label>
+          <select id="sortMode">
+            <option value="template">Use label-template order if uploaded, otherwise packing-list order</option>
+            <option value="packing">Packing-list sheet order</option>
+            <option value="color">Color / reference name</option>
+          </select>
+        </div>
+        <label class="checkline span-4">
+          <input id="renumber" type="checkbox" checked />
+          <span>Renumber cartons globally, starting at carton start</span>
+        </label>
+        <label class="checkline span-4">
+          <input id="templateCartons" type="checkbox" checked />
+          <span>Use uploaded BOX LABEL carton numbers when matched by color</span>
+        </label>
+        <label class="checkline span-4">
+          <input id="twoCopies" type="checkbox" checked />
+          <span>Print two identical copies of every carton label</span>
+        </label>
+        <div class="field span-2">
+          <label for="pageMarginX">Side margin mm</label>
+          <input id="pageMarginX" type="number" value="10" min="3" max="20" step="0.5" />
+        </div>
+        <div class="field span-2">
+          <label for="pageMarginY">Top/bottom mm</label>
+          <input id="pageMarginY" type="number" value="10" min="3" max="20" step="0.5" />
+        </div>
+        <div class="field span-2">
+          <label for="labelGap">Label gap mm</label>
+          <input id="labelGap" type="number" value="7" min="0" max="20" step="0.5" />
+        </div>
+        <div class="field span-2">
+          <label for="printInset">Print inset mm</label>
+          <input id="printInset" type="number" value="5" min="0" max="12" step="0.5" />
+        </div>
+        <div class="field span-2">
+          <label for="fontSizePt">Max font pt</label>
+          <input id="fontSizePt" type="number" value="26.5" min="14" max="36" step="0.5" />
+        </div>
+        <div class="field span-2">
+          <label for="borderPt">Border pt</label>
+          <input id="borderPt" type="number" value="1.2" min="0.5" max="3" step="0.1" />
+        </div>
+        <label class="checkline span-2">
+          <input id="fitText" type="checkbox" checked />
+          <span>Auto-fit text</span>
+        </label>
+      </div>
+      <div class="buttonbar">
+        <button type="button" id="applyBtn">Apply settings</button>
+        <button type="button" id="printBtn" disabled>Save as PDF / Print…</button>
+        <button type="button" id="pdfBtn" class="secondary" disabled>Download PDF file</button>
+        <button type="button" id="addBtn" class="ghost">Add manual label</button>
+        <button type="button" id="clearBtn" class="danger">Clear</button>
+      </div>
+      <div class="small subtle" style="margin-top: 8px;">Recommended: use <strong>Save as PDF / Print…</strong>, choose <strong>Save as PDF</strong> in the browser dialog, set paper to <strong>A4</strong>, orientation to <strong>Portrait</strong>, scale to <strong>100%</strong>, and margins to <strong>None</strong>. If the left/right edge is still clipped, increase <strong>Print inset mm</strong>. If text touches borders, lower <strong>Max font pt</strong> to 25–26 or increase <strong>Print inset mm</strong>.</div>
+    </section>
+
+    <section class="panel">
+      <h2 style="margin: 0 0 10px;">Parsed labels</h2>
+      <div class="table-wrap">
+        <table class="data" id="labelGrid">
+          <thead>
+            <tr>
+              <th style="width: 54px;">Use</th>
+              <th style="width: 90px;">Carton</th>
+              <th style="width: 210px;">Order</th>
+              <th style="width: 260px;">Reference</th>
+              <th style="width: 210px;">Color</th>
+              <th style="width: 260px;">Sizes</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="small subtle" style="margin-top: 8px;">Sizes use this format: <code>XS:3 | S:9 | M:9 | L:6 | XL:3</code>. You can edit any cell before making the PDF.</div>
+    </section>
+
+    <section class="panel">
+      <h2 style="margin: 0 0 10px;">How this maps from your files</h2>
+      <div class="mapping">
+        <div><code>Order</code> comes from the packing-list line that starts with <code>Order No.:</code>. <code>TFS New-York</code> is normalized to <code>TFS NYC</code>.</div>
+        <div><code>Reference</code> comes from the <code>REF NO.</code> column, with the trailing color words removed to match the box-label template.</div>
+        <div><code>Color</code> comes from the <code>COLOR</code> column, for example <code>635STP-4 DARK NAVY</code>.</div>
+        <div><code>Sizes / NB PIECES</code> come from the size columns between <code>COLOR</code> and <code>QTY CTN</code>.</div>
+        <div><code>Carton №</code> is generated globally, or copied from an uploaded BOX LABEL template when the color matches.</div>
+        <div><code>Page layout</code> is A4 portrait at <code>210mm × 297mm</code>. The page is split into two equal label slots using your margin and label-gap settings. The browser print path also adds a centered print-safe inset so labels do not get clipped on the left/right side.</div>
+        <div><code>Auto-fit text</code> reduces only the font size inside crowded cells and leaves a hidden print-safety reserve at the right edge. This prevents browser PDF rendering from clipping final letters such as <code>E</code>, <code>S</code>, or <code>№</code>.</div>
+      </div>
+    </section>
+
+    <section class="panel print-panel">
+      <div id="printArea"><div class="no-preview">Upload a packing list to preview labels here.</div></div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      rawLabels: [],
+      labels: [],
+      templateLabels: [],
+      files: [],
+      messages: []
+    };
+
+    const $ = (sel) => document.querySelector(sel);
+    const els = {
+      dropzone: $('#dropzone'),
+      fileInput: $('#fileInput'),
+      chooseBtn: $('#chooseBtn'),
+      message: $('#message'),
+      summary: $('#summary'),
+      labelGridBody: $('#labelGrid tbody'),
+      printArea: $('#printArea'),
+      destinationMode: $('#destinationMode'),
+      orderOverride: $('#orderOverride'),
+      cartonStart: $('#cartonStart'),
+      sortMode: $('#sortMode'),
+      renumber: $('#renumber'),
+      templateCartons: $('#templateCartons'),
+      twoCopies: $('#twoCopies'),
+      pageMarginX: $('#pageMarginX'),
+      pageMarginY: $('#pageMarginY'),
+      labelGap: $('#labelGap'),
+      printInset: $('#printInset'),
+      fontSizePt: $('#fontSizePt'),
+      borderPt: $('#borderPt'),
+      fitText: $('#fitText'),
+      applyBtn: $('#applyBtn'),
+      pdfBtn: $('#pdfBtn'),
+      printBtn: $('#printBtn'),
+      addBtn: $('#addBtn'),
+      clearBtn: $('#clearBtn')
+    };
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    }
+    function norm(value) {
+      return String(value ?? '').replace(/\s+/g, ' ').trim();
+    }
+    function normKey(value) {
+      return norm(value).toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+    }
+    function parseNum(value) {
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      const s = norm(value).replace(',', '.').replace(/[^0-9.\-]/g, '');
+      if (!s || s === '-' || s === '.') return NaN;
+      const n = Number(s);
+      return Number.isFinite(n) ? n : NaN;
+    }
+    function fmtQty(value) {
+      const n = parseNum(value);
+      if (!Number.isFinite(n)) return '';
+      return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+    }
+    function filenameBase(name) {
+      return String(name || 'labels').replace(/\.[^.]+$/, '').replace(/[^a-z0-9\-_]+/gi, '-').replace(/-+/g, '-');
+    }
+    function colorKey(value) {
+      return norm(value).toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+    }
+    function clampNumber(value, min, max, fallback) {
+      const n = parseNum(value);
+      if (!Number.isFinite(n)) return fallback;
+      return Math.min(max, Math.max(min, n));
+    }
+    function ptToPx(pt) {
+      return Number(pt) * 96 / 72;
+    }
+    function waitFrame() {
+      return new Promise(resolve => requestAnimationFrame(resolve));
+    }
+    function updateLayoutCss() {
+      const root = document.documentElement;
+      const marginX = clampNumber(els.pageMarginX.value, 3, 20, 10);
+      const marginY = clampNumber(els.pageMarginY.value, 3, 20, 10);
+      const gap = clampNumber(els.labelGap.value, 0, 20, 7);
+      const printInset = clampNumber(els.printInset.value, 0, 12, 5);
+      const fontPt = clampNumber(els.fontSizePt.value, 14, 40, 26.5);
+      const border = clampNumber(els.borderPt.value, 0.5, 3, 1.2);
+      root.style.setProperty('--page-margin-x', `${marginX}mm`);
+      root.style.setProperty('--page-margin-y', `${marginY}mm`);
+      root.style.setProperty('--label-gap', `${gap}mm`);
+      root.style.setProperty('--print-safe-inset', `${printInset}mm`);
+      root.style.setProperty('--label-font-size', `${fontPt}pt`);
+      root.style.setProperty('--border-thin', `${border}pt`);
+      root.style.setProperty('--border-thick', `${border * 2}pt`);
+    }
+
+    function findCellText(rows, regex, maxRows = 25) {
+      for (let r = 0; r < Math.min(rows.length, maxRows); r++) {
+        for (let c = 0; c < (rows[r] || []).length; c++) {
+          const v = norm(rows[r][c]);
+          if (regex.test(v)) return { r, c, value: v };
+        }
+      }
+      return null;
+    }
+
+    function extractOrder(rows) {
+      const hit = findCellText(rows, /Order\s*No\.?\s*:/i, 15);
+      if (!hit) return '';
+      return normalizeOrder(hit.value);
+    }
+
+    function normalizeOrder(text) {
+      let s = String(text || '').replace(/Order\s*No\.?\s*:?/i, '').replace(/\s+/g, ' ').trim();
+      s = s.replace(/TFS\s+New\s*-\s*York/ig, 'TFS NYC');
+      s = s.replace(/TFS\s+New\s+York/ig, 'TFS NYC');
+      s = s.replace(/TFS\s+NYC/ig, 'TFS NYC');
+      s = s.replace(/TFS\s+Paris/ig, 'TFS Paris');
+      return s;
+    }
+
+    function extractDestinationText(rows) {
+      const hit = findCellText(rows, /Destination\s*:/i, 15);
+      return hit ? hit.value : '';
+    }
+
+    function guessDestination(order, destinationText, filename) {
+      const blob = `${order} ${destinationText} ${filename}`.toUpperCase();
+      if (/NEW\s*-?\s*YORK|NYC|FARMINGDALE|UNITED STATES|\bUS\b|USA/.test(blob)) return 'TFS US';
+      if (/PARIS|FRANCE|\bEU\b|EUROPE/.test(blob)) return 'TFS EU';
+      return 'WH';
+    }
+
+    function cleanReference(ref, color) {
+      let result = norm(ref);
+      let colorName = norm(color).replace(/^\S+\s*/, '').trim();
+      if (colorName) {
+        const escaped = colorName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        result = result.replace(new RegExp(`\\s*-\\s*${escaped}$`, 'i'), '');
+        result = result.replace(new RegExp(`\\s+${escaped}$`, 'i'), '');
+        const words = colorName.split(/\s+/).filter(Boolean).sort((a,b) => b.length - a.length);
+        for (const word of words) {
+          const e = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          result = result.replace(new RegExp(`\\s*-?\\s*${e}$`, 'i'), '');
+        }
+      }
+      result = result.replace(/\s+-\s*$/, '').replace(/\s+/g, ' ').trim();
+      return result || norm(ref);
+    }
+
+    function rowContainsPackingHeader(row) {
+      return (row || []).some(v => /CTN\s*NO/i.test(norm(v))) && (row || []).some(v => /REF\s*NO/i.test(norm(v)));
+    }
+
+    function classifySheet(rows) {
+      if (rows.some(rowContainsPackingHeader)) return 'packing';
+      const first = (rows[0] || []).map(normKey).join(' | ');
+      if (/DESTINATION/.test(first) && /CARTOON|CARTON/.test(first)) return 'template';
+      return 'unknown';
+    }
+
+    function parsePackingSheet(rows, sheetName, fileName, fileIndex) {
+      const headerRowIndex = rows.findIndex(rowContainsPackingHeader);
+      if (headerRowIndex < 0) return [];
+
+      const header = rows[headerRowIndex] || [];
+      const keys = header.map(normKey);
+      const ctnStartCol = keys.findIndex(k => /CTN\s*NO/.test(k));
+      const refCol = keys.findIndex(k => /REF\s*NO/.test(k));
+      const colorCol = keys.findIndex(k => /^COLOR$|\bCOLOR\b/.test(k));
+      const qtyCol = keys.findIndex(k => /QTY/.test(k) && /CTN/.test(k));
+      const ttlCtnCol = keys.findIndex(k => /TTL/.test(k) && /CTN/.test(k));
+      const ctnEndCol = ctnStartCol >= 0 ? ctnStartCol + 2 : -1;
+      const sizeStart = colorCol >= 0 ? colorCol + 1 : -1;
+      const sizeEndExclusive = qtyCol > sizeStart ? qtyCol : Math.min(header.length, sizeStart + 8);
+      const sizeCols = [];
+      for (let c = sizeStart; c < sizeEndExclusive; c++) {
+        const label = norm(header[c]);
+        if (label) sizeCols.push({ col: c, label });
+      }
+
+      const order = extractOrder(rows);
+      const destinationText = extractDestinationText(rows);
+      const destination = guessDestination(order, destinationText, fileName);
+      const labels = [];
+
+      for (let r = headerRowIndex + 1; r < rows.length; r++) {
+        const row = rows[r] || [];
+        const first = normKey(row[ctnStartCol]);
+        if (first.startsWith('TOTAL')) break;
+        const rawRef = norm(row[refCol]);
+        const color = norm(row[colorCol]);
+        if (!rawRef && !color) continue;
+
+        const sizes = sizeCols
+          .map(s => ({ size: s.label, qty: fmtQty(row[s.col]) }))
+          .filter(s => s.size && s.qty !== '' && Number(s.qty) !== 0);
+        const sourceStart = Math.trunc(parseNum(row[ctnStartCol])) || 1;
+        const sourceEnd = Math.trunc(parseNum(row[ctnEndCol])) || sourceStart;
+        const ttlCtn = Math.trunc(parseNum(row[ttlCtnCol]));
+        const repeats = Math.max(1, Number.isFinite(ttlCtn) ? ttlCtn : (sourceEnd - sourceStart + 1));
+
+        for (let n = 0; n < repeats; n++) {
+          labels.push({
+            enabled: true,
+            fileIndex,
+            sheetName,
+            rowNumber: r + 1,
+            source: `${fileName} / ${sheetName} / row ${r + 1}`,
+            sourceCartonNo: sourceStart + n,
+            cartonNo: sourceStart + n,
+            order,
+            destination,
+            reference: cleanReference(rawRef, color),
+            rawReference: rawRef,
+            color,
+            sizes,
+            templateIndex: null,
+            templateCartonNo: null
+          });
+        }
+      }
+      return labels;
+    }
+
+    function parseTemplateSheet(rows, sheetName, fileName, fileIndex) {
+      const top = rows || [];
+      const color = norm(top[4]?.[1] || top[12]?.[1] || '');
+      const reference = norm(top[3]?.[1] || top[11]?.[1] || '');
+      const order = norm(top[1]?.[1] || top[9]?.[1] || '');
+      const cartonNo = Math.trunc(parseNum(top[0]?.[5] || top[8]?.[5])) || null;
+      const sizeRow = top[5] || [];
+      const qtyRow = top[6] || [];
+      const sizes = [];
+      for (let c = 1; c <= 5; c++) {
+        const size = norm(sizeRow[c]);
+        const qty = fmtQty(qtyRow[c]);
+        if (size && qty !== '') sizes.push({ size, qty });
+      }
+      if (!color && !reference) return null;
+      return {
+        fileIndex,
+        sheetName,
+        source: `${fileName} / ${sheetName}`,
+        order,
+        reference,
+        color,
+        sizes,
+        cartonNo
+      };
+    }
+
+    async function loadFiles(files) {
+      if (!window.XLSX) {
+        showMessage('The Excel parser did not load. Open this HTML while online, or vendor the SheetJS script locally.', 'error');
+        return;
+      }
+      state.rawLabels = [];
+      state.labels = [];
+      state.templateLabels = [];
+      state.files = [];
+      state.messages = [];
+
+      const usableFiles = [...files].filter(f => /\.(xls|xlsx|xlsm|csv)$/i.test(f.name));
+      if (!usableFiles.length) {
+        showMessage('No Excel files selected. Please upload .xls, .xlsx, .xlsm, or .csv files.', 'error');
+        return;
+      }
+
+      for (let i = 0; i < usableFiles.length; i++) {
+        const file = usableFiles[i];
+        state.files.push(file.name);
+        try {
+          const data = await file.arrayBuffer();
+          const workbook = XLSX.read(data, { type: 'array', cellDates: false });
+          workbook.SheetNames.forEach(sheetName => {
+            const sheet = workbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '', blankrows: true });
+            const type = classifySheet(rows);
+            if (type === 'packing') {
+              state.rawLabels.push(...parsePackingSheet(rows, sheetName, file.name, i));
+            } else if (type === 'template') {
+              const template = parseTemplateSheet(rows, sheetName, file.name, i);
+              if (template) state.templateLabels.push(template);
+            }
+          });
+        } catch (err) {
+          console.error(err);
+          state.messages.push(`Could not read ${file.name}: ${err.message || err}`);
+        }
+      }
+
+      applySettings();
+      if (state.labels.length) {
+        showMessage(`Parsed ${state.labels.length} label record(s) from ${usableFiles.length} file(s).`, 'ok');
+      } else {
+        showMessage('No packing-list rows found. The app looks for a row containing CTN NO. and REF NO.', 'error');
+      }
+    }
+
+    function applyTemplateMatches(labels) {
+      const templates = state.templateLabels.map((t, idx) => ({ ...t, templateIndex: idx, key: colorKey(t.color) }));
+      return labels.map(label => {
+        const match = templates.find(t => t.key && t.key === colorKey(label.color));
+        return match ? { ...label, templateIndex: match.templateIndex, templateCartonNo: match.cartonNo } : { ...label, templateIndex: null, templateCartonNo: null };
+      });
+    }
+
+    function applySettings() {
+      let labels = state.rawLabels.map(l => ({ ...l, sizes: l.sizes.map(s => ({...s})) }));
+      labels = applyTemplateMatches(labels);
+
+      const destinationMode = els.destinationMode.value;
+      const orderOverride = norm(els.orderOverride.value);
+      labels = labels.map(l => ({
+        ...l,
+        destination: destinationMode === 'auto' ? l.destination : destinationMode,
+        order: orderOverride || l.order
+      }));
+
+      const sortMode = els.sortMode.value;
+      if (sortMode === 'template' && state.templateLabels.length) {
+        labels.sort((a, b) => {
+          const ai = a.templateIndex ?? 99999;
+          const bi = b.templateIndex ?? 99999;
+          if (ai !== bi) return ai - bi;
+          return a.fileIndex - b.fileIndex || a.sheetName.localeCompare(b.sheetName) || a.rowNumber - b.rowNumber;
+        });
+      } else if (sortMode === 'color') {
+        labels.sort((a, b) => `${a.color} ${a.reference}`.localeCompare(`${b.color} ${b.reference}`));
+      } else {
+        labels.sort((a, b) => a.fileIndex - b.fileIndex || a.sheetName.localeCompare(b.sheetName) || a.rowNumber - b.rowNumber);
+      }
+
+      const start = Math.max(1, Math.trunc(parseNum(els.cartonStart.value)) || 1);
+      let current = start;
+      labels = labels.map(label => {
+        let cartonNo = label.sourceCartonNo;
+        if (els.templateCartons.checked && label.templateCartonNo) cartonNo = label.templateCartonNo;
+        else if (els.renumber.checked) cartonNo = current++;
+        return { ...label, cartonNo };
+      });
+
+      state.labels = labels;
+      renderAll();
+    }
+
+    function sizeText(sizes) {
+      return (sizes || []).map(s => `${s.size}:${s.qty}`).join(' | ');
+    }
+
+    function parseSizeText(text) {
+      return String(text || '')
+        .split(/\s*[|;,]\s*/)
+        .map(part => {
+          const m = part.match(/^(.+?)\s*[:=]\s*(.+)$/);
+          if (!m) return null;
+          const size = norm(m[1]);
+          const qty = fmtQty(m[2]);
+          return size && qty !== '' ? { size, qty } : null;
+        })
+        .filter(Boolean);
+    }
+
+    function renderGrid() {
+      els.labelGridBody.innerHTML = state.labels.map((label, idx) => `
+        <tr>
+          <td><input type="checkbox" data-idx="${idx}" data-field="enabled" ${label.enabled ? 'checked' : ''}></td>
+          <td><input type="number" data-idx="${idx}" data-field="cartonNo" value="${esc(label.cartonNo)}"></td>
+          <td><input data-idx="${idx}" data-field="order" value="${esc(label.order)}"></td>
+          <td><input data-idx="${idx}" data-field="reference" value="${esc(label.reference)}"></td>
+          <td><input data-idx="${idx}" data-field="color" value="${esc(label.color)}"></td>
+          <td><input data-idx="${idx}" data-field="sizes" value="${esc(sizeText(label.sizes))}"></td>
+          <td class="small">${esc(label.source)}${label.templateCartonNo ? `<br><span class="subtle">Matched template carton ${esc(label.templateCartonNo)}</span>` : ''}</td>
+        </tr>
+      `).join('');
+      els.labelGridBody.querySelectorAll('input').forEach(input => input.addEventListener('input', onGridEdit));
+    }
+
+    function onGridEdit(event) {
+      const input = event.currentTarget;
+      const idx = Number(input.dataset.idx);
+      const field = input.dataset.field;
+      const label = state.labels[idx];
+      if (!label) return;
+      if (field === 'enabled') label.enabled = input.checked;
+      else if (field === 'cartonNo') label.cartonNo = Math.trunc(parseNum(input.value)) || '';
+      else if (field === 'sizes') label.sizes = parseSizeText(input.value);
+      else label[field] = input.value;
+      renderPreview();
+      updateButtons();
+    }
+
+    function renderSummary() {
+      const enabled = state.labels.filter(l => l.enabled);
+      const fileCount = state.files.length;
+      const templateCount = state.templateLabels.length;
+      const qty = enabled.reduce((sum, label) => sum + label.sizes.reduce((s, x) => s + (parseNum(x.qty) || 0), 0), 0);
+      els.summary.innerHTML = `
+        <div class="metric"><span class="subtle">Files</span><strong>${fileCount}</strong></div>
+        <div class="metric"><span class="subtle">Packing labels</span><strong>${enabled.length}</strong></div>
+        <div class="metric"><span class="subtle">Template labels matched</span><strong>${templateCount}</strong></div>
+        <div class="metric"><span class="subtle">Total pieces in enabled labels</span><strong>${qty}</strong></div>
+      `;
+    }
+
+    function cell(text, className = 'center', min = 12) {
+      return `<td class="${className}"><div class="cell"><span class="fit-text" data-min="${min}">${esc(text)}</span></div></td>`;
+    }
+
+    function renderLabelTable(label) {
+      const cols = Math.max(1, label.sizes.length);
+      const sizeCells = label.sizes.map(s => `<span><em class="fit-text" data-min="9">${esc(s.size)}</em></span>`).join('') || '<span><em class="fit-text" data-min="9"></em></span>';
+      const qtyCells = label.sizes.map(s => `<span><em class="fit-text" data-min="9">${esc(s.qty)}</em></span>`).join('') || '<span><em class="fit-text" data-min="9"></em></span>';
+      return `
+        <table class="label-table" aria-label="Box label carton ${esc(label.cartonNo)}">
+          <colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"></colgroup>
+          <tbody>
+            <tr class="r-top">
+              ${cell('DESTINATION', 'center', 9)}
+              ${cell('TFS EU', 'center', 9)}
+              ${cell('TFS US', 'center', 9)}
+              ${cell('WH', 'center', 9)}
+              ${cell('CARTON №', 'center', 9)}
+              ${cell(label.cartonNo, 'center', 9)}
+            </tr>
+            <tr class="r-order">
+              ${cell('ORDER', 'left', 9)}
+              <td class="value" colspan="5"><div class="cell"><span class="fit-text" data-min="9">${esc(label.order)}</span></div></td>
+            </tr>
+            <tr class="r-blank"><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr class="r-ref">
+              ${cell('REFERENCE', 'left', 9)}
+              <td class="value" colspan="5"><div class="cell"><span class="fit-text" data-min="9">${esc(label.reference)}</span></div></td>
+            </tr>
+            <tr class="r-color">
+              ${cell('COLOR', 'left', 9)}
+              <td class="value" colspan="5"><div class="cell"><span class="fit-text" data-min="9">${esc(label.color)}</span></div></td>
+            </tr>
+            <tr class="r-size">
+              ${cell('SIZE (S)', 'left', 9)}
+              <td colspan="5" style="padding:0"><div class="size-grid" style="grid-template-columns: repeat(${cols}, 1fr)">${sizeCells}</div></td>
+            </tr>
+            <tr class="r-pieces">
+              ${cell('NB PIECES', 'left', 9)}
+              <td colspan="5" style="padding:0"><div class="size-grid" style="grid-template-columns: repeat(${cols}, 1fr)">${qtyCells}</div></td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderLabelSlot(label) {
+      return label ? `<div class="label-copy">${renderLabelTable(label)}</div>` : '<div class="label-copy empty"></div>';
+    }
+
+    function chunkPairs(items) {
+      const pages = [];
+      for (let i = 0; i < items.length; i += 2) pages.push([items[i], items[i + 1] || null]);
+      return pages;
+    }
+
+    function fitLabelText(root = els.printArea) {
+      if (!els.fitText.checked) return;
+      const isPrinting = document.body.classList.contains('printing-mode') || document.body.classList.contains('pdf-mode');
+      const chosenPt = clampNumber(els.fontSizePt.value, 14, 36, 26.5);
+      const printShrinkPt = isPrinting ? 1.2 : 0;
+      const maxPx = ptToPx(Math.max(14, chosenPt - printShrinkPt));
+      const safetyPx = isPrinting ? 12 : 8;
+      root.querySelectorAll('.fit-text').forEach(el => {
+        const minPx = ptToPx(Number(el.dataset.min || 8));
+        const box = el.closest('.cell') || el.parentElement;
+        if (!box) return;
+        let size = maxPx;
+        const boxStyle = getComputedStyle(box);
+        const padX = (parseFloat(boxStyle.paddingLeft) || 0) + (parseFloat(boxStyle.paddingRight) || 0);
+        const padY = (parseFloat(boxStyle.paddingTop) || 0) + (parseFloat(boxStyle.paddingBottom) || 0);
+        const targetWidth = Math.max(1, box.clientWidth - padX - safetyPx);
+        const targetHeight = Math.max(1, box.clientHeight - padY - 4);
+        el.style.fontSize = `${size}px`;
+        el.style.maxWidth = `${targetWidth}px`;
+        let guard = 0;
+        while (guard < 140 && size > minPx && (el.scrollWidth > targetWidth || el.scrollHeight > targetHeight)) {
+          size -= 0.5;
+          el.style.fontSize = `${size}px`;
+          guard++;
+        }
+        if (el.scrollWidth > targetWidth || el.scrollHeight > targetHeight) {
+          const wRatio = targetWidth / Math.max(1, el.scrollWidth);
+          const hRatio = targetHeight / Math.max(1, el.scrollHeight);
+          const ratio = Math.min(wRatio, hRatio, 1);
+          el.style.transformOrigin = 'center center';
+          el.style.transform = `scale(${Math.max(0.85, ratio)})`;
+        } else {
+          el.style.transform = '';
+        }
+      });
+    }
+
+    function scheduleFitLabels() {
+      if (!els.fitText.checked) return;
+      requestAnimationFrame(() => {
+        fitLabelText();
+        requestAnimationFrame(() => fitLabelText());
+      });
+    }
+
+    function renderPreview() {
+      updateLayoutCss();
+      const enabled = state.labels.filter(l => l.enabled);
+      if (!enabled.length) {
+        els.printArea.innerHTML = '<div class="no-preview">No enabled labels yet.</div>';
+        return;
+      }
+
+      let pages;
+      if (els.twoCopies.checked) {
+        pages = enabled.map(label => [label, label]);
+      } else {
+        pages = chunkPairs(enabled);
+      }
+
+      els.printArea.innerHTML = pages.map(pair => `
+        <section class="label-page">
+          ${pair.map(renderLabelSlot).join('')}
+        </section>
+      `).join('');
+      scheduleFitLabels();
+    }
+
+    function renderAll() {
+      updateLayoutCss();
+      renderGrid();
+      renderSummary();
+      renderPreview();
+      updateButtons();
+    }
+
+    function updateButtons() {
+      const hasLabels = state.labels.some(l => l.enabled);
+      els.pdfBtn.disabled = !hasLabels;
+      els.printBtn.disabled = !hasLabels;
+    }
+
+    function showMessage(text, type = 'ok') {
+      const extra = state.messages.length ? ` ${state.messages.join(' ')}` : '';
+      els.message.textContent = text + extra;
+      els.message.className = `message ${type}`;
+    }
+
+    function addManualLabel() {
+      const start = Math.max(1, Math.trunc(parseNum(els.cartonStart.value)) || 1);
+      const cartonNo = state.labels.length ? Math.max(...state.labels.map(l => parseNum(l.cartonNo) || 0)) + 1 : start;
+      state.labels.push({
+        enabled: true,
+        fileIndex: 9999,
+        sheetName: 'Manual',
+        rowNumber: 0,
+        source: 'Manual entry',
+        sourceCartonNo: cartonNo,
+        cartonNo,
+        order: els.orderOverride.value || 'P2025-10-22-1422 TFS NYC',
+        destination: els.destinationMode.value === 'auto' ? 'TFS US' : els.destinationMode.value,
+        reference: 'MILTON WOOL-BLEND TROUSERS',
+        rawReference: '',
+        color: '635STP-3 BLACK',
+        sizes: [{size:'XS', qty:'3'}, {size:'S', qty:'9'}, {size:'M', qty:'9'}, {size:'L', qty:'6'}, {size:'XL', qty:'3'}],
+        templateIndex: null,
+        templateCartonNo: null
+      });
+      state.rawLabels = state.labels.map(l => ({ ...l, sizes: l.sizes.map(s => ({ ...s })) }));
+      renderAll();
+      showMessage('Added one manual label. Edit it in the table.', 'ok');
+    }
+
+    function clearAll() {
+      state.rawLabels = [];
+      state.labels = [];
+      state.templateLabels = [];
+      state.files = [];
+      state.messages = [];
+      els.orderOverride.value = '';
+      renderAll();
+      els.printArea.innerHTML = '<div class="no-preview">Upload a packing list to preview labels here.</div>';
+      els.message.className = 'message';
+      els.message.textContent = '';
+    }
+
+    async function openSaveAsPdfDialog() {
+      const enabled = state.labels.filter(l => l.enabled);
+      if (!enabled.length) return;
+      document.body.classList.add('printing-mode');
+      updateLayoutCss();
+      renderPreview();
+      await waitFrame();
+      fitLabelText();
+      await waitFrame();
+      fitLabelText();
+      window.print();
+    }
+
+    async function downloadPdf() {
+      const enabled = state.labels.filter(l => l.enabled);
+      if (!enabled.length) return;
+      if (!window.html2pdf) {
+        window.print();
+        return;
+      }
+      document.body.classList.add('pdf-mode');
+      renderPreview();
+      await waitFrame();
+      fitLabelText();
+      await waitFrame();
+      fitLabelText();
+      const firstOrder = enabled[0]?.order || 'TFS-labels';
+      const opt = {
+        margin: 0,
+        filename: `${filenameBase(firstOrder)}-box-labels.pdf`,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          windowWidth: Math.round(210 * 96 / 25.4),
+          scrollY: 0
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['.label-page', '.label-copy'] }
+      };
+      try {
+        await html2pdf().set(opt).from(els.printArea).save();
+      } finally {
+        document.body.classList.remove('pdf-mode');
+        renderPreview();
+      }
+    }
+
+    els.chooseBtn.addEventListener('click', () => els.fileInput.click());
+    els.dropzone.addEventListener('click', () => els.fileInput.click());
+    els.dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') els.fileInput.click(); });
+    els.fileInput.addEventListener('change', e => loadFiles(e.target.files));
+    ['dragenter', 'dragover'].forEach(evt => els.dropzone.addEventListener(evt, e => {
+      e.preventDefault();
+      els.dropzone.classList.add('dragover');
+    }));
+    ['dragleave', 'drop'].forEach(evt => els.dropzone.addEventListener(evt, e => {
+      e.preventDefault();
+      els.dropzone.classList.remove('dragover');
+    }));
+    els.dropzone.addEventListener('drop', e => loadFiles(e.dataTransfer.files));
+    els.applyBtn.addEventListener('click', applySettings);
+    [els.destinationMode, els.orderOverride, els.cartonStart, els.sortMode, els.renumber, els.templateCartons, els.twoCopies]
+      .forEach(el => el.addEventListener('change', applySettings));
+    [els.pageMarginX, els.pageMarginY, els.labelGap, els.printInset, els.fontSizePt, els.borderPt, els.fitText]
+      .forEach(el => el.addEventListener('change', renderPreview));
+    els.printBtn.addEventListener('click', openSaveAsPdfDialog);
+    window.addEventListener('beforeprint', () => {
+      document.body.classList.add('printing-mode');
+      updateLayoutCss();
+      fitLabelText();
+    });
+    window.addEventListener('afterprint', () => {
+      document.body.classList.remove('printing-mode');
+      renderPreview();
+    });
+    els.pdfBtn.addEventListener('click', downloadPdf);
+    els.addBtn.addEventListener('click', addManualLabel);
+    els.clearBtn.addEventListener('click', clearAll);
+
+    renderAll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<Application
+    x:Class="LogisticsPacking.App.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Палитра: мрамор (фон), гранит (плочки), месингов акцент -->
+            <ImageBrush x:Key="MarbleBrush" ImageSource="ms-appx:///Assets/wall_granite.jpg" Stretch="UniformToFill" />
+            <ImageBrush x:Key="GraniteBrush" ImageSource="ms-appx:///Assets/tile_granite.jpg" Stretch="UniformToFill" />
+            <SolidColorBrush x:Key="InkBrush" Color="#26272B" />
+            <SolidColorBrush x:Key="InkSoftBrush" Color="#5B5C62" />
+            <SolidColorBrush x:Key="StoneTextBrush" Color="#F4F1EA" />
+            <SolidColorBrush x:Key="StoneSoftTextBrush" Color="#C9C5BC" />
+            <SolidColorBrush x:Key="TileTextBrush" Color="#202125" />
+            <SolidColorBrush x:Key="TileSoftTextBrush" Color="#44454B" />
+            <SolidColorBrush x:Key="BrassBrush" Color="#B08D57" />
+            <SolidColorBrush x:Key="TileEdgeBrush" Color="#99FFFFFF" />
+            <LinearGradientBrush x:Key="GlossBrush" StartPoint="0,0" EndPoint="0.35,1">
+                <GradientStop Color="#66FFFFFF" Offset="0" />
+                <GradientStop Color="#1AFFFFFF" Offset="0.45" />
+                <GradientStop Color="#00FFFFFF" Offset="0.5" />
+                <GradientStop Color="#0FFFFFFF" Offset="1" />
+            </LinearGradientBrush>
+            <SolidColorBrush x:Key="TileBorderBrush" Color="#8C8F96" />
+            <SolidColorBrush x:Key="BarBrush" Color="#F01F2023" />
+            <!-- Светла "хартия" (зареждане/грешка в клиент) - текстът е винаги тъмен, независимо от темата -->
+            <SolidColorBrush x:Key="PaperBrush" Color="#F5F2EC" />
+            <SolidColorBrush x:Key="PaperInkBrush" Color="#26272B" />
+            <SolidColorBrush x:Key="PaperInkSoftBrush" Color="#5B5C62" />
+
+            <!-- Голяма гранитна плочка за клиент -->
+            <Style x:Key="TileButtonStyle" TargetType="Button">
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="VerticalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Grid x:Name="TileRoot" CornerRadius="12" BorderThickness="1"
+                                  BorderBrush="{StaticResource TileBorderBrush}"
+                                  Background="{StaticResource GraniteBrush}"
+                                  RenderTransformOrigin="0.5,0.5">
+                                <Grid.RenderTransform>
+                                    <ScaleTransform x:Name="TileScale" ScaleX="1" ScaleY="1" />
+                                </Grid.RenderTransform>
+                                <Border x:Name="TileGloss" Background="{StaticResource GlossBrush}" CornerRadius="12" IsHitTestVisible="False" />
+                                <Border x:Name="TileShine" Background="#22FFFFFF" CornerRadius="12" Opacity="0" IsHitTestVisible="False" />
+                                <Border x:Name="TilePressShade" Background="#33000000" CornerRadius="12" Opacity="0" IsHitTestVisible="False" />
+                                <ContentPresenter HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal" />
+                                        <VisualState x:Name="PointerOver">
+                                            <VisualState.Setters>
+                                                <Setter Target="TileShine.Opacity" Value="1" />
+                                                <Setter Target="TileRoot.BorderBrush" Value="{StaticResource BrassBrush}" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <VisualState.Setters>
+                                                <Setter Target="TileShine.Opacity" Value="1" />
+                                                <Setter Target="TileRoot.BorderBrush" Value="{StaticResource BrassBrush}" />
+                                                <Setter Target="TilePressShade.Opacity" Value="1" />
+                                                <Setter Target="TileScale.ScaleX" Value="0.975" />
+                                                <Setter Target="TileScale.ScaleY" Value="0.975" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="Disabled" />
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

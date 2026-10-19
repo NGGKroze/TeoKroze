@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACNE PDF Packing + Labels</title>
+<style>
+:root { --bg:#f3f4f6; --card:#fff; --ink:#111827; --muted:#6b7280; --line:#d1d5db; --blue:#2563eb; --green:#10b981; --black:#000; --red:#ef4444; --amber:#f59e0b; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Segoe UI, Arial, sans-serif; background:var(--bg); color:var(--ink); }
+header { background:#000; color:#fff; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+header .brand { font-weight:800; letter-spacing:2px; font-size:22px; }
+header .sub { color:#d1d5db; font-size:13px; }
+main { max-width:1400px; margin:0 auto; padding:22px; }
+.panel { background:var(--card); border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 4px 12px rgba(0,0,0,.06); padding:18px; margin-bottom:18px; }
+.drop { border:2px dashed var(--blue); background:#eff6ff; border-radius:12px; padding:30px; text-align:center; cursor:pointer; transition:.2s; }
+.drop.dragover { background:#dbeafe; transform:scale(1.005); }
+.drop h2 { margin:0 0 8px; }
+.drop p { color:var(--muted); margin:0; }
+input[type="file"] { display:none; }
+.toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-top:14px; }
+.btn { border:0; background:#111827; color:#fff; padding:10px 14px; border-radius:9px; font-weight:700; cursor:pointer; letter-spacing:.2px; }
+.btn:hover { background:#374151; }
+.btn.blue { background:var(--blue); }
+.btn.green, .btn.done { background:var(--green); }
+.btn.red { background:var(--red); }
+.btn.light { background:#e5e7eb; color:#111827; }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.status { font-weight:700; color:var(--blue); }
+.order-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px; position:sticky; top:0; z-index:5; background:linear-gradient(var(--bg), var(--bg)); padding:8px 0 10px; }
+.order-tabs.empty { display:none; }
+.order-tab { border:1px solid #cbd5e1; background:#fff; color:#111827; border-radius:999px; padding:8px 12px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:7px; box-shadow:0 2px 6px rgba(0,0,0,.05); }
+.order-tab:hover { border-color:#111827; }
+.order-tab.active { background:#111827; color:#fff; border-color:#111827; }
+.order-tab.done { background:#dcfce7; color:#065f46; border-color:#10b981; }
+.order-tab.done.active { background:#10b981; color:#fff; border-color:#059669; }
+.order-tab .mini { font-size:11px; opacity:.82; font-weight:700; }
+.order-tab .check { font-size:15px; font-weight:900; }
+.grid { display:grid; grid-template-columns:repeat(6, minmax(130px, 1fr)); gap:10px; }
+.field label { display:block; font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:800; margin-bottom:4px; }
+.field input, .field textarea, .field select { width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 9px; font:inherit; background:#fff; }
+.field textarea { min-height:80px; resize:vertical; }
+.order-card { border-left:7px solid #111827; }
+.order-card.downloaded { border-left-color:var(--green); background:#f0fdf4; }
+.order-title { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.order-title h3 { margin:0; font-size:20px; }
+.badges { display:flex; flex-wrap:wrap; gap:6px; }
+.badge { font-size:12px; padding:4px 8px; background:#e5e7eb; border-radius:999px; font-weight:700; color:#374151; }
+.badge.green { background:#d1fae5; color:#065f46; }
+.badge.warn { background:#fee2e2; color:#991b1b; }
+table { width:100%; border-collapse:collapse; margin-top:12px; background:#fff; }
+th, td { border:1px solid #d1d5db; padding:6px; vertical-align:top; font-size:13px; }
+th { background:#111827; color:#fff; font-weight:800; position:sticky; top:56px; }
+td input { width:100%; border:1px solid transparent; padding:5px; border-radius:5px; font:inherit; }
+td input:focus { border-color:var(--blue); outline:none; background:#eff6ff; }
+.row-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.small { font-size:12px; color:var(--muted); }
+.warning { background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; padding:10px; border-radius:8px; margin-top:10px; }
+details summary { cursor:pointer; font-weight:800; margin:12px 0 6px; }
+.carton-preview { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.carton-pill { border:1px solid #d1d5db; border-radius:10px; padding:8px; background:#f9fafb; min-width:190px; }
+.carton-pill b { display:block; margin-bottom:4px; }
+.preview-grid { display:grid; grid-template-columns:1.05fr .95fr; gap:16px; align-items:start; }
+.preview-box { border:1px solid #d1d5db; border-radius:12px; background:#f9fafb; padding:12px; overflow:auto; }
+.preview-title { font-weight:900; margin:0 0 8px; letter-spacing:.2px; }
+.pack-preview { background:white; border:1px solid #111827; padding:10px; min-width:760px; font-size:11px; }
+.pack-preview .logo { text-align:center; font-size:24px; font-weight:900; letter-spacing:1.5px; margin:8px 0 12px; }
+.pack-preview .headgrid { display:grid; grid-template-columns:150px 1fr 150px 1fr; gap:0; border-top:1px solid #111827; border-left:1px solid #111827; margin-bottom:10px; }
+.pack-preview .headgrid div { border-right:1px solid #111827; border-bottom:1px solid #111827; padding:4px 6px; min-height:24px; }
+.pack-preview .label { font-weight:800; background:#f3f4f6; }
+.pack-preview table { margin:0; font-size:10.5px; }
+.pack-preview th, .pack-preview td { padding:3px 4px; text-align:center; }
+.pack-preview th { position:static; background:#000; color:#fff; }
+.pack-preview .left { text-align:left; }
+.label-sheet-preview { background:white; border:1px solid #111827; padding:10px; margin:0 0 12px; min-width:520px; }
+.label-sheet-title { font-size:11px; font-weight:900; color:#374151; margin-bottom:6px; }
+.label-grid-preview { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.label-card-preview { border:2px solid #111827; background:#fff; font-size:10px; }
+.label-row-preview { display:grid; grid-template-columns:38% 62%; border-bottom:1px solid #111827; min-height:20px; }
+.label-row-preview:last-child { border-bottom:0; }
+.label-row-preview .k { text-align:right; font-weight:900; padding:4px 5px; border-right:1px solid #111827; }
+.label-row-preview .v { text-align:center; font-weight:800; padding:4px 5px; white-space:pre-wrap; }
+.label-row-preview.tall { min-height:56px; }
+@media (max-width:1100px){ .preview-grid { grid-template-columns:1fr; } }
+
+.empty-state { text-align:center; color:#6b7280; padding:30px; }
+@media (max-width:900px){ .grid { grid-template-columns:1fr 1fr; } }
+@media (max-width:620px){ .grid { grid-template-columns:1fr; } header { align-items:flex-start; flex-direction:column; } .order-tabs { position:static; } th { position:static; } }
+</style>
+</head>
+<body>
+<header>
+  <div><div class="brand">ACNE STUDIOS</div><div class="sub">PDF/XLSX Orders → editable Packing Lists + Excel Labels</div></div>
+  <div class="sub">Local Python app · close this tab to stop the server</div>
+</header>
+<main>
+  <section class="panel">
+    <div class="drop" id="dropZone">
+      <h2>Drop Acne PO PDFs or existing Packing XLSX here</h2>
+      <p>Upload one or multiple PDFs to create packing lists, or drop an existing Acne packing .xlsx to edit/regenerate labels.</p>
+      <input id="fileInput" type="file" accept=".pdf,.xlsx,.xlsm,.xls" multiple>
+    </div>
+    <div class="toolbar">
+      <div class="status" id="status">Ready.</div>
+      <div>
+        <button class="btn light" onclick="clearAll()">Clear</button>
+        <button class="btn green" id="exportAllBtn" onclick="exportAll()" disabled>Export all orders ZIP</button>
+      </div>
+    </div>
+  </section>
+  <div id="orderTabs" class="order-tabs empty"></div>
+  <div id="orders"></div>
+</main>
+<script>
+
+let appClosingBeaconSent = false;
+function sendCloseBeacon(){
+  if(appClosingBeaconSent) return;
+  appClosingBeaconSent = true;
+  try {
+    const blob = new Blob(['{}'], {type:'application/json'});
+    navigator.sendBeacon('/api/window-closed', blob);
+  } catch(e) {
+    try { fetch('/api/window-closed', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}', keepalive:true}); } catch(_e) {}
+  }
+}
+window.addEventListener('pagehide', sendCloseBeacon);
+
+let orders = [];
+let activeOrderIndex = -1;
+const DESTINATION_PRESETS = {
+  SE: {label:'Sweden / WH SE Spånga', address:['AIU Logistics','Finspångsgatan 49','163 53 Spånga','Sweden']},
+  US: {label:'United States / 3PL US', address:['Acne Corp','c/o Bergen Logistics','Attn: Receiving Dept','5903 West Side Avenue','North Bergen, NJ 07047','United States','(201) 854-1512 ext 418']},
+  KR: {label:'Korea / 3PL KR', address:['Acne Studios Korea LLC','c/o Maersk Logistics DC11','Dock 12, 2F, 536, Yeojunam-ro, Ganam-eup, Yeoju-si','Gyeonggi-do 12646','Republic of Korea']},
+  JP: {label:'Japan / 3PL JP', address:['Acne Aoyama c/o Maersk Logistics','GLP MFLP Ichikawa Shiohama','5F 1-6-3 Shiohama, Ichikawa City','Chiba 272-0127','Japan']},
+  CN: {label:'China / 3PL CN', address:['Acne Studios China Co., Ltd.','c/o Cargo Services China (Shanghai)','1800 Wenchuan Road,','Shanghai Baoshan City Industrial Park','201901 Shanghai','China']}
+};
+const dz = document.getElementById('dropZone');
+const input = document.getElementById('fileInput');
+const statusEl = document.getElementById('status');
+const ordersEl = document.getElementById('orders');
+const tabsEl = document.getElementById('orderTabs');
+const exportAllBtn = document.getElementById('exportAllBtn');
+
+dz.addEventListener('click', () => input.click());
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files); });
+input.addEventListener('change', e => { if (e.target.files.length) uploadFiles(e.target.files); });
+
+function setStatus(msg, color){ statusEl.textContent = msg; statusEl.style.color = color || '#2563eb'; }
+function esc(v){ return String(v ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+function asInt(v){ const n = Number(String(v).replace(',', '.')); return Number.isFinite(n) ? n : 0; }
+function totalQty(order){ return (order.items || []).reduce((a, x) => a + asInt(x.quantity), 0); }
+function destKey(order){ return DESTINATION_PRESETS[String(order.destination_key || '').toUpperCase()] ? String(order.destination_key).toUpperCase() : 'SE'; }
+function destLabel(order){ return DESTINATION_PRESETS[destKey(order)].label; }
+function destinationOptions(current){
+  const cur = String(current || 'SE').toUpperCase();
+  return Object.entries(DESTINATION_PRESETS).map(([k, v]) => `<option value="${k}" ${k === cur ? 'selected' : ''}>${esc(v.label)}</option>`).join('');
+}
+function changeDestination(idx, key){
+  key = String(key || 'SE').toUpperCase();
+  if(!DESTINATION_PRESETS[key]) key = 'SE';
+  orders[idx].destination_key = key;
+  orders[idx].destination = DESTINATION_PRESETS[key].label;
+  orders[idx].ship_to = DESTINATION_PRESETS[key].address.join('\n');
+  render();
+}
+function isDone(order){ return !!(order.downloaded_packing && order.downloaded_labels); }
+function ensureActive(){
+  if(!orders.length){ activeOrderIndex = -1; return; }
+  if(activeOrderIndex < 0 || activeOrderIndex >= orders.length) activeOrderIndex = 0;
+}
+
+async function uploadFiles(fileList){
+  const fd = new FormData();
+  const startIndex = orders.length;
+  [...fileList].forEach(f => fd.append('files', f));
+  setStatus('Parsing files...');
+  try {
+    const res = await fetch('/api/upload', {method:'POST', body:fd});
+    if(!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    orders = orders.concat((data.orders || []).map(o => ({...o, downloaded_packing:false, downloaded_labels:false})));
+    activeOrderIndex = orders.length ? startIndex : -1;
+    render();
+    setStatus(`Parsed ${data.orders.length} file(s).`, '#10b981');
+  } catch(err){
+    console.error(err);
+    setStatus('Upload/parse failed: ' + err.message, '#ef4444');
+  } finally { input.value = ''; }
+}
+
+function clearAll(){ orders = []; activeOrderIndex = -1; render(); setStatus('Ready.'); }
+function selectOrder(idx){ activeOrderIndex = idx; render(); }
+function updateField(idx, key, val){ orders[idx][key] = val; if(key === 'draft_carton_strategy') recalcOrder(idx); else render(); }
+function updateItem(idx, row, key, val){ orders[idx].items[row][key] = val; renderCartonsOnly(idx); }
+function addItem(idx){
+  const order = orders[idx];
+  order.items.push({ line_nr: order.items.length+1, item_number:'', color:'', color_code:'', size:'', article_name:order.style_code||'', quantity:0 });
+  render();
+}
+function deleteItem(idx, row){ orders[idx].items.splice(row, 1); orders[idx].items.forEach((x,i)=>x.line_nr=i+1); render(); }
+
+async function recalcOrder(idx){
+  try{
+    const state = {downloaded_packing:orders[idx].downloaded_packing, downloaded_labels:orders[idx].downloaded_labels};
+    const res = await fetch('/api/recalc', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(orders[idx])});
+    orders[idx] = {...await res.json(), ...state};
+    render();
+  }catch(e){ console.error(e); render(); }
+}
+
+function localCartons(order){
+  const groups = [];
+  if(order.draft_carton_strategy === 'from_existing_packing' && Array.isArray(order.cartons) && order.cartons.length){
+    return order.cartons;
+  }
+  if(order.draft_carton_strategy === 'one_carton_per_line'){
+    (order.items || []).forEach((it, i)=> groups.push({ carton_no:i+1, color:it.color, color_code:it.color_code, skus:[{size:it.size, units:it.quantity, color_code:it.color_code}] }));
+    return groups;
+  }
+  const map = new Map();
+  (order.items || []).forEach(it => {
+    const key = it.color || '';
+    if(!map.has(key)) map.set(key, []);
+    map.get(key).push({size:it.size, units:it.quantity, color_code:it.color_code});
+  });
+  [...map.entries()].forEach(([color, skus], i)=>groups.push({carton_no:i+1, color, color_code:[...new Set(skus.map(s=>s.color_code).filter(Boolean))].join(', '), skus}));
+  return groups;
+}
+
+function renderCartonsOnly(idx){
+  const el = document.getElementById('cartons_' + idx);
+  if(el) el.innerHTML = cartonHtml(localCartons(orders[idx]));
+  const t = document.getElementById('total_' + idx);
+  if(t) t.textContent = totalQty(orders[idx]);
+  refreshPreviews(idx);
+}
+function cartonHtml(cartons){
+  if(!cartons.length) return '<div class="small">No cartons yet.</div>';
+  return cartons.map(c => {
+    const code = c.color_code || [...new Set((c.skus||[]).map(s=>s.color_code).filter(Boolean))].join(', ');
+    return `<div class="carton-pill"><b>Carton ${esc(c.carton_no)} · ${esc(c.color || 'No color')}${code ? ' · ' + esc(code) : ''}</b>${(c.skus||[]).map(s=>`${esc(s.size)} × ${esc(s.units)}`).join('<br>')}</div>`;
+  }).join('');
+}
+
+function naturalParts(v){ return String(v ?? '').split(/(\d+)/).map(x => /^\d+$/.test(x) ? Number(x) : x.toLowerCase()); }
+function naturalCompare(a,b){
+  const aa = naturalParts(a), bb = naturalParts(b);
+  for(let i=0;i<Math.max(aa.length,bb.length);i++){
+    if(aa[i] === undefined) return -1;
+    if(bb[i] === undefined) return 1;
+    if(aa[i] < bb[i]) return -1;
+    if(aa[i] > bb[i]) return 1;
+  }
+  return 0;
+}
+function cartonColorCode(c){ return c.color_code || [...new Set((c.skus||[]).map(s => s.color_code).filter(Boolean))].join(', '); }
+function previewSizes(order){
+  const set = new Set();
+  (localCartons(order)||[]).forEach(c => (c.skus||[]).forEach(s => { if(String(s.size||'').trim()) set.add(String(s.size).replace(/\.0$/, '')); }));
+  if(!set.size) (order.items||[]).forEach(i => { if(String(i.size||'').trim()) set.add(String(i.size).replace(/\.0$/, '')); });
+  return [...set].sort(naturalCompare).slice(0,16);
+}
+function packingPreviewHtml(order){
+  const cartons = localCartons(order);
+  const sizes = previewSizes(order);
+  const total = cartons.reduce((sum,c)=>sum+(c.skus||[]).reduce((a,s)=>a+asInt(s.units),0),0);
+  const head = `<div class="pack-preview">
+    <div class="logo">ACNE STUDIOS</div>
+    <div class="headgrid">
+      <div class="label">PACKING LIST</div><div>${esc(order.po_number || '')}</div>
+      <div class="label">Destination</div><div>${esc(destLabel(order))}</div>
+      <div class="label">Style Name</div><div>${esc(order.product_name || order.style_code || '')}</div>
+      <div class="label">Ship Date</div><div>${esc(order.ex_factory_date || order.shipment_date || '')}</div>
+      <div class="label">Cartons</div><div>${esc(cartons.length)}</div>
+      <div class="label">Total Qty</div><div>${esc(total)}</div>
+      <div class="label">Ship To</div><div style="white-space:pre-wrap">${esc(order.ship_to || '')}</div>
+      <div class="label">Partial Shipment</div><div>☑ Partial Shipment #: <span style="color:#ef4444;font-weight:900">X</span></div>
+    </div>
+    <table><thead><tr><th>Carton / Box</th><th>Style Name</th><th>Color Name</th><th>Color Code</th>${sizes.map(sz=>`<th>${esc(sz)}</th>`).join('')}<th>TTL</th><th>Boxes</th></tr></thead><tbody>`;
+  const body = cartons.map((c, idx) => {
+    const bySize = Object.fromEntries(sizes.map(sz => [sz, 0]));
+    (c.skus||[]).forEach(s => { const sz = String(s.size||'').replace(/\.0$/, ''); if(bySize[sz] !== undefined) bySize[sz] += asInt(s.units); });
+    const rowTotal = Object.values(bySize).reduce((a,b)=>a+b,0);
+    return `<tr><td>${esc(c.carton_no || idx+1)}</td><td class="left">${esc(order.product_name || order.style_code || '')}</td><td class="left">${esc(c.color || '')}</td><td>${esc(cartonColorCode(c))}</td>${sizes.map(sz=>`<td>${bySize[sz] || ''}</td>`).join('')}<td><b>${rowTotal}</b></td><td>60/40/40</td></tr>`;
+  }).join('');
+  const totalRow = `<tr><td colspan="${4+sizes.length}" class="left"><b>TTL PO:</b></td><td><b>${total}</b></td><td></td></tr>`;
+  return head + body + totalRow + '</tbody></table></div>';
+}
+function labelRowsPreview(fields){
+  return fields.map(([k,v]) => `<div class="label-row-preview ${(k === 'Ship To:' || k === 'Shipment Date:') ? 'tall' : ''}"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('');
+}
+function commonLabelFields(order, carton, sku, totalCartons){
+  return [
+    ['PO #:', order.po_number || ''],
+    ['Style Name:', order.product_name || ''],
+    ['Color Name:', sku.color || carton.color || ''],
+    ['Size:', String(sku.size || '').replace(/\.0$/, '')],
+    ['Style #:', order.style_code || sku.article_name || ''],
+    ['Number of Units:', sku.units || 0],
+    ['Carton #:', `${carton.carton_no || ''} of ${totalCartons}`],
+    ['Shipment #:', '1 of 1'],
+    ['Country of Origin:', order.origin || 'BULGARIA']
+  ];
+}
+function singleLabelFieldsPreview(order, carton, sku, totalCartons){
+  const shipment = order.shipment_date || order.ex_factory_date || '';
+  return [['Ship To:', order.ship_to || ''], ...commonLabelFields(order, carton, sku, totalCartons).slice(0,8), ['Shipment Date:', shipment], ['Country of Origin:', order.origin || 'BULGARIA']];
+}
+function multiLabelFieldsPreview(order, carton, sku, totalCartons, blockIndex){
+  const common = commonLabelFields(order, carton, sku, totalCartons);
+  if(blockIndex === 0) return [['Ship To:', order.ship_to || ''], ...common];
+  if(blockIndex === 1) return [['Shipment Date:', order.shipment_date || order.ex_factory_date || ''], ...common];
+  return common;
+}
+function labelsPreviewHtml(order){
+  const cartons = localCartons(order);
+  const totalCartons = Math.max(1, cartons.length);
+  let sheets = [];
+  let singleNo = 1, multiNo = 1;
+  cartons.forEach((carton) => {
+    const skus = carton.skus || [];
+    if(!skus.length) return;
+    if(skus.length === 1){
+      sheets.push(`<div class="label-sheet-preview"><div class="label-sheet-title">Single ${String(singleNo++).padStart(3,'0')} · A4 portrait</div><div class="label-card-preview">${labelRowsPreview(singleLabelFieldsPreview(order, carton, skus[0], totalCartons))}</div></div>`);
+      return;
+    }
+    for(let start=0; start<skus.length; start+=4){
+      const chunk = skus.slice(start, start+4);
+      sheets.push(`<div class="label-sheet-preview"><div class="label-sheet-title">Multi ${String(multiNo++).padStart(3,'0')} · Carton ${esc(carton.carton_no)} · A4 landscape</div><div class="label-grid-preview">${chunk.map((sku, bi) => `<div class="label-card-preview">${labelRowsPreview(multiLabelFieldsPreview(order, carton, sku, totalCartons, bi))}</div>`).join('')}</div></div>`);
+    }
+  });
+  return sheets.length ? sheets.join('') : '<div class="small">No labels yet.</div>';
+}
+function refreshPreviews(idx){
+  const order = orders[idx];
+  const p = document.getElementById('packing_preview_' + idx);
+  const l = document.getElementById('labels_preview_' + idx);
+  if(p) p.innerHTML = packingPreviewHtml(order);
+  if(l) l.innerHTML = labelsPreviewHtml(order);
+}
+function buttonText(done, text){ return done ? `✓ ${text}` : text; }
+
+function renderTabs(){
+  ensureActive();
+  tabsEl.classList.toggle('empty', !orders.length);
+  if(!orders.length){ tabsEl.innerHTML = ''; return; }
+  tabsEl.innerHTML = orders.map((o, idx) => {
+    const done = isDone(o);
+    const label = `${esc(o.po_number || 'Unknown PO')} · ${esc(o.style_code || 'No style')}`;
+    const mini = `${esc(destKey(o))} · ${esc(totalQty(o))} pcs`;
+    return `<button class="order-tab ${idx === activeOrderIndex ? 'active' : ''} ${done ? 'done' : ''}" onclick="selectOrder(${idx})"><span>${done ? '<span class="check">✓</span>' : ''}${label}</span><span class="mini">${mini}</span></button>`;
+  }).join('');
+}
+
+function render(){
+  ensureActive();
+  exportAllBtn.disabled = !orders.length;
+  renderTabs();
+  if(!orders.length){ ordersEl.innerHTML = '<section class="panel empty-state">No orders loaded yet.</section>'; return; }
+  const idx = activeOrderIndex;
+  const o = orders[idx];
+  const warnings = (o.warnings || []).map(w => `<div>${esc(w)}</div>`).join('');
+  const rows = (o.items || []).map((it, r) => `
+    <tr>
+      <td><input value="${esc(it.line_nr || r+1)}" onchange="updateItem(${idx},${r},'line_nr',this.value)"></td>
+      <td><input value="${esc(it.item_number || '')}" onchange="updateItem(${idx},${r},'item_number',this.value)"></td>
+      <td><input value="${esc(it.color || '')}" onchange="updateItem(${idx},${r},'color',this.value)"></td>
+      <td><input value="${esc(it.color_code || '')}" onchange="updateItem(${idx},${r},'color_code',this.value)"></td>
+      <td><input value="${esc(it.size || '')}" onchange="updateItem(${idx},${r},'size',this.value)"></td>
+      <td><input value="${esc(it.article_name || '')}" onchange="updateItem(${idx},${r},'article_name',this.value)"></td>
+      <td><input type="number" step="1" value="${esc(it.quantity || 0)}" onchange="updateItem(${idx},${r},'quantity',this.value)"></td>
+      <td><button class="btn red" onclick="deleteItem(${idx},${r})">Delete</button></td>
+    </tr>`).join('');
+  ordersEl.innerHTML = `<section class="panel order-card ${isDone(o) ? 'downloaded' : ''}" id="card_${idx}">
+    <div class="order-title">
+      <div>
+        <h3>${esc(o.po_number || 'Unknown PO')} · ${esc(o.style_code || 'No style')}</h3>
+        <div class="small">${esc(o.source_filename || '')}</div>
+      </div>
+      <div class="badges">
+        <span class="badge">Qty: <span id="total_${idx}">${esc(totalQty(o))}</span></span>
+        <span class="badge">Lines: ${(o.items || []).length}</span>
+        <span class="badge green">Cartons: ${localCartons(o).length}</span>
+        <span class="badge">Dest: ${esc(destKey(o))}</span>
+        ${o.downloaded_packing ? '<span class="badge green">Packing ✓</span>' : ''}
+        ${o.downloaded_labels ? '<span class="badge green">Labels ✓</span>' : ''}
+        ${o.used_ocr ? '<span class="badge warn">OCR used</span>' : ''}
+      </div>
+    </div>
+    ${warnings ? `<div class="warning">${warnings}</div>` : ''}
+    <div class="grid">
+      <div class="field"><label>PO #</label><input value="${esc(o.po_number || '')}" onchange="updateField(${idx},'po_number',this.value)"></div>
+      <div class="field"><label>PO Ref</label><input value="${esc(o.po_line_ref || '')}" onchange="updateField(${idx},'po_line_ref',this.value)"></div>
+      <div class="field"><label>Style # / Article</label><input value="${esc(o.style_code || '')}" onchange="updateField(${idx},'style_code',this.value)"></div>
+      <div class="field"><label>Internal Type</label><input value="${esc(o.internal_order_type || '')}" onchange="updateField(${idx},'internal_order_type',this.value)"></div>
+      <div class="field"><label>Destination</label><select onchange="changeDestination(${idx}, this.value)">${destinationOptions(destKey(o))}</select></div>
+      <div class="field"><label>Ex Factory</label><input value="${esc(o.ex_factory_date || '')}" onchange="updateField(${idx},'ex_factory_date',this.value)"></div>
+      <div class="field"><label>Shipment Date for labels</label><input value="${esc(o.shipment_date || o.ex_factory_date || '')}" onchange="updateField(${idx},'shipment_date',this.value)"></div>
+      <div class="field"><label>Season</label><input value="${esc(o.season || '')}" onchange="updateField(${idx},'season',this.value)"></div>
+      <div class="field"><label>Origin</label><input value="${esc(o.origin || 'BULGARIA')}" onchange="updateField(${idx},'origin',this.value)"></div>
+      <div class="field"><label>Carton draft</label><select onchange="updateField(${idx},'draft_carton_strategy',this.value)">${o.source_type === 'packing_xlsx' ? `<option value="from_existing_packing" ${o.draft_carton_strategy === 'from_existing_packing' ? 'selected' : ''}>Imported packing cartons</option>` : ''}<option value="one_carton_per_color" ${o.draft_carton_strategy === 'one_carton_per_color' || (!o.draft_carton_strategy && o.draft_carton_strategy !== 'one_carton_per_line') ? 'selected' : ''}>One carton per color</option><option value="one_carton_per_line" ${o.draft_carton_strategy === 'one_carton_per_line' ? 'selected' : ''}>One carton per item line</option></select></div>
+      <div class="field" style="grid-column:span 2;"><label>Product name</label><input value="${esc(o.product_name || '')}" onchange="updateField(${idx},'product_name',this.value)"></div>
+      <div class="field" style="grid-column:span 2;"><label>Ship To / destination address</label><textarea onchange="updateField(${idx},'ship_to',this.value)">${esc(o.ship_to || '')}</textarea></div>
+    </div>
+    <details open>
+      <summary>Editable order lines</summary>
+      <table>
+        <thead><tr><th>Line</th><th>Item number</th><th>Color</th><th>Color Code</th><th>Size</th><th>Article / Style</th><th>Qty</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <button class="btn light" onclick="addItem(${idx})" style="margin-top:10px;">+ Add line</button>
+    </details>
+    <details open>
+      <summary>Draft carton/label preview</summary>
+      <div class="small">For imported packing lists, the original carton split is preserved. Switch the carton draft option if you want to rebuild cartons from edited lines.</div>
+      <div class="carton-preview" id="cartons_${idx}">${cartonHtml(localCartons(o))}</div>
+    </details>
+    <details open>
+      <summary>Live Excel preview</summary>
+      <div class="small">Preview updates from the current editable order/carton data. The downloaded Excel keeps the template formatting and print settings.</div>
+      <div class="preview-grid">
+        <div class="preview-box"><div class="preview-title">Packing List preview</div><div id="packing_preview_${idx}">${packingPreviewHtml(o)}</div></div>
+        <div class="preview-box"><div class="preview-title">Labels preview</div><div id="labels_preview_${idx}">${labelsPreviewHtml(o)}</div></div>
+      </div>
+    </details>
+    <div class="row-actions">
+      <button class="btn ${o.downloaded_packing ? 'done' : ''}" onclick="downloadOne(${idx}, 'packing')">${buttonText(o.downloaded_packing, 'Download packing XLSX')}</button>
+      <button class="btn ${o.downloaded_labels ? 'done' : ''}" onclick="downloadOne(${idx}, 'labels')">${buttonText(o.downloaded_labels, 'Download labels XLSX')}</button>
+      <button class="btn ${isDone(o) ? 'done' : 'blue'}" onclick="downloadOne(${idx}, 'both')">${buttonText(isDone(o), 'Download both ZIP')}</button>
+    </div>
+  </section>`;
+}
+
+async function downloadBlob(endpoint, payload, fallbackName){
+  const res = await fetch(endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+  if(!res.ok) throw new Error(await res.text());
+  const blob = await res.blob();
+  const cd = res.headers.get('Content-Disposition') || '';
+  let filename = fallbackName;
+  const m = cd.match(/filename="?([^";]+)"?/i);
+  if(m) filename = m[1];
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+async function downloadOne(idx, type){
+  const order = orders[idx];
+  setStatus(`Exporting ${type} for ${order.po_number || 'order'}...`);
+  const endpoint = type === 'packing' ? '/api/export/packing' : type === 'labels' ? '/api/export/labels' : '/api/export/both';
+  try{
+    await downloadBlob(endpoint, order, type === 'both' ? 'ACNE_PACKING_AND_LABELS.zip' : `ACNE_${type}.xlsx`);
+    if(type === 'packing') order.downloaded_packing = true;
+    if(type === 'labels') order.downloaded_labels = true;
+    if(type === 'both'){ order.downloaded_packing = true; order.downloaded_labels = true; }
+    order.downloaded = isDone(order);
+    render();
+    setStatus('Export complete.', '#10b981');
+  }catch(e){ console.error(e); setStatus('Export failed: ' + e.message, '#ef4444'); }
+}
+async function exportAll(){
+  setStatus('Exporting all orders ZIP...');
+  try{
+    await downloadBlob('/api/export/all', {orders}, 'ACNE_ALL_PACKING_LABELS.zip');
+    orders.forEach(o => { o.downloaded_packing = true; o.downloaded_labels = true; o.downloaded = true; });
+    render();
+    setStatus('All orders exported.', '#10b981');
+  }catch(e){ console.error(e); setStatus('Export all failed: ' + e.message, '#ef4444'); }
+}
+render();
+</script>
+</body>
+</html>

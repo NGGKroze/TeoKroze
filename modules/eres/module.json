@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "eres",
+  "name": "ERES",
+  "version": "1.0.0",
+  "type": "html",
+  "entry": "index.html",
+  "order": 70,
+  "summary": "A4 етикети от PL",
+  "requires": [
+    "Packing list в XLSX или CSV формат"
+  ],
+  "note": "Генераторът чете Excel данни, включително cell details, и прави printable A4 етикети.",
+  "formats": [
+    "XLSX",
+    "CSV"
+  ]
+}

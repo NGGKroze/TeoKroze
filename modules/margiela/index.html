@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PELINTEX Pallet Labels v7 Manual TEC-IT GS1-128</title>
+  <script src="vendor/cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+    :root {
+      --bg: #eef3f8;
+      --panel: #ffffff;
+      --text: #111111;
+      --muted: #5f6b7a;
+      --line: #d6dde6;
+      --accent: #1f5d99;
+      --bad: #b42318;
+      --ok: #067647;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .app {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 22px;
+    }
+
+    .controls {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(20, 31, 45, 0.08);
+      padding: 18px;
+      margin-bottom: 22px;
+    }
+
+    .top-row {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0.2px;
+    }
+
+    .version-badge {
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 8px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: #1f5d99;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .hint {
+      margin: 4px 0 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dropzone {
+      border: 2px dashed #9fb4cc;
+      background: #f8fbff;
+      border-radius: 14px;
+      padding: 22px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.15s ease;
+      margin-bottom: 14px;
+      user-select: none;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background: #eaf4ff;
+      transform: translateY(-1px);
+    }
+
+    .dropzone strong {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+
+    .dropzone span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    input[type="file"] { display: none; }
+
+    .settings {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      gap: 12px;
+      align-items: end;
+      margin-top: 10px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 12px;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    input[type="text"], input[type="number"], input[type="date"] {
+      width: 100%;
+      border: 1px solid #cfd7e2;
+      border-radius: 10px;
+      padding: 10px 11px;
+      font: 600 14px Arial, Helvetica, sans-serif;
+      background: #fff;
+      color: #111;
+      outline: none;
+    }
+
+    input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(31, 93, 153, 0.12);
+    }
+
+    input[readonly] {
+      background: #f8fafc;
+      color: #475467;
+      cursor: default;
+    }
+
+    .date-control {
+      display: grid;
+      grid-template-columns: 1fr 42px;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .calendar-btn {
+      height: 40px;
+      padding: 0;
+      line-height: 1;
+      font-size: 18px;
+      border-radius: 10px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font: 700 14px Arial, Helvetica, sans-serif;
+      cursor: pointer;
+      background: #e8eef6;
+      color: #102a43;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      background: #f3f6fa;
+      color: #344054;
+      white-space: pre-line;
+    }
+
+    .status.ok { background: #ecfdf3; color: var(--ok); }
+    .status.bad { background: #fef3f2; color: var(--bad); }
+
+    .mapping {
+      display: none;
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .mapping table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 12px;
+    }
+
+    .mapping th, .mapping td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .mapping th {
+      background: #f8fafc;
+      color: #475467;
+    }
+
+
+    .tab-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+    }
+
+    .tab-btn {
+      background: #eef2f7;
+      color: #344054;
+      border: 1px solid #d7e0ea;
+      padding: 9px 13px;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .manual-grid {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(320px, 0.95fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 210px;
+      border: 1px solid #cfd7e2;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font: 600 13px Consolas, "Courier New", monospace;
+      background: #fff;
+      color: #111;
+      outline: none;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(31, 93, 153, 0.12);
+    }
+
+    .manual-help {
+      margin: 0 0 8px 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .manual-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .manual-summary {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+      overflow: hidden;
+      font-size: 12px;
+    }
+
+    .manual-summary .empty {
+      padding: 12px;
+      color: var(--muted);
+    }
+
+    .manual-summary table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .manual-summary th,
+    .manual-summary td {
+      border-bottom: 1px solid var(--line);
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .manual-summary th {
+      background: #eef2f7;
+      color: #344054;
+      font-weight: 800;
+    }
+
+    .manual-summary tr:last-child td { border-bottom: 0; }
+
+    .tag-auto,
+    .tag-manual,
+    .tag-missing {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-weight: 800;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .tag-auto { background: #eef4ff; color: #1f5d99; }
+    .tag-manual { background: #ecfdf3; color: #067647; }
+    .tag-missing { background: #fef3f2; color: #b42318; }
+
+    @media (max-width: 900px) {
+      .manual-grid { grid-template-columns: 1fr; }
+    }
+
+    .print-area {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .page {
+      width: 297mm;
+      min-height: 210mm;
+      padding: 5mm;
+      background: white;
+      box-shadow: 0 10px 30px rgba(22, 33, 51, 0.15);
+      display: grid;
+      grid-template-columns: 100mm 100mm;
+      grid-auto-rows: 150mm;
+      align-content: center;
+      justify-content: center;
+      gap: 10mm;
+    }
+
+    .label-slot {
+      width: 100mm;
+      height: 150mm;
+      padding: 0;
+    }
+
+    .pallet-label {
+      width: 100mm;
+      height: 150mm;
+      padding: 6.5mm 8.5mm 5mm 8.5mm;
+      background: #fff;
+      color: #000;
+      border: 0.35mm solid #d8d8d8;
+      border-radius: 2.5mm;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      page-break-inside: avoid;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .label-title {
+      text-align: center;
+      font-size: 8.4mm;
+      line-height: 1;
+      letter-spacing: 0.7mm;
+      font-weight: 400;
+      white-space: nowrap;
+      margin: 0 0 3mm 0;
+    }
+
+    .pl-code {
+      text-align: center;
+      font-size: 7.1mm;
+      line-height: 1;
+      font-weight: 400;
+      margin: 0 0 4mm 0;
+      white-space: nowrap;
+    }
+
+    .items {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .item-block {
+      margin-top: 0;
+      margin-bottom: 7.2mm;
+    }
+
+    .item-block:last-child { margin-bottom: 2mm; }
+
+    .article-code {
+      text-align: center;
+      font-size: 6.6mm;
+      line-height: 1;
+      font-weight: 400;
+      margin-bottom: 2.3mm;
+      white-space: nowrap;
+    }
+
+    .qty-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      column-gap: 5mm;
+      align-items: baseline;
+      font-size: 4.9mm;
+      line-height: 1;
+      margin-bottom: 1.2mm;
+    }
+
+    .qty-label {
+      text-align: left;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    .qty-total {
+      text-align: right;
+      font-weight: 400;
+      white-space: nowrap;
+      min-width: 18mm;
+    }
+
+    .box-lines {
+      font-size: 4.8mm;
+      line-height: 1.25;
+      font-weight: 400;
+    }
+
+    .box-line {
+      display: block;
+      min-height: 5.9mm;
+    }
+
+    .footer {
+      flex: 0 0 auto;
+      margin-top: 2mm;
+    }
+
+    .sscc-text {
+      font-size: 3.6mm;
+      line-height: 1;
+      margin-bottom: 2.5mm;
+      white-space: nowrap;
+    }
+
+    .barcode-wrap {
+      width: 100%;
+      height: 22mm;
+      overflow: hidden;
+    }
+
+    .barcode-wrap img,
+    .barcode-wrap svg {
+      width: 100%;
+      height: 16.5mm;
+      display: block;
+      object-fit: fill;
+      border: 0;
+    }
+
+    .barcode-human {
+      text-align: center;
+      font-size: 4.1mm;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.1mm;
+      margin-top: 0.7mm;
+      white-space: nowrap;
+    }
+
+    .no-sscc {
+      border: 0.2mm dashed #888;
+      padding: 2mm;
+      text-align: center;
+      font-size: 3.5mm;
+    }
+
+    .pallet-label.compact .label-title { font-size: 7.8mm; margin-bottom: 2.5mm; }
+    .pallet-label.compact .pl-code { font-size: 6.4mm; margin-bottom: 3mm; }
+    .pallet-label.compact .item-block { margin-bottom: 5.2mm; }
+    .pallet-label.compact .article-code { font-size: 5.8mm; margin-bottom: 1.8mm; }
+    .pallet-label.compact .qty-row { font-size: 4.35mm; }
+    .pallet-label.compact .box-lines { font-size: 4.2mm; line-height: 1.18; }
+    .pallet-label.compact .box-line { min-height: 4.95mm; }
+    .pallet-label.compact .sscc-text { font-size: 3.35mm; }
+
+    .pallet-label.ultra {
+      padding-left: 7.2mm;
+      padding-right: 7.2mm;
+    }
+    .pallet-label.ultra .label-title { font-size: 7mm; letter-spacing: 0.35mm; margin-bottom: 2mm; }
+    .pallet-label.ultra .pl-code { font-size: 5.7mm; margin-bottom: 2.3mm; }
+    .pallet-label.ultra .item-block { margin-bottom: 3.4mm; }
+    .pallet-label.ultra .article-code { font-size: 5.1mm; margin-bottom: 1.4mm; }
+    .pallet-label.ultra .qty-row { font-size: 3.9mm; margin-bottom: 0.8mm; }
+    .pallet-label.ultra .box-lines { font-size: 3.65mm; line-height: 1.1; }
+    .pallet-label.ultra .box-line { min-height: 4.05mm; }
+    .pallet-label.ultra .sscc-text { font-size: 3mm; }
+    .pallet-label.ultra .barcode-wrap { height: 19mm; }
+    .pallet-label.ultra .barcode-wrap img,
+    .barcode-wrap svg { height: 14.5mm; }
+    .pallet-label.ultra .barcode-human { font-size: 3.4mm; }
+
+
+    /* v4 auto-fit system: the script below changes these variables per label, so
+       large pallets keep all article/quantity text above the SSCC + barcode area. */
+    .pallet-label {
+      --fit-scale: 1;
+      --title-fit-scale: 1;
+      --pl-fit-scale: 1;
+      --article-fit-scale: 1;
+      --qty-fit-scale: 1;
+
+      --title-size: 8.4mm;
+      --title-letter: 0.7mm;
+      --title-mb: 3mm;
+      --pl-size: 7.1mm;
+      --pl-mb: 4mm;
+      --item-mb: 7.2mm;
+      --item-last-mb: 2mm;
+      --article-size: 6.6mm;
+      --article-mb: 2.3mm;
+      --qty-size: 4.9mm;
+      --qty-mb: 1.2mm;
+      --box-size: 4.8mm;
+      --box-lh: 1.25;
+      --box-min-h: 5.9mm;
+      --sscc-size: 3.6mm;
+      --sscc-mb: 2.5mm;
+      --barcode-wrap-h: 22mm;
+      --barcode-svg-h: 16.5mm;
+      --human-size: 4.1mm;
+      --human-mt: 0.7mm;
+    }
+
+    .pallet-label.compact {
+      --title-size: 7.8mm;
+      --title-letter: 0.55mm;
+      --title-mb: 2.5mm;
+      --pl-size: 6.4mm;
+      --pl-mb: 3mm;
+      --item-mb: 5.2mm;
+      --article-size: 5.8mm;
+      --article-mb: 1.8mm;
+      --qty-size: 4.35mm;
+      --box-size: 4.2mm;
+      --box-lh: 1.18;
+      --box-min-h: 4.95mm;
+      --sscc-size: 3.35mm;
+    }
+
+    .pallet-label.ultra {
+      --title-size: 7mm;
+      --title-letter: 0.35mm;
+      --title-mb: 2mm;
+      --pl-size: 5.7mm;
+      --pl-mb: 2.3mm;
+      --item-mb: 3.4mm;
+      --article-size: 5.1mm;
+      --article-mb: 1.4mm;
+      --qty-size: 3.9mm;
+      --qty-mb: 0.8mm;
+      --box-size: 3.65mm;
+      --box-lh: 1.1;
+      --box-min-h: 4.05mm;
+      --sscc-size: 3mm;
+      --barcode-wrap-h: 19mm;
+      --barcode-svg-h: 14.5mm;
+      --human-size: 3.4mm;
+    }
+
+    .pallet-label .label-title {
+      font-size: calc(var(--title-size) * var(--fit-scale) * var(--title-fit-scale));
+      letter-spacing: calc(var(--title-letter) * var(--fit-scale) * var(--title-fit-scale));
+      margin-bottom: calc(var(--title-mb) * var(--fit-scale));
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .pallet-label .pl-code {
+      font-size: calc(var(--pl-size) * var(--fit-scale) * var(--pl-fit-scale));
+      margin-bottom: calc(var(--pl-mb) * var(--fit-scale));
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .pallet-label .item-block {
+      margin-bottom: calc(var(--item-mb) * var(--fit-scale));
+    }
+
+    .pallet-label .item-block:last-child {
+      margin-bottom: calc(var(--item-last-mb) * var(--fit-scale));
+    }
+
+    .pallet-label .article-code {
+      font-size: calc(var(--article-size) * var(--fit-scale) * var(--article-fit-scale));
+      margin-bottom: calc(var(--article-mb) * var(--fit-scale));
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .pallet-label .qty-row {
+      font-size: calc(var(--qty-size) * var(--fit-scale) * var(--qty-fit-scale));
+      margin-bottom: calc(var(--qty-mb) * var(--fit-scale));
+    }
+
+    .pallet-label .box-lines {
+      font-size: calc(var(--box-size) * var(--fit-scale) * var(--qty-fit-scale));
+      line-height: calc(var(--box-lh) * var(--fit-scale));
+    }
+
+    .pallet-label .box-line {
+      min-height: calc(var(--box-min-h) * var(--fit-scale));
+    }
+
+    .pallet-label .footer {
+      margin-top: 1.5mm;
+    }
+
+    .pallet-label .sscc-text {
+      font-size: var(--sscc-size);
+      margin-bottom: var(--sscc-mb);
+    }
+
+    .pallet-label .barcode-wrap {
+      height: var(--barcode-wrap-h);
+    }
+
+    .pallet-label .barcode-wrap img,
+    .barcode-wrap svg {
+      height: var(--barcode-svg-h);
+    }
+
+    .pallet-label .barcode-human {
+      font-size: var(--human-size);
+      margin-top: var(--human-mt);
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    @page {
+      size: 297mm 210mm;
+      margin: 0;
+    }
+
+    @media print {
+      html, body {
+        width: 297mm;
+        background: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .app {
+        max-width: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .controls { display: none !important; }
+
+  
+    .tab-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+    }
+
+    .tab-btn {
+      background: #eef2f7;
+      color: #344054;
+      border: 1px solid #d7e0ea;
+      padding: 9px 13px;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .manual-grid {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(320px, 0.95fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 210px;
+      border: 1px solid #cfd7e2;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font: 600 13px Consolas, "Courier New", monospace;
+      background: #fff;
+      color: #111;
+      outline: none;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(31, 93, 153, 0.12);
+    }
+
+    .manual-help {
+      margin: 0 0 8px 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .manual-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .manual-summary {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+      overflow: hidden;
+      font-size: 12px;
+    }
+
+    .manual-summary .empty {
+      padding: 12px;
+      color: var(--muted);
+    }
+
+    .manual-summary table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .manual-summary th,
+    .manual-summary td {
+      border-bottom: 1px solid var(--line);
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .manual-summary th {
+      background: #eef2f7;
+      color: #344054;
+      font-weight: 800;
+    }
+
+    .manual-summary tr:last-child td { border-bottom: 0; }
+
+    .tag-auto,
+    .tag-manual,
+    .tag-missing {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-weight: 800;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .tag-auto { background: #eef4ff; color: #1f5d99; }
+    .tag-manual { background: #ecfdf3; color: #067647; }
+    .tag-missing { background: #fef3f2; color: #b42318; }
+
+    @media (max-width: 900px) {
+      .manual-grid { grid-template-columns: 1fr; }
+    }
+
+    .print-area {
+        display: block;
+        margin: 0;
+        padding: 0;
+      }
+
+      .page {
+        width: 297mm;
+        height: 210mm;
+        min-height: 210mm;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        page-break-after: always;
+        break-after: page;
+        display: grid;
+        grid-template-columns: 100mm 100mm;
+        grid-auto-rows: 150mm;
+        align-content: center;
+        justify-content: center;
+        gap: 10mm;
+      }
+
+      .page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .pallet-label {
+        box-shadow: none;
+        border: 0.25mm solid #d0d0d0;
+        border-radius: 1.8mm;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="controls">
+      <div class="top-row">
+        <div>
+          <h1>PELINTEX Pallet Label Generator <span class="version-badge">v7 Manual TEC-IT</span></h1>
+          <p class="hint">Drop the Excel export. The program groups rows by pallet and creates 100 × 150 mm labels, 2 labels per A4 landscape page. Barcodes can be created automatically with TEC-IT GS1-128 or pasted manually from the TEC-IT site.</p>
+        </div>
+        <div class="buttons">
+          <button id="clearBtn" type="button">Clear</button>
+          <button id="printBtn" type="button" class="primary" disabled>Print / Save PDF</button>
+        </div>
+      </div>
+
+      <div class="settings">
+        <label>
+          Company / title
+          <input id="companyInput" type="text" value="PELINTEX" />
+        </label>
+        <label>
+          PL date
+          <span class="date-control">
+            <input id="plDateInput" type="date" />
+            <button id="calendarBtn" type="button" class="calendar-btn" title="Open calendar">📅</button>
+          </span>
+        </label>
+        <label>
+          PL code preview
+          <input id="plPreviewInput" type="text" readonly />
+        </label>
+        <label>
+          Maximum units in a box
+          <input id="maxBoxInput" type="number" min="1" step="1" value="12" />
+        </label>
+        <div class="buttons">
+          <button id="regenerateBtn" type="button" disabled>Regenerate</button>
+        </div>
+      </div>
+
+      <div class="tab-buttons" role="tablist" aria-label="Input method">
+        <button id="excelTabBtn" type="button" class="tab-btn active" data-tab="excelPane">1. Excel file</button>
+        <button id="manualTabBtn" type="button" class="tab-btn" data-tab="manualPane">2. Manual TEC-IT codes</button>
+      </div>
+
+      <div id="excelPane" class="tab-pane active" role="tabpanel" aria-labelledby="excelTabBtn">
+        <div id="dropzone" class="dropzone">
+          <strong>Drop XLSX file here</strong>
+          <span>or click to select file</span>
+          <input id="fileInput" type="file" accept=".xlsx,.xls,.xlsm,.csv" />
+        </div>
+        <div id="mapping" class="mapping"></div>
+      </div>
+
+      <div id="manualPane" class="tab-pane" role="tabpanel" aria-labelledby="manualTabBtn">
+        <div class="manual-grid">
+          <div>
+            <p class="manual-help">
+              Load the Excel first, then paste the barcode codes copied from TEC-IT. Accepted formats: full TEC-IT image URL, full HTML &lt;img&gt; code, one code per line, or just SSCC / (00)SSCC digits. If no pallet/SSCC is detected, lines are applied in label order.
+            </p>
+            <textarea id="manualBarcodeInput" placeholder="Example paste from TEC-IT:
+&lt;img src=&quot;https://barcode.tec-it.com/barcode.ashx?data=00136126200310308558&amp;code=GS1-128...&quot;&gt;
+
+Or one per line:
+PALET 1: https://barcode.tec-it.com/barcode.ashx?...
+PALET 2: (00)136126200310308565"></textarea>
+            <div class="manual-buttons">
+              <button id="applyManualBarcodeBtn" type="button">Apply pasted codes</button>
+              <button id="clearManualBarcodeBtn" type="button">Clear manual codes</button>
+            </div>
+          </div>
+          <div>
+            <div id="manualSummary" class="manual-summary"><div class="empty">Load Excel to see the label list.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="status" class="status">Waiting for Excel file.</div>
+      <p class="hint service-note">Barcode source: <a href="https://barcode.tec-it.com/en/GS1-128" target="_blank" rel="noopener">TEC-IT GS1-128 Barcode Generator</a>. (TEOKROZE: офлайн версия - баркодовете се рисуват локално, интернет не е нужен.) In tab 2 you can paste TEC-IT-generated codes manually; if images fail to load, the program falls back to local GS1-128 rendering.</p>
+    </section>
+
+    <main id="printArea" class="print-area"></main>
+  </div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+
+    const dropzone = $('#dropzone');
+    const fileInput = $('#fileInput');
+    const statusBox = $('#status');
+    const mappingBox = $('#mapping');
+    const printArea = $('#printArea');
+    const printBtn = $('#printBtn');
+    const clearBtn = $('#clearBtn');
+    const regenerateBtn = $('#regenerateBtn');
+    const companyInput = $('#companyInput');
+    const plDateInput = $('#plDateInput');
+    const calendarBtn = $('#calendarBtn');
+    const plPreviewInput = $('#plPreviewInput');
+    const maxBoxInput = $('#maxBoxInput');
+    const excelTabBtn = $('#excelTabBtn');
+    const manualTabBtn = $('#manualTabBtn');
+    const manualBarcodeInput = $('#manualBarcodeInput');
+    const applyManualBarcodeBtn = $('#applyManualBarcodeBtn');
+    const clearManualBarcodeBtn = $('#clearManualBarcodeBtn');
+    const manualSummary = $('#manualSummary');
+
+    let lastGrid = null;
+    let lastParsed = null;
+    let manualBarcodeOverrides = new Map();
+
+    const columnDefinitions = {
+      pallet: {
+        label: 'Pallet',
+        candidates: ['num manuel de pal', 'numero manuel de pal', 'num manuel pal', 'manual pallet', 'pallet', 'palet', 'palette', 'pal']
+      },
+      sscc: {
+        label: 'SSCC',
+        candidates: ['numero sscc', 'numéro sscc', 'sscc', 'num sscc']
+      },
+      article: {
+        label: 'Article',
+        candidates: ['article', 'reference article', 'ref article', 'item', 'reference', 'référence']
+      },
+      quantity: {
+        label: 'Quantity',
+        candidates: ['quantite', 'quantité', 'quantity', 'qty', 'qte', 'qté']
+      },
+      dateTransport: {
+        label: 'Date transport',
+        candidates: ['date transport', 'transport date', 'date']
+      },
+      numTransport: {
+        label: 'Transport No.',
+        candidates: ['num transport', 'numero transport', 'numéro transport', 'transport no', 'transport number']
+      },
+      yourReference: {
+        label: 'Reference',
+        candidates: ['votre reference', 'votre référence', 'customer reference', 'client reference', 'reference client']
+      }
+    };
+
+    function setStatus(message, type = '') {
+      statusBox.textContent = message;
+      statusBox.className = 'status' + (type ? ' ' + type : '');
+    }
+
+    function clearAll() {
+      lastGrid = null;
+      lastParsed = null;
+      printArea.innerHTML = '';
+      mappingBox.style.display = 'none';
+      mappingBox.innerHTML = '';
+      printBtn.disabled = true;
+      regenerateBtn.disabled = true;
+      fileInput.value = '';
+      manualBarcodeOverrides.clear();
+      manualBarcodeInput.value = '';
+      updateManualSummary();
+      setPLDate(new Date());
+      setStatus('Waiting for Excel file.');
+    }
+
+    function normalizeHeader(value) {
+      return String(value ?? '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+    }
+
+    function cleanText(value) {
+      if (value === null || value === undefined) return '';
+      return String(value).replace(/\s+/g, ' ').trim();
+    }
+
+    function escapeHtml(value) {
+      return cleanText(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeHtmlRaw(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+
+    function labelKey(label) {
+      return `${normalizePallet(label.pallet)}__${normalizeSscc(label.sscc) || 'NO_SSCC'}`;
+    }
+
+    function decodeHtmlEntities(value) {
+      const el = document.createElement('textarea');
+      el.innerHTML = String(value ?? '');
+      return el.value;
+    }
+
+    function normalizeManualUrl(value) {
+      let url = decodeHtmlEntities(cleanText(value));
+      if (!url) return '';
+      if (url.startsWith('//')) url = 'https:' + url;
+      return url;
+    }
+
+    function extractUrlFromManualLine(line) {
+      const srcMatch = String(line).match(/<img[^>]+src\s*=\s*["']([^"']+)["'][^>]*>/i)
+        || String(line).match(/src\s*=\s*["']([^"']+)["']/i);
+      if (srcMatch) return normalizeManualUrl(srcMatch[1]);
+
+      const urlMatch = String(line).match(/https?:\/\/[^\s"'<>]+/i)
+        || String(line).match(/\/\/barcode\.tec-it\.com\/[^\s"'<>]+/i);
+      if (urlMatch) return normalizeManualUrl(urlMatch[0]);
+      return '';
+    }
+
+    function extractSsccFromAny(value) {
+      let text = String(value ?? '');
+      try { text = decodeURIComponent(text); } catch (_) {}
+      text = decodeHtmlEntities(text);
+
+      const explicit = text.match(/\(\s*00\s*\)\s*([0-9][0-9\s\-]{16,24}[0-9])/);
+      if (explicit) {
+        const digits = explicit[1].replace(/\D/g, '');
+        if (digits.length >= 18) return normalizeSscc(digits.slice(0, 18));
+      }
+
+      const candidates = text.match(/\d{18,20}/g) || [];
+      for (const c of candidates) {
+        const normalized = normalizeSscc(c);
+        if (/^\d{18}$/.test(normalized)) return normalized;
+      }
+      return '';
+    }
+
+    function extractPalletFromManualLine(line) {
+      const text = normalizeHeader(line);
+      const match = text.match(/(?:palet|pallet|palette|pal)\s*(?:no|number|num|n)?\s*(\d{1,6})/i);
+      if (match) return String(Number(match[1]));
+
+      const startMatch = cleanText(line).match(/^(\d{1,6})\s*[:;\-\t ]/);
+      if (startMatch) return String(Number(startMatch[1]));
+      return '';
+    }
+
+    function parseManualBarcodeLine(line) {
+      const raw = String(line ?? '').trim();
+      const sourceUrl = extractUrlFromManualLine(raw);
+      const sscc = extractSsccFromAny(raw + ' ' + sourceUrl);
+      const pallet = extractPalletFromManualLine(raw);
+      return { raw, sourceUrl, sscc, pallet };
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabId);
+      });
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.toggle('active', pane.id === tabId);
+      });
+    }
+
+    function updateManualSummary() {
+      if (!manualSummary) return;
+      if (!lastParsed || !lastParsed.labels.length) {
+        manualSummary.innerHTML = '<div class="empty">Load Excel to see the label list.</div>';
+        return;
+      }
+
+      const rows = lastParsed.labels.map((label, index) => {
+        const override = manualBarcodeOverrides.get(labelKey(label));
+        let tag = '<span class="tag-auto">AUTO TEC-IT</span>';
+        let details = label.sscc ? `SSCC ${escapeHtml(label.sscc)}` : '<span class="tag-missing">NO SSCC</span>';
+        if (override) {
+          tag = '<span class="tag-manual">MANUAL</span>';
+          if (override.sourceUrl) details = 'Manual TEC-IT image/code';
+          else if (override.sscc) details = `Manual SSCC ${(override.sscc)}`;
+        }
+        return `<tr><td>${index + 1}</td><td>${escapeHtml(label.pallet)}</td><td>${escapeHtml(label.sscc || 'missing')}</td><td>${tag}</td><td>${details}</td></tr>`;
+      }).join('');
+
+      manualSummary.innerHTML = `<table><thead><tr><th>#</th><th>Palet</th><th>Excel SSCC</th><th>Barcode</th><th>Details</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function applyManualBarcodes() {
+      if (!lastParsed || !lastParsed.labels.length) {
+        setStatus('Load the Excel file first, then paste TEC-IT codes in tab 2.', 'bad');
+        switchTab('excelPane');
+        return;
+      }
+
+      const lines = String(manualBarcodeInput.value || '')
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean);
+
+      if (!lines.length) {
+        manualBarcodeOverrides.clear();
+        renderPages(lastParsed.labels);
+        updateManualSummary();
+        setStatus('Manual barcode codes cleared. Labels now use automatic TEC-IT GS1-128 generation.', 'ok');
+        return;
+      }
+
+      const labels = lastParsed.labels;
+      const bySscc = new Map(labels.map(label => [normalizeSscc(label.sscc), label]).filter(([sscc]) => sscc));
+      const byPallet = new Map(labels.map(label => [normalizePallet(label.pallet), label]));
+      const nextUnassigned = () => labels.find(label => !manualBarcodeOverrides.has(labelKey(label)));
+
+      manualBarcodeOverrides.clear();
+      let applied = 0;
+      let skipped = 0;
+
+      for (const line of lines) {
+        const parsed = parseManualBarcodeLine(line);
+        if (!parsed.sourceUrl && !parsed.sscc) {
+          skipped++;
+          continue;
+        }
+
+        let target = null;
+        if (parsed.sscc && bySscc.has(parsed.sscc)) target = bySscc.get(parsed.sscc);
+        if (!target && parsed.pallet && byPallet.has(parsed.pallet)) target = byPallet.get(parsed.pallet);
+        if (!target) target = nextUnassigned();
+        if (!target) {
+          skipped++;
+          continue;
+        }
+
+        manualBarcodeOverrides.set(labelKey(target), {
+          sourceUrl: parsed.sourceUrl,
+          sscc: parsed.sscc || normalizeSscc(target.sscc),
+          raw: parsed.raw
+        });
+        applied++;
+      }
+
+      renderPages(labels);
+      updateManualSummary();
+      setStatus(`Applied ${applied} manual TEC-IT barcode code(s).${skipped ? ` Skipped ${skipped} line(s) that did not contain a barcode URL, HTML image code, or SSCC.` : ''}`, applied ? 'ok' : 'bad');
+    }
+
+    function clearManualBarcodesOnly() {
+      manualBarcodeOverrides.clear();
+      manualBarcodeInput.value = '';
+      if (lastParsed) renderPages(lastParsed.labels);
+      updateManualSummary();
+      setStatus('Manual barcode codes cleared. Labels now use automatic TEC-IT GS1-128 generation.', 'ok');
+    }
+
+    function findColumn(headers, key) {
+      const normalized = headers.map(normalizeHeader);
+      const candidates = columnDefinitions[key].candidates.map(normalizeHeader);
+
+      for (const candidate of candidates) {
+        const exactIndex = normalized.findIndex(h => h === candidate);
+        if (exactIndex !== -1) return exactIndex;
+      }
+
+      for (const candidate of candidates) {
+        const looseIndex = normalized.findIndex(h => h && (h.includes(candidate) || candidate.includes(h)));
+        if (looseIndex !== -1) return looseIndex;
+      }
+
+      return -1;
+    }
+
+    function findHeaderRow(grid) {
+      let best = { rowIndex: -1, score: -1, mapping: null };
+      const scanRows = Math.min(grid.length, 25);
+
+      for (let r = 0; r < scanRows; r++) {
+        const headers = grid[r] || [];
+        const mapping = {};
+        for (const key of Object.keys(columnDefinitions)) {
+          mapping[key] = findColumn(headers, key);
+        }
+
+        let score = 0;
+        if (mapping.article >= 0) score += 3;
+        if (mapping.quantity >= 0) score += 3;
+        if (mapping.pallet >= 0) score += 3;
+        if (mapping.sscc >= 0) score += 3;
+        if (mapping.dateTransport >= 0) score += 1;
+        if (mapping.numTransport >= 0) score += 1;
+        if (mapping.yourReference >= 0) score += 1;
+
+        if (score > best.score) best = { rowIndex: r, score, mapping };
+      }
+
+      return best;
+    }
+
+    function readWorksheetToGrid(ws) {
+      const ref = ws['!ref'];
+      if (!ref) return [];
+      const range = XLSX.utils.decode_range(ref);
+      const grid = [];
+
+      for (let r = range.s.r; r <= range.e.r; r++) {
+        const row = [];
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const address = XLSX.utils.encode_cell({ r, c });
+          const cell = ws[address];
+          let value = '';
+          if (cell) {
+            if (cell.w !== undefined && cell.w !== null) value = String(cell.w);
+            else if (cell.v !== undefined && cell.v !== null) value = String(cell.v);
+          }
+          row.push(value);
+        }
+        grid.push(row);
+      }
+      return grid;
+    }
+
+    function parseQuantity(value) {
+      const raw = cleanText(value).replace(/\s/g, '').replace(',', '.');
+      const match = raw.match(/-?\d+(?:\.\d+)?/);
+      if (!match) return 0;
+      const num = Number(match[0]);
+      if (!Number.isFinite(num)) return 0;
+      return num;
+    }
+
+    function parseDateValue(value) {
+      const s = cleanText(value);
+      if (!s) return null;
+
+      if (/^\d{5}(?:\.0+)?$/.test(s)) {
+        const serial = Number(s);
+        const utcDays = Math.floor(serial - 25569);
+        const utcValue = utcDays * 86400;
+        const dateInfo = new Date(utcValue * 1000);
+        return new Date(dateInfo.getUTCFullYear(), dateInfo.getUTCMonth(), dateInfo.getUTCDate());
+      }
+
+      let m = s.match(/^(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})$/);
+      if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+
+      m = s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})$/);
+      if (m) {
+        let day = Number(m[1]);
+        let month = Number(m[2]);
+        let year = Number(m[3]);
+        if (year < 100) year += 2000;
+        return new Date(year, month - 1, day);
+      }
+
+      m = s.match(/(\d{2})(\d{2})(\d{4})/);
+      if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+
+      const parsed = new Date(s);
+      if (!Number.isNaN(parsed.getTime())) return parsed;
+      return null;
+    }
+
+    function ymd(date) {
+      const y = String(date.getFullYear()).padStart(4, '0');
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}${m}${d}`;
+    }
+
+    function dateInputValue(date) {
+      const y = String(date.getFullYear()).padStart(4, '0');
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function dateFromInputValue(value) {
+      const m = cleanText(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return new Date();
+      const date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return Number.isNaN(date.getTime()) ? new Date() : date;
+    }
+
+    function plCodeFromDateInput() {
+      return 'PL' + ymd(dateFromInputValue(plDateInput.value));
+    }
+
+    function updatePLPreview() {
+      plPreviewInput.value = plCodeFromDateInput();
+    }
+
+    function setPLDate(date) {
+      plDateInput.value = dateInputValue(date || new Date());
+      updatePLPreview();
+    }
+
+    function normalizePallet(value) {
+      const s = cleanText(value);
+      if (!s) return 'NO PALLET';
+      const n = Number(s.replace(',', '.'));
+      if (Number.isFinite(n) && String(n) !== '') return String(Math.trunc(n));
+      return s;
+    }
+
+    function normalizeSscc(value) {
+      let digits = cleanText(value).replace(/\D/g, '');
+      // Sometimes exported SSCC values include the AI prefix 00. For GS1-128
+      // encoding we keep only the 18 SSCC data digits and add AI (00) separately.
+      if (digits.length === 20 && digits.startsWith('00')) digits = digits.slice(2);
+      // If Excel stripped a leading zero from an 18-digit SSCC, restore it.
+      if (digits.length > 0 && digits.length < 18) digits = digits.padStart(18, '0');
+      return digits;
+    }
+
+    function isValidSsccForGs1(sscc) {
+      return /^\d{18}$/.test(normalizeSscc(sscc));
+    }
+
+    function boxBreakdown(quantity, maxUnits) {
+      const q = Math.round(Number(quantity) || 0);
+      if (q <= 0) return ['0 boxes'];
+      const full = Math.floor(q / maxUnits);
+      const remainder = q % maxUnits;
+      const lines = [];
+
+      if (full > 0) {
+        lines.push(`${full} boxes of ${maxUnits}`);
+      }
+      if (remainder > 0) {
+        lines.push(`1 boxes of ${remainder}`);
+      }
+      return lines;
+    }
+
+    function renderBoxLines(quantity, maxUnits) {
+      return boxBreakdown(quantity, maxUnits)
+        .map(line => `<span class="box-line">${escapeHtmlRaw(line)}</span>`)
+        .join('');
+    }
+
+    function derivePLDate(rows, mapping) {
+      if (mapping.dateTransport >= 0) {
+        for (const row of rows) {
+          const dt = parseDateValue(row[mapping.dateTransport]);
+          if (dt) return dt;
+        }
+      }
+      if (mapping.yourReference >= 0) {
+        for (const row of rows) {
+          const dt = parseDateValue(row[mapping.yourReference]);
+          if (dt) return dt;
+        }
+      }
+      return new Date();
+    }
+
+    function parseGrid(grid) {
+      const headerInfo = findHeaderRow(grid);
+      if (headerInfo.score < 9) {
+        throw new Error('Could not detect the required columns. Needed: Article, Quantité, Num manuel de pal, Numéro SSCC.');
+      }
+
+      const headers = grid[headerInfo.rowIndex] || [];
+      const dataRows = grid.slice(headerInfo.rowIndex + 1)
+        .filter(row => row.some(cell => cleanText(cell) !== ''));
+
+      const mapping = headerInfo.mapping;
+      const groups = new Map();
+
+      for (const row of dataRows) {
+        const article = cleanText(row[mapping.article]);
+        const qty = parseQuantity(row[mapping.quantity]);
+        if (!article || qty <= 0) continue;
+
+        const pallet = mapping.pallet >= 0 ? normalizePallet(row[mapping.pallet]) : 'NO PALLET';
+        const sscc = mapping.sscc >= 0 ? normalizeSscc(row[mapping.sscc]) : '';
+        const groupKey = `${pallet}__${sscc || 'NO_SSCC'}`;
+
+        if (!groups.has(groupKey)) {
+          groups.set(groupKey, {
+            pallet,
+            sscc,
+            rows: [],
+            itemMap: new Map(),
+            sourceOrder: groups.size
+          });
+        }
+
+        const group = groups.get(groupKey);
+        group.rows.push(row);
+        if (!group.sscc && sscc) group.sscc = sscc;
+
+        if (!group.itemMap.has(article)) {
+          group.itemMap.set(article, { article, quantity: 0, firstIndex: group.itemMap.size });
+        }
+        group.itemMap.get(article).quantity += qty;
+      }
+
+      const labels = Array.from(groups.values())
+        .sort((a, b) => {
+          const an = Number(a.pallet);
+          const bn = Number(b.pallet);
+          if (Number.isFinite(an) && Number.isFinite(bn)) return an - bn;
+          return String(a.pallet).localeCompare(String(b.pallet), undefined, { numeric: true });
+        })
+        .map(group => ({
+          pallet: group.pallet,
+          sscc: group.sscc,
+          items: Array.from(group.itemMap.values()).sort((a, b) => a.firstIndex - b.firstIndex)
+        }));
+
+      return {
+        headers,
+        mapping,
+        rows: dataRows,
+        labels,
+        plDate: derivePLDate(dataRows, mapping)
+      };
+    }
+
+    function showMapping(parsed) {
+      const rows = Object.keys(columnDefinitions).map(key => {
+        const idx = parsed.mapping[key];
+        const detected = idx >= 0 ? parsed.headers[idx] : 'Not detected';
+        return `<tr><td>${escapeHtml(columnDefinitions[key].label)}</td><td>${escapeHtml(detected)}</td></tr>`;
+      }).join('');
+
+      mappingBox.innerHTML = `<table><thead><tr><th>Needed field</th><th>Detected Excel column</th></tr></thead><tbody>${rows}</tbody></table>`;
+      mappingBox.style.display = 'block';
+    }
+
+    function labelClass(label) {
+      if (label.items.length >= 6) return 'pallet-label ultra';
+      if (label.items.length >= 4) return 'pallet-label compact';
+      return 'pallet-label';
+    }
+
+    function renderLabel(label, plCode, maxUnits, company) {
+      const manualOverride = manualBarcodeOverrides.get(labelKey(label));
+      const barcodeSscc = normalizeSscc((manualOverride && manualOverride.sscc) || label.sscc);
+      const manualBarcodeUrl = manualOverride && manualOverride.sourceUrl ? normalizeManualUrl(manualOverride.sourceUrl) : '';
+      const itemHtml = label.items.map(item => `
+        <div class="item-block">
+          <div class="article-code">${escapeHtml(item.article)}</div>
+          <div class="qty-row">
+            <div class="qty-label">QUANTITY</div>
+            <div class="qty-total">${escapeHtml(Math.round(item.quantity))}</div>
+          </div>
+          <div class="box-lines">${renderBoxLines(item.quantity, maxUnits)}</div>
+        </div>
+      `).join('');
+
+      const ssccText = barcodeSscc ? `SSCC: ${escapeHtml(barcodeSscc)}` : 'SSCC: missing';
+      const manualAttr = manualBarcodeUrl ? ` data-manual-url="${escapeHtmlRaw(manualBarcodeUrl)}"` : '';
+      const barcodeHtml = barcodeSscc || manualBarcodeUrl
+        ? `<div class="barcode-wrap"><img class="barcode-img" data-sscc="${escapeHtml(barcodeSscc)}"${manualAttr} alt="GS1-128 barcode (00)${escapeHtml(barcodeSscc)}" /><div class="barcode-human">(00)${escapeHtml(barcodeSscc)}</div></div>`
+        : `<div class="no-sscc">No SSCC for barcode</div>`;
+
+      return `
+        <div class="${labelClass(label)}">
+          <div class="label-title">${escapeHtml(company)} - PALET ${escapeHtml(label.pallet)} -</div>
+          <div class="pl-code">${escapeHtml(plCode)}</div>
+          <div class="items">${itemHtml}</div>
+          <div class="footer">
+            <div class="sscc-text">${ssccText}</div>
+            ${barcodeHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    const CODE128_PATTERNS = [
+      '212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',
+      '221312','231212','112232','122132','122231','113222','123122','123221','223211','221132',
+      '221231','213212','223112','312131','311222','321122','321221','312212','322112','322211',
+      '212123','212321','232121','111323','131123','131321','112313','132113','132311','211313',
+      '231113','231311','112133','112331','132131','113123','113321','133121','313121','211331',
+      '231131','213113','213311','213131','311123','311321','331121','312113','312311','332111',
+      '314111','221411','431111','111224','111422','121124','121421','141122','141221','112214',
+      '112412','122114','122411','142112','142211','241211','221114','413111','241112','134111',
+      '111242','121142','121241','114212','124112','124211','411212','421112','421211','212141',
+      '214121','412121','111143','111341','131141','114113','114311','411113','411311','113141',
+      '114131','311141','411131','211412','211214','211232','2331112'
+    ];
+
+    function gs1_128_sscc_symbols(ssccRaw) {
+      const sscc = normalizeSscc(ssccRaw);
+      if (!/^\d{18}$/.test(sscc)) {
+        throw new Error('GS1-128 SSCC must be 18 digits. Found: ' + (sscc || 'empty'));
+      }
+
+      const aiAndData = '00' + sscc; // AI (00) + 18-digit SSCC, encoded in Code Set C.
+      const symbols = [105, 102];    // Start Code C + FNC1 = GS1-128.
+
+      for (let i = 0; i < aiAndData.length; i += 2) {
+        symbols.push(Number(aiAndData.slice(i, i + 2)));
+      }
+
+      let checksum = symbols[0];
+      for (let i = 1; i < symbols.length; i++) checksum += symbols[i] * i;
+      symbols.push(checksum % 103);
+      symbols.push(106); // Stop
+      return symbols;
+    }
+
+    function renderGs1_128_Sscc(svg, ssccRaw) {
+      const symbols = gs1_128_sscc_symbols(ssccRaw);
+      const quiet = 10; // GS1 quiet zone inside the full barcode width.
+      const barHeight = 58;
+      let x = quiet;
+      let rects = '';
+
+      for (const symbol of symbols) {
+        const pattern = CODE128_PATTERNS[symbol];
+        if (!pattern) throw new Error('Invalid Code 128 symbol: ' + symbol);
+        for (let i = 0; i < pattern.length; i++) {
+          const w = Number(pattern[i]);
+          if (i % 2 === 0) {
+            rects += `<rect x="${x}" y="0" width="${w}" height="${barHeight}" fill="#000"/>`;
+          }
+          x += w;
+        }
+      }
+
+      const totalWidth = x + quiet;
+      svg.setAttribute('viewBox', `0 0 ${totalWidth} ${barHeight}`);
+      svg.setAttribute('preserveAspectRatio', 'none');
+      svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', `GS1-128 SSCC (00)${normalizeSscc(ssccRaw)}`);
+      svg.innerHTML = `<rect x="0" y="0" width="${totalWidth}" height="${barHeight}" fill="#fff"/>${rects}`;
+    }
+
+    function tecItGs1_128Url(ssccRaw) {
+      const sscc = normalizeSscc(ssccRaw);
+      if (!/^\d{18}$/.test(sscc)) {
+        throw new Error('GS1-128 SSCC must be 18 digits. Found: ' + (sscc || 'empty'));
+      }
+
+      const params = new URLSearchParams({
+        data: '00' + sscc,
+        code: 'GS1-128',
+        'translate-esc': 'on',
+        showhrt: 'no',
+        dpi: '300',
+        modulewidth: 'fit',
+        format: 'png',
+        onerror: 'show'
+      });
+
+      return 'https://barcode.tec-it.com/barcode.ashx?' + params.toString();
+    }
+
+    function renderLocalBarcodeFallback(img, message = '') {
+      const sscc = img.dataset.sscc || '';
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.classList.add('barcode-svg');
+      svg.dataset.sscc = sscc;
+
+      try {
+        renderGs1_128_Sscc(svg, sscc);
+        svg.setAttribute('data-fallback', message || 'local');
+        img.replaceWith(svg);
+      } catch (err) {
+        img.outerHTML = `<div class="no-sscc">GS1-128 error: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderBarcodes() {
+      document.querySelectorAll('.barcode-img').forEach(img => {
+        try {
+          img.onload = null;
+          img.onerror = () => renderLocalBarcodeFallback(img, img.dataset.manualUrl ? 'Manual TEC-IT image load failed' : 'TEC-IT load failed');
+          if (img.dataset.manualUrl) {
+            img.src = normalizeManualUrl(img.dataset.manualUrl);
+          } else {
+            // TEOKROZE: офлайн - директно локален GS1-128 рендер (без TEC-IT)
+            renderLocalBarcodeFallback(img, 'local');
+          }
+        } catch (err) {
+          img.outerHTML = `<div class="no-sscc">GS1-128 error: ${escapeHtml(err.message)}</div>`;
+        }
+      });
+
+      document.querySelectorAll('.barcode-svg').forEach(svg => {
+        try {
+          renderGs1_128_Sscc(svg, svg.dataset.sscc);
+        } catch (err) {
+          svg.outerHTML = `<div class="no-sscc">GS1-128 error: ${escapeHtml(err.message)}</div>`;
+        }
+      });
+    }
+
+    function waitForBarcodeImages(timeoutMs = 8000) {
+      const images = Array.from(document.querySelectorAll('.barcode-img'));
+      if (!images.length) return Promise.resolve();
+
+      return Promise.all(images.map(img => new Promise(resolve => {
+        if (img.complete && img.naturalWidth > 0) {
+          resolve();
+          return;
+        }
+
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          resolve();
+        };
+
+        img.addEventListener('load', finish, { once: true });
+        img.addEventListener('error', () => {
+          renderLocalBarcodeFallback(img, 'TEC-IT load failed before print');
+          finish();
+        }, { once: true });
+        window.setTimeout(finish, timeoutMs);
+      }))).then(() => undefined);
+    }
+
+    async function printLabels() {
+      if (!lastParsed) return;
+      const previous = statusBox.textContent;
+      setStatus('Preparing TEC-IT GS1-128 barcode images before printing...');
+      renderBarcodes();
+      await waitForBarcodeImages();
+      fitAllLabels();
+      window.requestAnimationFrame(() => {
+        fitAllLabels();
+        setStatus(previous, statusBox.classList.contains('ok') ? 'ok' : '');
+        window.print();
+      });
+    }
+
+
+    function resetLabelFit(labelEl) {
+      labelEl.style.setProperty('--fit-scale', '1');
+      labelEl.style.setProperty('--title-fit-scale', '1');
+      labelEl.style.setProperty('--pl-fit-scale', '1');
+      labelEl.style.setProperty('--article-fit-scale', '1');
+      labelEl.style.setProperty('--qty-fit-scale', '1');
+    }
+
+    function getOverflowRatio(el) {
+      const box = el.getBoundingClientRect();
+      const available = Math.max(1, box.width);
+      const needed = Math.max(el.scrollWidth, available);
+      return available / needed;
+    }
+
+    function fitTextGroupWidth(labelEl, selector, cssVar, minScale) {
+      const elements = Array.from(labelEl.querySelectorAll(selector));
+      if (!elements.length) return;
+
+      let scale = 1;
+      labelEl.style.setProperty(cssVar, '1');
+
+      for (let pass = 0; pass < 8; pass++) {
+        let worstRatio = 1;
+        for (const el of elements) {
+          const ratio = getOverflowRatio(el);
+          if (ratio < worstRatio) worstRatio = ratio;
+        }
+
+        if (worstRatio >= 0.995) break;
+        scale = Math.max(minScale, scale * worstRatio * 0.985);
+        labelEl.style.setProperty(cssVar, scale.toFixed(3));
+        if (scale <= minScale + 0.001) break;
+      }
+    }
+
+    function itemsFitVertically(labelEl) {
+      const items = labelEl.querySelector('.items');
+      if (!items) return true;
+      const labelBox = labelEl.getBoundingClientRect();
+      const footer = labelEl.querySelector('.footer');
+      const footerBox = footer ? footer.getBoundingClientRect() : null;
+      const footerInside = !footerBox || footerBox.bottom <= labelBox.bottom - 1;
+      return items.scrollHeight <= items.clientHeight + 1 && footerInside;
+    }
+
+    function fitOneLabel(labelEl) {
+      resetLabelFit(labelEl);
+
+      // First, protect the header and codes from horizontal overflow.
+      fitTextGroupWidth(labelEl, '.label-title', '--title-fit-scale', 0.48);
+      fitTextGroupWidth(labelEl, '.pl-code', '--pl-fit-scale', 0.62);
+      fitTextGroupWidth(labelEl, '.article-code', '--article-fit-scale', 0.60);
+      fitTextGroupWidth(labelEl, '.qty-label, .qty-total, .box-line', '--qty-fit-scale', 0.58);
+
+      // Then shrink the whole text area only as much as needed so the item list
+      // never enters the SSCC/barcode area at the bottom.
+      let scale = 1;
+      for (let pass = 0; pass < 24 && !itemsFitVertically(labelEl); pass++) {
+        scale = Math.max(0.52, scale - 0.025);
+        labelEl.style.setProperty('--fit-scale', scale.toFixed(3));
+        if (scale <= 0.521) break;
+      }
+
+      // Width can change slightly after vertical fitting, so run the width pass again.
+      fitTextGroupWidth(labelEl, '.label-title', '--title-fit-scale', 0.48);
+      fitTextGroupWidth(labelEl, '.pl-code', '--pl-fit-scale', 0.62);
+      fitTextGroupWidth(labelEl, '.article-code', '--article-fit-scale', 0.60);
+      fitTextGroupWidth(labelEl, '.qty-label, .qty-total, .box-line', '--qty-fit-scale', 0.58);
+    }
+
+    function fitAllLabels() {
+      document.querySelectorAll('.pallet-label').forEach(fitOneLabel);
+    }
+
+    function renderPages(labels) {
+      printArea.innerHTML = '';
+      const maxUnits = Math.max(1, Math.floor(Number(maxBoxInput.value) || 12));
+      maxBoxInput.value = String(maxUnits);
+
+      const company = cleanText(companyInput.value) || 'PELINTEX';
+      updatePLPreview();
+      const plCode = plCodeFromDateInput();
+
+      for (let i = 0; i < labels.length; i += 2) {
+        const page = document.createElement('section');
+        page.className = 'page';
+
+        for (let j = 0; j < 2; j++) {
+          const slot = document.createElement('div');
+          slot.className = 'label-slot';
+          const label = labels[i + j];
+          if (label) slot.innerHTML = renderLabel(label, plCode, maxUnits, company);
+          page.appendChild(slot);
+        }
+        printArea.appendChild(page);
+      }
+
+      renderBarcodes();
+      fitAllLabels();
+      window.requestAnimationFrame(fitAllLabels);
+      printBtn.disabled = labels.length === 0;
+      regenerateBtn.disabled = labels.length === 0;
+    }
+
+    function regenerateFromParsed() {
+      if (!lastParsed) return;
+      renderPages(lastParsed.labels);
+      setStatus(`Generated ${lastParsed.labels.length} TEC-IT GS1-128 label(s) on ${Math.ceil(lastParsed.labels.length / 2)} A4 landscape page(s).`, 'ok');
+    }
+
+    async function handleFile(file) {
+      if (!file) return;
+      if (!window.XLSX) {
+        setStatus('SheetJS library did not load. Please connect to the internet once, then reload this HTML file, or ask for an offline version.', 'bad');
+        return;
+      }
+
+      printArea.innerHTML = '';
+      mappingBox.style.display = 'none';
+      mappingBox.innerHTML = '';
+      printBtn.disabled = true;
+      regenerateBtn.disabled = true;
+      setStatus(`Reading ${file.name} ...`);
+
+      try {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array', cellDates: false, raw: false });
+        const firstSheetName = workbook.SheetNames[0];
+        if (!firstSheetName) throw new Error('No sheets found in the file.');
+
+        const ws = workbook.Sheets[firstSheetName];
+        const grid = readWorksheetToGrid(ws);
+        const parsed = parseGrid(grid);
+        lastGrid = grid;
+        lastParsed = parsed;
+        manualBarcodeOverrides.clear();
+        manualBarcodeInput.value = '';
+
+        setPLDate(parsed.plDate || new Date());
+
+        showMapping(parsed);
+        renderPages(parsed.labels);
+        updateManualSummary();
+        setStatus(
+          `Loaded: ${file.name}\nSheet: ${firstSheetName}\nRows used: ${parsed.rows.length}\nGenerated ${parsed.labels.length} TEC-IT GS1-128 label(s) on ${Math.ceil(parsed.labels.length / 2)} A4 landscape page(s).`,
+          'ok'
+        );
+      } catch (err) {
+        console.error(err);
+        setStatus(err.message || String(err), 'bad');
+      }
+    }
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (event) => handleFile(event.target.files[0]));
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', (event) => {
+      const file = event.dataTransfer.files && event.dataTransfer.files[0];
+      handleFile(file);
+    });
+
+    window.addEventListener('dragover', (event) => event.preventDefault());
+    window.addEventListener('drop', (event) => event.preventDefault());
+
+    setPLDate(new Date());
+
+    printBtn.addEventListener('click', printLabels);
+    clearBtn.addEventListener('click', clearAll);
+    regenerateBtn.addEventListener('click', regenerateFromParsed);
+    excelTabBtn.addEventListener('click', () => switchTab('excelPane'));
+    manualTabBtn.addEventListener('click', () => switchTab('manualPane'));
+    applyManualBarcodeBtn.addEventListener('click', applyManualBarcodes);
+    clearManualBarcodeBtn.addEventListener('click', clearManualBarcodesOnly);
+
+    plDateInput.addEventListener('input', () => {
+      updatePLPreview();
+      regenerateFromParsed();
+    });
+
+    calendarBtn.addEventListener('click', () => {
+      if (plDateInput.showPicker) plDateInput.showPicker();
+      else plDateInput.focus();
+    });
+
+    [companyInput, plDateInput, maxBoxInput].forEach(input => {
+      input.addEventListener('change', regenerateFromParsed);
+      input.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') regenerateFromParsed();
+      });
+    });
+  </script>
+</body>
+</html>

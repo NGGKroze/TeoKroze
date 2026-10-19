@@ -1,0 +1,44 @@
+{
+  "exact": {
+    "TRESSE Box Label Generator": "TRESSE – генератор на етикети за кашони",
+    "Drop the packing list XLSX and the labels will be generated automatically. Supports Product-only layouts without Référence CLIENT.": "Пуснете опаковъчния лист (XLSX) и етикетите се генерират автоматично. Поддържа и формат само с продукт, без „Référence CLIENT“.",
+    "Drop Packing List Excel here": "Пуснете Excel с опаковъчния лист тук",
+    "or click to choose the XLSX file": "или кликнете, за да изберете XLSX файл",
+    "Print / Save as PDF": "Печат / Запази като PDF",
+    "Clear batch": "Изчисти партидата",
+    "Order": "Поръчка",
+    "Expedition date": "Дата на експедиция",
+    "Boxes": "Кашони",
+    "Colors": "Цветове",
+    "Color fill selector": "Избор на цветове за запълване",
+    "Change any color here or inside any label. Every label with the same color name updates automatically.": "Променете цвят тук или в етикет. Всички етикети със същото име на цвят се обновяват автоматично.",
+    "Live preview will appear here after dropping the packing list.": "Прегледът ще се покаже тук след качване на опаковъчния лист.",
+    "Could not find the packing list header row with № colis / Product / EAN / Coloris.": "Не е намерен редът със заглавия (№ colis / Product / EAN / Coloris).",
+    "Missing required columns:": "Липсват задължителни колони:",
+    "Could not detect size columns between Coloris/Taille and Quantité livrée. Numeric sizes and letter sizes XXS–XXXL are supported.": "Не са открити колони с размери между Coloris/Taille и Quantité livrée. Поддържат се числови размери и XXS–XXXL.",
+    "No box rows with quantities were found.": "Не са намерени редове с кашони и количества.",
+    "EAN13 barcode error": "Грешка в EAN13 баркод",
+    "Please load a packing list first.": "Първо качете опаковъчен лист.",
+    "Failed to parse the packing list.": "Опаковъчният лист не може да бъде прочетен.",
+    "Could not read this Excel file.": "Този Excel файл не може да бъде прочетен.",
+    "Could not read the file.": "Файлът не може да бъде прочетен."
+  },
+  "patterns": [
+    [
+      "^(\\d+) labels / (\\d+) boxes$",
+      "$1 етикета / $2 кашона"
+    ],
+    [
+      "^Generated (\\d+) labels from (.+)\\.$",
+      "Генерирани са $1 етикета от $2."
+    ],
+    [
+      "^Selected: (.+)$",
+      "Избран: $1"
+    ]
+  ],
+  "skip": [
+    "#labels-container",
+    "#print-area"
+  ]
+}

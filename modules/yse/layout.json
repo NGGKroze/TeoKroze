@@ -1,0 +1,24 @@
+{
+  "title": "Ysé – генератор на етикети",
+  "subtitle": "Опаковъчен лист (XLSX/CSV) → PDF етикети по INBSHIP",
+  "hide": [
+    "body > div > header",
+    "main > div.lg\\:col-span-1"
+  ],
+  "side": [
+    {
+      "title": "1. Файл",
+      "move": [
+        "#dropzone",
+        "#fileInfo"
+      ]
+    },
+    {
+      "card": false,
+      "move": [
+        "#exportPanel"
+      ]
+    }
+  ],
+  "actions": []
+}

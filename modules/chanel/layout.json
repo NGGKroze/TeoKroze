@@ -1,0 +1,22 @@
+{
+  "title": "CHANEL Uniforms – генератор на етикети",
+  "subtitle": "Опаковъчен лист (Excel) → PDF етикети A4",
+  "hide": [
+    "div.max-w-6xl > div:first-child"
+  ],
+  "side": [
+    {
+      "card": false,
+      "move": [
+        "div.lg\\:col-span-4 > div"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "sel": "#downloadBtn",
+      "kind": "primary",
+      "side": "right"
+    }
+  ]
+}

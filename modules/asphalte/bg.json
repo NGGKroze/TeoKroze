@@ -1,0 +1,16 @@
+{
+  "exact": {
+    "ASPHALTE Workshop": "ASPHALTE – работилница",
+    "ASPHALTE Python + Tesseract Workshop": "ASPHALTE – опаковъчни листове и етикети (Python + Tesseract)",
+    "EAN / SKU Excel": "EAN / SKU Excel",
+    "Batch / Order line": "Партида / ред от поръчката",
+    "Color code": "Код на цвят",
+    "Color description": "Описание на цвят",
+    "Първо качи готов packing list Excel файл.": "Първо качете готов опаковъчен лист (Excel).",
+    "Първо качи ZIP с PDF поръчки.": "Първо качете ZIP с PDF поръчки.",
+    "PKL kg": "PKL кг"
+  },
+  "skip": [
+    "#labelPreviewWrap"
+  ]
+}

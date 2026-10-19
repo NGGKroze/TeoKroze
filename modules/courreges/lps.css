@@ -1,0 +1,20 @@
+/* COURREGES - единна тема */
+@media screen {
+  html[data-lps="courreges"] { --accent:var(--lps-accent); --bg:transparent; }
+  html[data-lps="courreges"] header { background: rgba(255,255,255,.86) !important; color: #26272b !important; border-bottom: 2px solid var(--lps-brass) !important; box-shadow: 0 6px 20px rgba(31,32,35,.07) !important; }
+  html[data-lps="courreges"] header * { color:inherit; }
+  html[data-lps="courreges"] .btn:not(.secondary):not(.good):not(.warn):not(.light), html[data-lps="courreges"] .num, html[data-lps="courreges"] .modalHead { background:var(--lps-accent) !important; }
+  html[data-lps="courreges"] .btn.secondary { background:#fff !important; color:var(--lps-accent) !important; border:1px solid var(--lps-accent) !important; }
+  html[data-lps="courreges"] .btn.good { background:#0f7b4b !important; }
+  html[data-lps="courreges"] .btn.warn { background:#9c3100 !important; }
+  html[data-lps="courreges"] .orderCard.active { background:var(--lps-accent) !important; border-color:var(--lps-accent) !important; }
+  html[data-lps="courreges"] .drop:hover, html[data-lps="courreges"] .drop.dragover { border-color:var(--lps-brass) !important; }
+}
+@media screen {
+  html[data-lps="courreges"] main { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+  html[data-lps="courreges"] main > .grid { display: block !important; }
+  html[data-lps="courreges"] #lps-side aside.panel { border: 0 !important; box-shadow: none !important; background: transparent !important; }
+  html[data-lps="courreges"] #lps-side aside.panel > h2 { display: none !important; }
+  html[data-lps="courreges"] #lps-side aside.panel > .body { padding: 0 !important; }
+  html[data-lps="courreges"] #lps-side .row, html[data-lps="courreges"] #lps-side .row3 { grid-template-columns: 1fr 1fr !important; }
+}

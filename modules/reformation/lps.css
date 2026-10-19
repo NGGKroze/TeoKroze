@@ -1,0 +1,9 @@
+@media screen {
+  html[data-lps="reformation"] .max-w-\[98\%\] { max-width: none !important; padding: 0 !important; margin: 0 !important; } html[data-lps="reformation"] #tab-pdf > .grid { display: block !important; }
+}
+@media screen {
+  html[data-lps="reformation"] #lps-side nav { flex-wrap: wrap !important; justify-content: flex-start !important; gap: 6px !important; margin: 0 !important; }
+  html[data-lps="reformation"] #lps-side nav > * { margin: 0 !important; }
+  html[data-lps="reformation"] #lps-side .tab-btn { padding: 8px 12px !important; font-size: 13px !important; border-radius: 10px; }
+  html[data-lps="reformation"] #lps-side .border-b { border: 0 !important; margin: 0 !important; }
+}

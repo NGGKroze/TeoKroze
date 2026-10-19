@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "id": "asphalte",
+  "name": "Asphalte",
+  "version": "1.0.0",
+  "type": "python",
+  "entry": "run.py",
+  "order": 30,
+  "summary": "Поръчка PDF → PL, етикети на кашони и палети",
+  "requires": [
+    "Поръчка (PDF) или готов PKL (Excel)",
+    "По избор: EAN / SKU Excel файл за баркодовете"
+  ],
+  "note": "След генерирането опаковъчният лист се редактира директно в таблица. Етикетите се обновяват по текущата таблица.",
+  "formats": [
+    "PDF",
+    "XLSX",
+    "EAN"
+  ],
+  "python": {
+    "script": "run.py",
+    "health": "/health",
+    "startupTimeoutSec": 90,
+    "port": 8777
+  }
+}

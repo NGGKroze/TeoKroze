@@ -1,0 +1,9 @@
+/* MARGIELA - единна тема */
+@media screen {
+  html[data-lps="margiela"] { --accent:var(--lps-accent); }
+  html[data-lps="margiela"] button.primary { background:var(--lps-accent); border-color:var(--lps-accent); }
+}
+@media screen {
+  html[data-lps="margiela"] .app, html[data-lps="margiela"] .controls { max-width: none !important; box-shadow: none !important; border: 0 !important; background: transparent !important; padding: 0 !important; margin: 0 !important; }
+  html[data-lps="margiela"] .settings { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+}

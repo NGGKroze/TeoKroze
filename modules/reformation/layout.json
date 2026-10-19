@@ -1,0 +1,33 @@
+{
+  "title": "Reformation – етикети и опаковъчни листове",
+  "subtitle": "Копиран текст на поръчка или Excel PL → опаковъчен лист и етикети",
+  "hide": [
+    "div.max-w-\\[98\\%\\] > div.text-center.mb-6"
+  ],
+  "side": [
+    {
+      "title": "Режим",
+      "move": [
+        "div.border-b.border-gray-200.mb-6"
+      ]
+    },
+    {
+      "card": false,
+      "move": [
+        "#tab-pdf .lg\\:col-span-4",
+        "#excel-dropzone"
+      ]
+    }
+  ],
+  "actions": [],
+  "style": [
+    {
+      "sel": "#dl-excel-btn",
+      "kind": "secondary"
+    },
+    {
+      "sel": "#dl-lbl-btn",
+      "kind": "primary"
+    }
+  ]
+}

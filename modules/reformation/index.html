@@ -1,0 +1,2257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reformation Label & PL Hub</title>
+    <!-- Tailwind CSS for UI Styling -->
+    <script src="vendor/cdn.tailwindcss.com/tailwindcss.js"></script>
+    <!-- SheetJS with STYLING capabilities (xlsx-js-style) -->
+    <script src="vendor/cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <!-- JsBarcode for Barcode Generation -->
+    <script src="vendor/cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <!-- html2pdf for PDF Generation (Backup Library) -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- PDF.js for Reading PDF Purchase Orders -->
+    <script src="vendor/cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+    <style>
+        /* Force body margins to zero to eliminate local browser user-agent margin shifts */
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* --- SCREEN SPECIFIC LABEL STYLE (10.0 x 15.0 cm / exactly 10x15cm dimensions) --- */
+        .label-template {
+            width: 10.0cm !important;
+            min-width: 10.0cm !important;
+            max-width: 10.0cm !important;
+            height: 15.0cm !important;
+            min-height: 15.0cm !important;
+            max-height: 15.0cm !important;
+            background: white !important;
+            color: black !important;
+            font-family: Arial, sans-serif !important;
+            border: 2px solid black !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            flex-direction: column !important;
+            margin: 0 auto !important;
+            overflow: hidden !important;
+            flex-shrink: 0 !important;
+        }
+        .label-section {
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 !important;
+        }
+        .header-row {
+            display: flex !important;
+            flex: 0 0 14px !important;
+        }
+        .value-row {
+            display: flex !important;
+            flex: 1 !important;
+        }
+        .cell {
+            flex: 1 !important;
+            border-bottom: 2px solid black !important;
+            border-right: 2px solid black !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            text-align: center !important;
+            padding: 2px 4px !important;
+            box-sizing: border-box !important;
+            width: 50% !important;
+            overflow: hidden !important;
+        }
+        .cell:nth-child(2) { border-right: none; }
+        .label-section:last-child .value-row .cell { border-bottom: none !important; }
+        
+        .header-cell {
+            font-weight: 600 !important;
+            font-size: 9px !important;
+            text-transform: uppercase !important;
+            color: #000 !important;
+            align-items: flex-start !important;
+            text-align: left !important;
+            padding-left: 6px !important;
+        }
+        .value-cell {
+            font-size: 22px !important;
+            font-weight: 900 !important;
+            line-height: 1.1 !important;
+            word-wrap: break-word !important;
+            max-width: 100% !important;
+        }
+        .value-cell.address { font-size: 10px !important; font-weight: 800 !important; line-height: 1.2 !important; }
+        .value-cell.medium { font-size: 16px !important; }
+        .value-cell.l { font-size: 18px !important; }
+        .value-cell.xl { font-size: 24px !important; line-height: 1 !important; }
+        .barcode { max-height: 30px; max-width: 100%; margin-bottom: 2px; }
+        
+        /* --- VISUAL PACKING LIST PREVIEW STYLES --- */
+        .pl-header-table { width: 100%; margin-bottom: 20px; font-size: 11px; border-collapse: collapse; }
+        .pl-header-table td { padding: 4px 8px; vertical-align: top; border: none; text-align: left; }
+        .pl-header-table strong { font-weight: bold; margin-right: 4px; }
+        
+        .pl-main-table { width: auto; min-width: 100%; border-collapse: collapse; font-size: 9px; text-align: center; color: black; margin-bottom: 20px; }
+        .pl-main-table th, .pl-main-table td { border: 1px solid #000; padding: 5px 6px; }
+        .pl-main-table th { background-color: #f9fafb; font-weight: bold; }
+        
+        /* General Tab Utilities */
+        .tab-btn.active { border-bottom: 2px solid #4f46e5; color: #4f46e5; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans text-gray-800 relative">
+
+    <!-- MAIN INTERACTIVE USER INTERFACE WRAPPER -->
+    <div class="relative z-10 bg-gray-50 min-h-screen pb-20">
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="hidden fixed inset-0 bg-gray-50 bg-opacity-95 flex justify-center items-center" style="z-index: 100000 !important;">
+            <div class="text-center">
+                <svg class="animate-spin mx-auto mb-4 h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-xl font-medium text-gray-800" id="loading-text">Processing...</span>
+            </div>
+        </div>
+
+        <!-- Graceful Custom Notification Box -->
+        <div id="message-toast" class="fixed top-5 right-5 max-w-sm w-full bg-red-600 text-white p-4 rounded-lg shadow-xl z-50 hidden transition-all duration-300 transform translate-y-2 opacity-0">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-bold" id="toast-title">Warning</p>
+                    <p class="text-xs mt-1" id="toast-body">Message detail here</p>
+                </div>
+                <button onclick="hideToast()" class="ml-auto text-white hover:text-gray-200">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Container widened globally to max-w-[98%] for full-screen support -->
+        <div class="max-w-[98%] mx-auto py-8 px-4 sm:px-6">
+            
+            <!-- Header -->
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+                    Reformation Generator Hub
+                </h1>
+                <p class="mt-2 max-w-2xl mx-auto text-base text-gray-500">
+                    Purchase Order Copy-Paste Label & Excel Packing List Generator
+                </p>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="border-b border-gray-200 mb-6">
+                <nav class="-mb-px flex justify-center space-x-8" aria-label="Tabs">
+                    <button onclick="switchTab('tab-pdf')" id="btn-tab-pdf" class="tab-btn active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        Paste PO Text Data
+                    </button>
+                    <button onclick="switchTab('tab-excel')" id="btn-tab-excel" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        Labels from Excel PL (Legacy)
+                    </button>
+                </nav>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 1: TEXT PASTE PO ENGINE                -->
+            <!-- ========================================== -->
+            <div id="tab-pdf" class="block">
+                <!-- Spacious 4:8 Split (33% Left / 67% Right) for zero left panel squishing -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    
+                    <!-- Left Column (Paste PO & Configuration inputs) -->
+                    <div class="lg:col-span-4 bg-white p-5 rounded-lg shadow border border-gray-200">
+                        <h3 class="text-md font-bold text-gray-900 mb-3 border-b pb-2 flex items-center">
+                            <svg class="h-5 w-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                            1. Paste PO Data
+                        </h3>
+                        
+                        <div class="mb-4">
+                            <label for="pasted-text" class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Raw PO Copied Text</label>
+                            <textarea id="pasted-text" rows="10" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-xs bg-gray-50 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 font-mono" placeholder="Press Ctrl+A on PO PDF, copy, and paste here..."></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="pl-date-input" class="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Packing List Date (DDMMYY or YYYYMMDD)</label>
+                            <input type="text" id="pl-date-input" class="block w-full border border-gray-300 rounded-md shadow-sm p-2 text-xs bg-white font-semibold text-gray-800" placeholder="e.g. 290526" value="260526">
+                        </div>
+
+                        <button onclick="processPastedText()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-md shadow text-xs font-bold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors tracking-wider uppercase">
+                            Load PO Configuration
+                        </button>
+
+                        <!-- Active PO Selector & Form Config -->
+                        <div id="pdf-config-area" class="mt-4 hidden border-t pt-4">
+                            <h3 class="text-md font-bold text-gray-900 mb-3 border-b pb-2 flex items-center">
+                                <svg class="h-5 w-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                2. Active PO Setup
+                            </h3>
+                            
+                            <!-- Mini PO Selector Pills -->
+                            <div class="mb-3">
+                                <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Select PO:</span>
+                                <div id="po-badge-container" class="flex flex-wrap gap-1.5">
+                                </div>
+                            </div>
+
+                            <!-- Active PO Configuration Form -->
+                            <div class="space-y-3 bg-gray-50 p-3.5 rounded border border-gray-200">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">PO Number</label>
+                                        <input type="text" id="cfg-po" oninput="updateActivePO('po', this.value)" class="mt-1 block w-full border border-gray-300 rounded shadow-sm p-1.5 text-xs bg-white font-semibold text-gray-900">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">HTS Code</label>
+                                        <input type="text" id="cfg-hts" oninput="updateActivePO('hts', this.value)" class="mt-1 block w-full border border-gray-300 rounded shadow-sm p-1.5 text-xs bg-white font-semibold">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Master SKU</label>
+                                    <input type="text" id="cfg-sku" oninput="updateActivePO('sku', this.value)" class="mt-1 block w-full border border-gray-300 rounded shadow-sm p-1.5 text-xs bg-white font-mono font-semibold">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Style Name</label>
+                                        <input type="text" id="cfg-style" oninput="updateActivePO('style', this.value)" class="mt-1 block w-full border border-gray-300 rounded shadow-sm p-1.5 text-xs bg-white font-medium text-gray-800">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Colorway</label>
+                                        <input type="text" id="cfg-color" oninput="updateActivePO('color', this.value)" class="mt-1 block w-full border border-gray-300 rounded shadow-sm p-1.5 text-xs bg-white font-medium text-gray-800">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Destination</label>
+                                        <select id="cfg-region" onchange="updateActivePO('region', this.value); updateRegionDefaults(this.value);" class="mt-1 block w-full border border-gray-300 rounded shadow-sm p-1.5 text-xs bg-white">
+                                            <option value="US">US (Balanced Cartons)</option>
+                                            <option value="EU">EU (Maxed & Grouped)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Max / Carton</label>
+                                        <input type="number" id="cfg-max-units" oninput="updateActivePO('maxUnits', this.value)" class="mt-1 block w-full border border-gray-300 rounded shadow-sm p-1.5 text-xs bg-white">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Delivery Address</label>
+                                    <textarea id="cfg-address" rows="2" oninput="updateActivePO('address', this.value)" class="mt-1 block w-full border border-gray-300 rounded shadow-sm p-1.5 text-xs bg-white text-gray-700"></textarea>
+                                </div>
+                                
+                                <h4 class="text-[10px] font-extrabold text-gray-950 border-b pb-1 uppercase tracking-wider">Carton Weight Logic</h4>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Dimensions</label>
+                                        <select id="cfg-dimensions" onchange="updateActivePO('dimensions', this.value)" class="mt-1 block w-full border border-gray-300 rounded shadow-sm p-1.5 text-xs bg-white">
+                                            <option value="60 X 40 X 40">60 X 40 X 40</option>
+                                            <option value="60 X 40 X 30">60 X 40 X 30</option>
+                                            <option value="60 X 40 X 20">60 X 40 X 20</option>
+                                            <option value="60 X 40 X 10">60 X 40 X 10</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Unit (kg)</label>
+                                        <input type="number" id="cfg-unit-wt" step="0.01" oninput="updateActivePO('unitWt', this.value)" class="mt-1 block w-full border border-gray-300 rounded-sm p-1.5 text-xs bg-white font-semibold">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-gray-500 uppercase">Box (kg)</label>
+                                        <input type="number" id="cfg-box-wt" step="0.01" class="mt-1 block w-full border border-gray-300 rounded shadow-sm p-1.5 text-xs bg-gray-100 font-semibold" disabled>
+                                    </div>
+                                </div>
+
+                                <h4 class="text-[10px] font-extrabold text-gray-950 border-b pb-1 uppercase tracking-wider">Sizes & Quantities</h4>
+                                <div id="sizes-container" class="space-y-1.5 mt-1 max-h-40 overflow-y-auto">
+                                </div>
+                                <div class="flex justify-between items-center pt-1 text-[11px]">
+                                    <button onclick="addNewSizeRowToActive()" class="text-indigo-600 font-bold hover:text-indigo-800">+ Add Size Row</button>
+                                    <button onclick="removeActivePO()" class="text-red-600 font-bold hover:text-red-800">Remove This PO</button>
+                                </div>
+                            </div>
+
+                            <button onclick="calculateAllCartons()" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-md shadow-md text-sm font-bold transition-all tracking-wider uppercase">
+                                Allocate Cartons & Rebuild
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Column (Previews & Visual Packing List Table) -->
+                    <div class="lg:col-span-8">
+                        <div id="pdf-results-area" class="hidden bg-white p-6 rounded-lg shadow border border-gray-200">
+                            <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 border-b pb-4 gap-4">
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-900">Generated Shipments</h3>
+                                    <div id="preview-po-tabs" class="flex flex-wrap gap-2 mt-2">
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    <button id="dl-excel-btn" onclick="exportPackingListExcel()" class="inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-xs font-bold rounded text-white bg-emerald-600 hover:bg-emerald-700 transition-colors">
+                                        <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                        Download Packing List (Excel)
+                                    </button>
+                                    <button id="dl-lbl-btn" onclick="exportLabelsPDF()" class="inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-xs font-bold rounded text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
+                                        <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                        Print Labels (PDF/Thermal)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Packing List Visual Preview -->
+                            <div class="overflow-x-auto">
+                                <div id="pl-preview-table-container" class="border rounded bg-white p-4 overflow-auto max-w-full"></div>
+                            </div>
+                            
+                            <!-- Labels Visual Preview -->
+                            <div class="mt-8">
+                                <h4 class="text-sm font-bold text-gray-700 mb-2 border-b pb-1">Labels Output Preview (2 per page - Landscape A4)</h4>
+                                <div id="labels-preview-container" class="flex flex-wrap gap-4 mt-4 justify-center bg-gray-100 p-4 rounded max-h-96 overflow-y-auto">
+                                </div>
+                            </div>
+                        </div> <!-- Closes pdf-results-area -->
+
+                        <div id="pdf-empty-state" class="flex flex-col items-center justify-center h-96 text-gray-400 p-10 border-2 border-dashed border-gray-200 rounded-lg">
+                            <svg class="h-16 w-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            <p class="text-lg text-center font-medium">Paste the purchase order raw data in the copy-paste box to generate shipments.</p>
+                        </div>
+                    </div> <!-- Closes lg:col-span-8 -->
+                </div> <!-- Closes grid -->
+            </div> <!-- Closes tab-pdf -->
+
+            <!-- ========================================== -->
+            <!-- TAB 2: EXCEL PARSER (LEGACY MODULE)        -->
+            <!-- ========================================== -->
+            <div id="tab-excel" class="hidden">
+                <div id="excel-dropzone" class="mt-8 flex justify-center px-6 pt-10 pb-12 border-2 border-gray-300 border-dashed rounded-lg bg-white hover:bg-gray-50 transition-colors cursor-pointer relative">
+                    <div class="space-y-1 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                        <div class="flex text-sm text-gray-600 justify-center">
+                            <label for="excel-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500">
+                                <span>Upload a Packing List File</span>
+                                <input id="excel-upload" type="file" class="sr-only" accept=".xlsx, .xls, .csv">
+                            </label>
+                            <p class="pl-1">or drag and drop</p>
+                        </div>
+                        <p class="text-xs text-gray-500">XLSX, XLS, or CSV up to 10MB</p>
+                    </div>
+                </div>
+
+                <div id="excel-controlsArea" class="hidden mt-8 flex justify-between items-center bg-white p-4 shadow rounded-lg">
+                    <div>
+                        <span id="excel-file-name" class="font-semibold text-gray-700"></span>
+                        <span id="excel-label-count" class="ml-2 text-sm text-gray-500"></span>
+                    </div>
+                    <button onclick="exportLabelsPDF()" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                        Download PDF Labels (2 per page - Landscape A4)
+                    </button>
+                </div>
+
+                <div id="excel-previewArea" class="mt-12 hidden">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6 border-b pb-2">Label Preview</h2>
+                    <div id="excel-previewContainer" class="flex flex-wrap gap-8 justify-center"></div>
+                </div>
+            </div>
+
+        </div> <!-- Closes max-w-98% -->
+    </div> <!-- Closes MAIN INTERACTIVE USER INTERFACE WRAPPER -->
+
+    <!-- FIXED OFFSCREEN RENDERING CONTAINER WRAPPER - This completely resolves local cutoffs & scale shifts! -->
+    <!-- Positioned exactly at coordinate (0,0) so html2canvas captures it flawlessly, but layered completely behind the main z-10 UI content -->
+    <div style="position: absolute !important; left: 0 !important; top: 0 !important; width: 29.7cm !important; background: white !important; margin: 0 !important; padding: 0 !important; z-index: -10000 !important; overflow: visible !important; pointer-events: none !important;">
+        <div id="pdf-container"></div>
+    </div>
+
+    <!-- PRINT-ONLY WRAPPER FOR NATIVE VECTOR PRINTING -->
+    <div id="print-area-wrapper"></div>
+
+    <script>
+        // --- GLOBAL SETUP & STATE MANAGEMENT ---
+        let activePOs = []; 
+        let selectedPOIndex = 0; 
+        let previewPOIndex = 0; 
+        let generatedLabelsData = []; // Store parsed legacy Excel labels globally
+
+        // Mutually exclusive size maps
+        const alphaSizes = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '1X', '2X', '3X'];
+        const numericSizes = ['00', '0', '2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24'];
+        const possibleSizes = [...alphaSizes, ...numericSizes];
+
+        // Global drag-and-drop helper function
+        function preventDefaults(e) { 
+            e.preventDefault(); 
+            e.stopPropagation(); 
+        }
+
+        // Tab and Loading Utility Elements
+        window.switchTab = function(tabId) {
+            document.getElementById('tab-pdf').classList.add('hidden');
+            document.getElementById('tab-excel').classList.add('hidden');
+            document.getElementById('btn-tab-pdf').classList.remove('active');
+            document.getElementById('btn-tab-excel').classList.remove('active');
+            
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).classList.add('active');
+        };
+
+        function showLoading(msg) {
+            document.getElementById('loading-text').textContent = msg;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        function isActualSize(name) {
+            if (!name) return false;
+            let n = name.toUpperCase().trim();
+            if (["TOTAL", "SUBTOTAL", "TOTAL FOB", "COST", "FOB", "TOT", "GRAND TOTAL", "GRAND", "OBQO", "ОБЩО", "FOB COST"].includes(n)) return false;
+            return possibleSizes.includes(n);
+        }
+
+        // Custom Graceful Inline Warning Banner Instead of Browser Alert
+        function showToast(title, body) {
+            document.getElementById('toast-title').textContent = title;
+            document.getElementById('toast-body').textContent = body;
+            const toast = document.getElementById('message-toast');
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+            }, 50);
+            
+            // Auto hide after 6 seconds
+            setTimeout(hideToast, 6000);
+        }
+
+        function hideToast() {
+            const toast = document.getElementById('message-toast');
+            toast.classList.add('translate-y-2', 'opacity-0');
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 300);
+        }
+
+        // Helper to convert column index to Excel letter (0-based)
+        function getColLetter(colIdx) {
+            let letter = "";
+            colIdx = colIdx + 1; // Convert to 1-based
+            while (colIdx > 0) {
+                let temp = (colIdx - 1) % 26;
+                letter = String.fromCharCode(65 + temp) + letter;
+                colIdx = Math.floor((colIdx - temp - 1) / 26);
+            }
+            return letter;
+        }
+
+        // Helper to normalize dimensions and look up weights correctly
+        function getBoxWeightFromDimensions(dimStr) {
+            const d = dimStr.replace(/\s+/g, '').replace(/\//g, 'X').toUpperCase();
+            if (d.includes('60X40X40')) return 1.10;
+            if (d.includes('60X40X30')) return 0.95;
+            if (d.includes('60X40X20')) return 0.75;
+            if (d.includes('60X40X10')) return 0.69;
+            return 1.10; // default fallback
+        }
+
+        function getDimensionsNormalized(dimStr) {
+            let clean = dimStr.replace(/\s+/g, '').replace(/\//g, 'X').toUpperCase().replace('CM', '');
+            if (clean.includes('60X40X40')) return '60 X 40 X 40';
+            if (clean.includes('60X40X30')) return '60 X 40 X 30';
+            if (clean.includes('60X40X20')) return '60 X 40 X 20';
+            if (clean.includes('60X40X10')) return '60 X 40 X 10';
+            return '60 X 40 X 40';
+        }
+
+        // Helper to split Style Name and Colorway cleanly
+        function splitStyleAndColor(text) {
+            let cleanText = text.trim();
+            const garmentKeywords = ['DRESS', 'TOP', 'PANT', 'SKIRT', 'JACKET', 'COAT', 'KNIT', 'SWEATER', 'TEE', 'SHIRT', 'BLOUSE', 'JEANS', 'SHORTS', 'PANTS', 'BLAZER', 'VEST', 'CARDIGAN'];
+            let words = cleanText.split(/\s+/);
+            let splitIdx = -1;
+            for (let i = words.length - 1; i >= 0; i--) {
+                let cleanWord = words[i].toUpperCase().replace(/[^A-Z]/g, '');
+                if (garmentKeywords.includes(cleanWord)) {
+                    splitIdx = i;
+                    break;
+                }
+            }
+            if (splitIdx !== -1 && splitIdx < words.length - 1) {
+                return { style: words.slice(0, splitIdx + 1).join(' '), color: words.slice(splitIdx + 1).join(' ') };
+            }
+            if (words.length > 1) {
+                let lastWord = words[words.length - 1];
+                if (lastWord === lastWord.toUpperCase() && isNaN(lastWord)) {
+                    return { style: words.slice(0, words.length - 1).join(' '), color: lastWord };
+                }
+            }
+            return { style: cleanText, color: 'TBD' };
+        }
+
+        // --- FILTER & EXTRACTION CORE HELPERS ---
+
+        function shouldFilterNumber(numVal, globalMetadata, deliveryPO) {
+            if (numVal >= 2023 && numVal <= 2030) return true;
+            if (numVal === 90058 || numVal === 2491 || numVal === 3403 || numVal === 90232 || numVal === 5801 || numVal === 8840) return true;
+            if (globalMetadata.po && parseInt(globalMetadata.po, 10) === numVal) return true;
+            if (deliveryPO) {
+                let base = parseInt(deliveryPO.split('-')[0], 10);
+                if (base === numVal) return true;
+            }
+            return false;
+        }
+
+        function findExactFit(target, items) {
+            function search(tgt, idx, currentPath) {
+                if (tgt === 0) return currentPath;
+                if (tgt < 0 || idx >= items.length) return null;
+                if (items[idx].qty > 0 && items[idx].qty <= tgt) {
+                    let res = search(tgt - items[idx].qty, idx + 1, [...currentPath, items[idx]]);
+                    if (res) return res;
+                }
+                return search(tgt, idx + 1, currentPath);
+            }
+            return search(target, 0, []);
+        }
+
+        function findQuantitySequence(numList) {
+            let bestSeq = null;
+            // Search Left to Right to find valid size runs that match the target line sum
+            for (let tIdx = 1; tIdx < numList.length; tIdx++) {
+                let target = numList[tIdx].val;
+                if (target <= 0) continue;
+                for (let len = 1; len <= tIdx; len++) {
+                    let startIdx = tIdx - len;
+                    let sub = numList.slice(startIdx, tIdx);
+                    let sum = sub.reduce((a, b) => a + b.val, 0);
+                    if (sum === target && sum > 0) {
+                        if (!bestSeq || sub.length > bestSeq.quantities.length) {
+                            bestSeq = { quantities: sub, total: target, startIdx: startIdx, endIdx: tIdx };
+                        }
+                    }
+                }
+            }
+            return bestSeq;
+        }
+
+        function cleanGarmentText(text) {
+            let s = text;
+            s = s.replace(/\b\d{7}[A-Z]{3}\b/ig, ''); 
+            s = s.replace(/\b\d{5,6}-\d{1,2}\b/g, ''); 
+            s = s.replace(/\b\d{4}\.\d{2}\.\d{2,4}(?:\.\d{2,4})?\b/g, ''); 
+            s = s.replace(/["',\\\/\[\]\(\)]/g, ' '); 
+            s = s.split(/\s+/).filter(w => !/^\d+$/.test(w) && w.toUpperCase() !== 'TOTAL' && w.toUpperCase() !== 'SUBTOTAL').join(" ");
+            return s.replace(/\s+/g, ' ').trim();
+        }
+
+        // Extremely robust plain-text address and structural noise sanitizer
+        function cleanAddressesAndNoise(str) {
+            let s = str;
+            // Strip common structural table headers & other noise first
+            const stopWords = ['MASTERSKU', 'STYLE NAME', 'STYLE', 'COLORWAY', 'COLOR', 'DELIVERY PO', 'DELIVERY', 'SHIP TO', 'CHANNEL', 'SHIP VIA', 'HTS', 'CANCEL DATE', 'HANDOVER DATE', 'TOTAL', 'SUBTOTAL', 'MEASUREMENT', 'DIMENSIONS'];
+            stopWords.forEach(w => {
+                s = s.replace(new RegExp(`\\b${w}\\b`, 'gi'), ' ');
+            });
+
+            // Strip US delivery address completely (prevents bleeding into garment fields)
+            s = s.replace(/5801\s+S\s+2nd\s+St\s+Vernon\s*,\s*CA\s*90058-3403/ig, ' ');
+            s = s.replace(/5801\s+S\s+2nd\s+St/ig, ' ');
+            s = s.replace(/Vernon\s*,\s*CA\s*90058-3403/ig, ' ');
+            s = s.replace(/\b90058-3403\b/g, ' ');
+            s = s.replace(/\b90058\b/g, ' ');
+            s = s.replace(/\b3403\b/g, ' ');
+            
+            // Strip EU delivery address completely
+            s = s.replace(/ATTN\s*:\s*REFORMATION\s*7\s*Westvlietweg/ig, ' ');
+            s = s.replace(/Den\s+Haag\s+Zuid-Holland\s+2491\s+EA\s+Netherlands/ig, ' ');
+            s = s.replace(/Westvlietweg/ig, ' ');
+            s = s.replace(/Zuid-Holland/ig, ' ');
+            s = s.replace(/Netherlands/ig, ' ');
+            s = s.replace(/Den\s+Haag/ig, ' ');
+            s = s.replace(/\b2491\b/g, ' ');
+            s = s.replace(/\bEA\b/ig, ' ');
+
+            // Strip Bulgaria picking address completely
+            s = s.replace(/blvd\s*\.?\s*Hristo\s+Botev\s+5/ig, ' ');
+            s = s.replace(/Ruse\s*,\s*7000\s+Bulgaria/ig, ' ');
+            s = s.replace(/Bulgaria/ig, ' ');
+            s = s.replace(/\b7000\b/g, ' ');
+            s = s.replace(/Hristo\s+Botev/ig, ' ');
+
+            // Strip general zip codes or residual address fragments
+            s = s.replace(/\bCA\b/g, ' ');
+
+            // Strip SKU codes, delivery POs, HTS codes, and single dates
+            s = s.replace(/\b\d{7}[A-Z]{3}\b/ig, ' '); 
+            s = s.replace(/\b\d{5,6}-\d{1,2}\b/g, ' '); 
+            s = s.replace(/\b\d{4}\.\d{2}\.\d{2,4}(?:\.\d{2,4})?\b/g, ' '); 
+
+            s = s.replace(/["',\\\/\[\]\(\)]/g, ' ');
+
+            // Filter out remaining numbers and extra whitespaces
+            let words = s.split(/\s+/).filter(w => {
+                let uw = w.toUpperCase();
+                if (/^\d+$/.test(uw)) return false;
+                if (["TOTAL", "SUBTOTAL", "TOTALS", "ORDER", "PICKING", "DELIVERY", "ADDRESS"].includes(uw)) return false;
+                return uw.length > 0;
+            });
+
+            return words.join(" ").trim();
+        }
+
+        function getFormattedDateTitle() {
+            let raw = document.getElementById('pl-date-input').value.trim();
+            if (!raw) {
+                // Today's simulated date fallback
+                raw = "260526";
+            }
+            
+            // Convert DDMMYY (length 6) to YYYYMMDD
+            let clean = raw.replace(/\D/g, '');
+            if (clean.length === 6) {
+                const dd = clean.substring(0, 2);
+                const mm = clean.substring(2, 4);
+                const yy = clean.substring(4, 6);
+                const year = parseInt(yy, 10) < 50 ? '20' + yy : '19' + yy;
+                return year + mm + dd;
+            }
+            return raw; // return raw if already custom
+        }
+
+        // Safe Excel Sheet Cell Ingest Value extractor
+        function getCellValue(cell) {
+            if (cell === undefined || cell === null) return "";
+            if (typeof cell === 'object') {
+                return cell.v !== undefined ? String(cell.v).trim() : (cell.w !== undefined ? String(cell.w).trim() : "");
+            }
+            return String(cell).trim();
+        }
+
+        function getNextCellData(row, keyword) {
+            for(let i=0; i<row.length; i++) {
+                let cellVal = getCellValue(row[i]).toUpperCase();
+                if (cellVal.includes(keyword)) {
+                    for(let j=i+1; j<row.length; j++) {
+                        let val = getCellValue(row[j]);
+                        if (val !== "") return val;
+                    }
+                }
+            }
+            return "";
+        }
+
+        // --- PASTE TEXT PARSING ENGINE ---
+        window.processPastedText = function() {
+            const text = document.getElementById('pasted-text').value;
+            if (!text.trim()) {
+                showToast("Empty Input", "Please copy and paste raw text data from your Reformation purchase order PDF.");
+                return;
+            }
+            
+            showLoading("Parsing Pasted Text...");
+            
+            setTimeout(() => {
+                try {
+                    activePOs = []; 
+                    let globalMetadata = { po: '', hts: '', sku: '', style: '', color: '' };
+                    let flatText = text.replace(/["']/g, "").replace(/,/g, " ").replace(/\s+/g, " ");
+
+                    let poMatch = flatText.match(/Order\s*No:?\s*(\d+)/i) || flatText.match(/PO\s*No:?\s*(\d+)/i);
+                    if (poMatch) globalMetadata.po = poMatch[1];
+                    
+                    let htsMatch = flatText.match(/\b(\d{4}\.\d{2}\.\d{2,4}(?:\.\d{2,4})?)\b/);
+                    if (htsMatch) globalMetadata.hts = htsMatch[1];
+
+                    let skuMatch = flatText.match(/\b(\d{7}[A-Z]{3})\b/i);
+                    if (skuMatch) globalMetadata.sku = skuMatch[1];
+
+                    if (deliveryRegex = globalMetadata.po ? new RegExp(`\\b${globalMetadata.po}-\\d{1,2}\\b`, 'g') : /\b\d{5,6}-\d{1,2}\b/g) {
+                        var deliveryMatches = flatText.match(deliveryRegex);
+                    }
+
+                    if (deliveryMatches) {
+                        let foundSizes = [];
+                        let normalized = flatText.toUpperCase();
+                        
+                        // Try to find the exact size run section between "Handover Date" and "Total"
+                        let startIndex = normalized.indexOf("HANDOVER DATE");
+                        if (startIndex === -1) startIndex = normalized.indexOf("HANDOVERDATE");
+                        
+                        if (startIndex !== -1) {
+                            let searchStart = startIndex + (normalized.includes("HANDOVER DATE") ? "HANDOVER DATE".length : "HANDOVERDATE".length);
+                            let searchSegment = flatText.substring(searchStart);
+                            
+                            // Match TOTAL or other common grid endings (accepting glued strings like XLXXLTOTAL)
+                            let regexEnd = /TOTAL|FOB|COST|TOT/i;
+                            let matchEnd = searchSegment.match(regexEnd);
+                            
+                            if (matchEnd) {
+                                let sizesRunText = searchSegment.substring(0, matchEnd.index).trim();
+                                
+                                // Precise mutual exclusivity classifier
+                                let alphaOrderedDesc = ['XXXL', 'XXS', 'XXL', 'XS', 'XL', '1X', '2X', '3X', 'S', 'M', 'L'];
+                                let numericOrderedDesc = ['00', '10', '12', '14', '16', '18', '20', '22', '24', '0', '2', '4', '6', '8'];
+                                
+                                // Pass 1: Run complete scan to determine dominant size type
+                                let prelimCandidates = [];
+                                let cleanRunText = sizesRunText.toUpperCase();
+                                let idx = 0;
+                                let globalSearchPool = [...alphaOrderedDesc, ...numericOrderedDesc];
+
+                                while (idx < cleanRunText.length) {
+                                    let matched = false;
+                                    for (let size of globalSearchPool) {
+                                        if (cleanRunText.substring(idx).startsWith(size)) {
+                                            if (['S', 'M', 'L'].includes(size)) {
+                                                let before = idx > 0 ? cleanRunText[idx - 1] : ' ';
+                                                let after = idx + size.length < cleanRunText.length ? cleanRunText[idx + size.length] : ' ';
+                                                if (/[A-Z]/.test(before) || /[A-Z]/.test(after)) {
+                                                    continue;
+                                                }
+                                            }
+                                            prelimCandidates.push(size);
+                                            idx += size.length;
+                                            matched = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!matched) idx++;
+                                }
+
+                                let alphaCount = prelimCandidates.filter(s => alphaSizes.includes(s)).length;
+                                let numericCount = prelimCandidates.filter(s => numericSizes.includes(s)).length;
+                                let bestType = alphaCount >= numericCount ? 'alpha' : 'numeric';
+                                
+                                // Pass 2: Strictly parse only the identified type, preventing any overlapping misidentifications
+                                let strictPool = bestType === 'alpha' ? alphaOrderedDesc : numericOrderedDesc;
+                                idx = 0;
+                                while (idx < cleanRunText.length) {
+                                    let matched = false;
+                                    for (let size of strictPool) {
+                                        if (cleanRunText.substring(idx).startsWith(size)) {
+                                            if (['S', 'M', 'L'].includes(size)) {
+                                                let before = idx > 0 ? cleanRunText[idx - 1] : ' ';
+                                                let after = idx + size.length < cleanRunText.length ? cleanRunText[idx + size.length] : ' ';
+                                                if (/[A-Z]/.test(before) || /[A-Z]/.test(after)) {
+                                                    continue;
+                                                }
+                                            }
+                                            foundSizes.push(size);
+                                            idx += size.length;
+                                            matched = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!matched) idx++;
+                                }
+                            }
+                        }
+
+                        // Global Fallback Classifier if bounded extraction fails or returns nothing
+                        if (foundSizes.length === 0) {
+                            let hasAlphaIndicators = /\b(XXS|XS|XL|XXL|XXXL|1X|2X|3X)\b/i.test(flatText);
+                            let activeSizes = hasAlphaIndicators ? alphaSizes : numericSizes;
+                            
+                            activeSizes.forEach(s => {
+                                let regex = new RegExp(`\\b${s}\\b`, 'i');
+                                if (regex.test(flatText)) {
+                                    foundSizes.push(s);
+                                }
+                            });
+                        }
+
+                        foundSizes = [...new Set(foundSizes)].filter(s => isActualSize(s));
+                        foundSizes.sort((a,b) => possibleSizes.indexOf(a) - possibleSizes.indexOf(b));
+
+                        [...new Set(deliveryMatches)].forEach(deliveryPO => {
+                            if (activePOs.some(p => p.po === deliveryPO)) return;
+
+                            let docStyle = 'TBD';
+                            let docColor = 'TBD';
+                            
+                            let blockMatch = flatText.match(new RegExp(`\\b\\d{7}[A-Z]{3}\\b(.*?)\\b${deliveryPO}\\b`, 'is'));
+                            if (blockMatch && blockMatch[1]) {
+                                // Strip picking & shipping addresses from segment to avoid capturing address parts inside colorway fields
+                                let cleaned = cleanAddressesAndNoise(blockMatch[1]);
+                                if (cleaned) {
+                                    let split = splitStyleAndColor(cleaned);
+                                    if (split.style && split.style !== 'TBD') docStyle = split.style;
+                                    if (split.color && split.color !== 'TBD') docColor = split.color;
+                                }
+                            }
+
+                            let hasUSKeywords = /Vernon|Culver|CA|90058|90232/i.test(flatText);
+                            let regionVal = hasUSKeywords ? 'US' : 'EU';
+                            let addressVal = hasUSKeywords 
+                                ? '5801 S 2nd St Vernon, CA 90058-3403' 
+                                : 'ATTN: REFORMATION 7 Westvlietweg Den Haag Zuid-Holland 2491 EA Netherlands';
+
+                            let quantitiesMap = {};
+                            let postPoText = flatText.substring(flatText.indexOf(deliveryPO) + deliveryPO.length).slice(0, 500);
+                            let nums = postPoText.match(/\b\d+\b/g) || [];
+                            
+                            let numCandidates = [];
+                            nums.forEach((n, idx) => {
+                                let val = parseInt(n, 10);
+                                if (!shouldFilterNumber(val, globalMetadata, deliveryPO)) {
+                                    numCandidates.push({ val: val, x: idx * 10 }); 
+                                }
+                            });
+                            
+                            let verifiedSeq = findQuantitySequence(numCandidates);
+                            if (verifiedSeq && foundSizes.length >= verifiedSeq.quantities.length) {
+                                verifiedSeq.quantities.forEach((q, idx) => {
+                                    if (foundSizes[idx]) {
+                                        quantitiesMap[foundSizes[idx]] = q.val;
+                                    }
+                                });
+                            }
+
+                            let sortedSizes = Object.keys(quantitiesMap)
+                                .sort((a, b) => possibleSizes.indexOf(a) - possibleSizes.indexOf(b))
+                                .map(name => ({ name, qty: quantitiesMap[name] }));
+
+                            sortedSizes = sortedSizes.filter(s => isActualSize(s.name));
+                            if (sortedSizes.length === 0) sortedSizes.push({ name: '', qty: '' });
+
+                            activePOs.push({
+                                po: deliveryPO,
+                                hts: globalMetadata.hts || 'TBD',
+                                sku: globalMetadata.sku || 'TBD',
+                                style: docStyle,
+                                color: docColor,
+                                region: regionVal,
+                                address: addressVal,
+                                maxUnits: 40,
+                                dimensions: '60 X 40 X 40',
+                                unitWt: 0.40,
+                                boxWt: 1.10, // Default matching 60x40x40
+                                sizes: sortedSizes,
+                                generatedCartons: [],
+                                allUniqueSizes: []
+                            });
+                        });
+                    }
+                    
+                    if (activePOs.length > 0) {
+                        window.selectPO(0);
+                        document.getElementById('pasted-text').value = ''; 
+                    } else {
+                        showToast("Extraction Failed", "Could not detect any valid Delivery PO numbers (e.g. 99353-2) in the pasted text.");
+                    }
+                    hideLoading();
+                } catch(e) {
+                    console.error(e);
+                    hideLoading();
+                    showToast("Error", "An unexpected error occurred while parsing the pasted text structure.");
+                }
+            }, 100);
+        };
+
+        window.updateActivePO = function(field, value) {
+            if (activePOs.length === 0) return;
+            if (field === 'maxUnits') value = parseInt(value, 10) || 40;
+            if (field === 'unitWt' || field === 'boxWt') value = parseFloat(value) || 0;
+            
+            activePOs[selectedPOIndex][field] = value;
+            
+            // Auto update empty box weight when dimensions change
+            if (field === 'dimensions') {
+                const bWt = getBoxWeightFromDimensions(value);
+                activePOs[selectedPOIndex].boxWt = bWt;
+                const boxWtInput = document.getElementById('cfg-box-wt');
+                if (boxWtInput) boxWtInput.value = bWt;
+            }
+            
+            renderPOSelectorBadges();
+        };
+
+        window.updateRegionDefaults = function(region) {
+            if (activePOs.length === 0) return;
+            const addressField = document.getElementById('cfg-address');
+            if (region === 'US') {
+                activePOs[selectedPOIndex].address = '5801 S 2nd St Vernon, CA 90058-3403';
+                activePOs[selectedPOIndex].maxUnits = 40;
+            } else {
+                activePOs[selectedPOIndex].address = 'ATTN: REFORMATION 7 Westvlietweg Den Haag Zuid-Holland 2491 EA Netherlands';
+                activePOs[selectedPOIndex].maxUnits = 40;
+            }
+            addressField.value = addressField;
+            document.getElementById('cfg-max-units').value = activePOs[selectedPOIndex].maxUnits;
+            renderPOSelectorBadges();
+        };
+
+        window.selectPO = function(index) {
+            selectedPOIndex = index;
+            renderPOForm();
+            renderPOSelectorBadges();
+        };
+
+        window.removeActivePO = function() {
+            activePOs.splice(selectedPOIndex, 1);
+            if (activePOs.length === 0) {
+                document.getElementById('pdf-config-area').classList.add('hidden');
+                document.getElementById('pdf-empty-state').classList.remove('hidden');
+                document.getElementById('pdf-results-area').classList.add('hidden');
+            } else {
+                selectedPOIndex = Math.max(0, selectedPOIndex - 1);
+                renderPOForm();
+                renderPOSelectorBadges();
+            }
+        };
+
+        window.updatePOSize = function(idx, property, value) {
+            if (property === 'qty') value = parseInt(value, 10) || 0;
+            activePOs[selectedPOIndex].sizes[idx][property] = value;
+        };
+
+        window.deletePOSize = function(idx) {
+            activePOs[selectedPOIndex].sizes.splice(idx, 1);
+            renderPOForm();
+        };
+
+        window.addNewSizeRowToActive = function() {
+            activePOs[selectedPOIndex].sizes.push({ name: '', qty: '' });
+            renderPOForm();
+        };
+
+        function renderPOSelectorBadges() {
+            const container = document.getElementById('po-badge-container');
+            let html = '';
+            activePOs.forEach((p, index) => {
+                const isActive = index === selectedPOIndex;
+                html += `<button onclick="selectPO(${index})" class="px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                        isActive ? 'bg-indigo-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }">PO: ${p.po || 'TBD'} (${p.style ? p.style.substring(0, 15) : 'New'})</button>`;
+            });
+            container.innerHTML = html;
+            document.getElementById('pdf-config-area').classList.remove('hidden');
+            document.getElementById('pdf-empty-state').classList.add('hidden');
+        }
+
+        function renderPOForm() {
+            if (activePOs.length === 0) return;
+            const current = activePOs[selectedPOIndex];
+            document.getElementById('cfg-po').value = current.po || '';
+            document.getElementById('cfg-hts').value = current.hts || '';
+            document.getElementById('cfg-sku').value = current.sku || '';
+            document.getElementById('cfg-style').value = current.style || '';
+            document.getElementById('cfg-color').value = current.color || '';
+            document.getElementById('cfg-region').value = current.region || 'US';
+            document.getElementById('cfg-max-units').value = current.maxUnits || 40;
+            document.getElementById('cfg-address').value = current.address || '';
+            document.getElementById('cfg-dimensions').value = current.dimensions || '60 X 40 X 40';
+            document.getElementById('cfg-unit-wt').value = current.unitWt || 0.40;
+            document.getElementById('cfg-box-wt').value = current.boxWt || 1.10;
+
+            const container = document.getElementById('sizes-container');
+            container.innerHTML = '';
+            current.sizes.forEach((s, idx) => {
+                const row = document.createElement('div');
+                row.className = "flex gap-2 mb-2 size-row items-center";
+                row.innerHTML = `
+                    <input type="text" placeholder="Size" value="${s.name}" oninput="updatePOSize(${idx}, 'name', this.value)" class="border border-gray-300 rounded p-2 text-sm w-1/2 bg-white">
+                    <input type="number" placeholder="Qty" value="${s.qty}" oninput="updatePOSize(${idx}, 'qty', this.value)" class="border border-gray-300 rounded p-2 text-sm w-1/3 bg-white">
+                    <button onclick="deletePOSize(${idx})" class="bg-red-100 text-red-600 font-bold px-3 py-2 rounded hover:bg-red-200">X</button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        window.calculateAllCartons = function() {
+            showLoading("Executing Carton Allocation...");
+            let processedAtLeastOne = false;
+            
+            activePOs.forEach(p => {
+                let validSizes = p.sizes.filter(s => s.name && isActualSize(s.name) && parseInt(s.qty) > 0);
+                p.allUniqueSizes = [...new Set(validSizes.map(s => s.name.toUpperCase().trim()))];
+                
+                let totalUnits = validSizes.reduce((sum, s) => sum + parseInt(s.qty), 0);
+                if (totalUnits === 0) {
+                    p.generatedCartons = [];
+                    return;
+                }
+
+                processedAtLeastOne = true;
+                let maxUnitsVal = parseInt(p.maxUnits) || 40;
+                let unitWtVal = parseFloat(p.unitWt) || 0.40;
+                let boxWtVal = parseFloat(p.boxWt) || 1.10;
+
+                const order = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '1X', '2X', '3X', '00', '0', '2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24'];
+
+                let finalCartons = [];
+
+                if (p.region === 'US') {
+                    // US Balancing logic
+                    let numCartons = Math.ceil(totalUnits / maxUnitsVal);
+                    let capacities = [];
+                    let base = Math.floor(totalUnits / numCartons);
+                    let rem = totalUnits % numCartons;
+                    for (let i = 0; i < numCartons; i++) {
+                        capacities.push(i < rem ? base + 1 : base);
+                    }
+                    capacities.sort((a, b) => b - a);
+
+                    let availableSizes = validSizes.map(s => ({ name: s.name.toUpperCase().trim(), qty: parseInt(s.qty) }));
+                    let solidCartons = [];
+                    let mixedCartons = [];
+
+                    capacities.forEach(cap => {
+                        availableSizes.sort((a, b) => b.qty - a.qty);
+                        let sizeMatch = availableSizes.find(s => s.qty >= cap);
+                        if (sizeMatch) {
+                            solidCartons.push({ sizesMap: { [sizeMatch.name]: cap }, qty: cap, isSolid: true });
+                            sizeMatch.qty -= cap;
+                        } else {
+                            mixedCartons.push({ sizesMap: {}, qty: cap, isSolid: false });
+                        }
+                    });
+
+                    mixedCartons.forEach(carton => {
+                        let needed = carton.qty;
+                        availableSizes.sort((a, b) => b.qty - a.qty);
+                        for (let i = 0; i < availableSizes.length; i++) {
+                            if (needed === 0) break;
+                            if (availableSizes[i].qty > 0) {
+                                let take = Math.min(availableSizes[i].qty, needed);
+                                carton.sizesMap[availableSizes[i].name] = take;
+                                availableSizes[i].qty -= take;
+                                needed -= take;
+                            }
+                        }
+                    });
+
+                    // US Final Sort: Solid Boxes first, Mixed Boxes last
+                    solidCartons.sort((a, b) => {
+                        let sA = Object.keys(a.sizesMap)[0];
+                        let sB = Object.keys(b.sizesMap)[0];
+                        let iA = order.indexOf(sA); iA = iA === -1 ? 999 : iA;
+                        let iB = order.indexOf(sB); iB = iB === -1 ? 999 : iB;
+                        return iA - iB;
+                    });
+                    
+                    finalCartons = [...solidCartons, ...mixedCartons];
+                } else {
+                    // EU Knapsack Logistics
+                    let availableSizes = validSizes.map(s => ({ name: s.name.toUpperCase().trim(), qty: parseInt(s.qty) }));
+                    let solidCartons = [];
+                    let mixedCartons = [];
+                    
+                    availableSizes.forEach(s => {
+                        while (s.qty >= maxUnitsVal) {
+                            solidCartons.push({ sizesMap: { [s.name]: maxUnitsVal }, qty: maxUnitsVal, isSolid: true });
+                            s.qty -= maxUnitsVal;
+                        }
+                    });
+
+                    availableSizes.sort((a, b) => {
+                        let idxA = order.indexOf(a.name);
+                        let idxB = order.indexOf(b.name);
+                        idxA = idxA === -1 ? 999 : idxA;
+                        idxB = idxB === -1 ? 999 : idxB;
+                        return idxA - idxB;
+                    });
+
+                    while (availableSizes.some(s => s.qty > 0)) {
+                        let carton = { sizesMap: {}, qty: 0, isSolid: false };
+                        let space = maxUnitsVal;
+
+                        // Pass 1: Try to pack whole sizes
+                        for (let i = 0; i < availableSizes.length; i++) {
+                            if (availableSizes[i].qty > 0 && availableSizes[i].qty <= space) {
+                                carton.sizesMap[availableSizes[i].name] = availableSizes[i].qty;
+                                carton.qty += availableSizes[i].qty;
+                                space -= availableSizes[i].qty;
+                                availableSizes[i].qty = 0;
+                            }
+                        }
+
+                        // Pass 2: If we still have space and sizes left, split the first available
+                        if (space > 0 && availableSizes.some(s => s.qty > 0)) {
+                            for (let i = 0; i < availableSizes.length; i++) {
+                                if (availableSizes[i].qty > 0) {
+                                    let take = Math.min(availableSizes[i].qty, space);
+                                    carton.sizesMap[availableSizes[i].name] = (carton.sizesMap[availableSizes[i].name] || 0) + take;
+                                    carton.qty += take;
+                                    space -= take;
+                                    availableSizes[i].qty -= take;
+                                    if (space === 0) break;
+                                }
+                            }
+                        }
+
+                        if (Object.keys(carton.sizesMap).length === 1) carton.isSolid = true;
+                        mixedCartons.push(carton);
+                    }
+
+                    // EU Final Sort: Solid Boxes first, Mixed Boxes last
+                    solidCartons.sort((a, b) => {
+                        let sA = Object.keys(a.sizesMap)[0];
+                        let sB = Object.keys(b.sizesMap)[0];
+                        let iA = order.indexOf(sA); iA = iA === -1 ? 999 : iA;
+                        let iB = order.indexOf(sB); iB = iB === -1 ? 999 : iB;
+                        return iA - iB;
+                    });
+
+                    finalCartons = [...solidCartons, ...mixedCartons];
+                }
+
+                // Add carton index and weights
+                finalCartons.forEach((c, index) => {
+                    c.cartonNum = index + 1;
+                    c.totalCartons = finalCartons.length;
+                    c.po = p.po;
+                    c.hts = p.hts;
+                    c.sku = p.sku;
+                    c.style = p.style;
+                    c.color = p.color;
+                    c.dimensions = p.dimensions.replace(/\s*X\s*/g, '/');
+                    c.rawDimensions = p.dimensions + " CM";
+                    c.boxWt = boxWtVal;
+                    c.from = "blvd. Hristo Botev 5, Ruse, 7000 Bulgaria";
+                    c.to = p.address;
+                    c.coo = "BULGARIA";
+                    c.sizes = Object.keys(c.sizesMap).join(", ");
+                    c.netWt = (c.qty * unitWtVal).toFixed(2);
+                    c.grWt = ((c.qty * unitWtVal) + boxWtVal).toFixed(2);
+                });
+
+                p.generatedCartons = finalCartons;
+            });
+
+            if (!processedAtLeastOne) {
+                alert("No units found to generate cartons! Please make sure at least one PO has sizes with quantities greater than 0.");
+                hideLoading();
+                return;
+            }
+
+            let firstValidIdx = activePOs.findIndex(p => p.generatedCartons && p.generatedCartons.length > 0);
+            previewPOIndex = firstValidIdx !== -1 ? firstValidIdx : 0;
+
+            window.renderPreviewTabs();
+            window.renderActivePreviews();
+
+            document.getElementById('pdf-empty-state').classList.add('hidden');
+            document.getElementById('pdf-results-area').classList.remove('hidden');
+            hideLoading();
+        };
+
+        window.renderPreviewTabs = function() {
+            const container = document.getElementById('preview-po-tabs');
+            let html = '';
+            
+            activePOs.forEach((p, idx) => {
+                if (!p.generatedCartons || p.generatedCartons.length === 0) return;
+                const isActive = idx === previewPOIndex;
+                html += `<button onclick="selectPreviewPO(${idx})" class="px-3 py-1 border rounded text-xs font-bold transition-all ${
+                        isActive ? 'bg-gray-800 text-white shadow-sm' : 'bg-white text-gray-700 hover:bg-gray-50'
+                    }">PO ${p.po || 'Export'}</button>`;
+            });
+            container.innerHTML = html;
+        };
+
+        window.selectPreviewPO = function(idx) {
+            previewPOIndex = idx;
+            window.renderPreviewTabs();
+            window.renderActivePreviews();
+        };
+
+        // --- INTERACTIVE PREVIEW MODIFIERS ---
+        window.updateCartonGroupSize = function(poIdx, startCtn, endCtn, sizeName, newValue) {
+            const current = activePOs[poIdx];
+            if (!current) return;
+            newValue = parseInt(newValue, 10);
+            if (isNaN(newValue) || newValue < 0) newValue = 0;
+            
+            current.generatedCartons.forEach(c => {
+                if (c.cartonNum >= startCtn && c.cartonNum <= endCtn) {
+                    c.sizesMap[sizeName] = newValue;
+                    c.qty = Object.values(c.sizesMap).reduce((sum, val) => sum + val, 0);
+                    c.netWt = (c.qty * parseFloat(current.unitWt)).toFixed(2);
+                    const bWt = c.boxWt !== undefined ? c.boxWt : getBoxWeightFromDimensions(c.dimensions);
+                    c.grWt = (parseFloat(c.netWt) + bWt).toFixed(2);
+                    c.sizes = Object.keys(c.sizesMap).filter(k => c.sizesMap[k] > 0).join(", ");
+                }
+            });
+            window.renderActivePreviews();
+        };
+
+        window.updateCartonGroupMeta = function(poIdx, startCtn, endCtn, field, newValue) {
+            const current = activePOs[poIdx];
+            if (!current) return;
+            current.generatedCartons.forEach(c => {
+                if (c.cartonNum >= startCtn && c.cartonNum <= endCtn) {
+                    c[field] = newValue.trim();
+                }
+            });
+            window.renderActivePreviews();
+        };
+
+        window.updateCartonGroupBoxSize = function(poIdx, startCtn, endCtn, newSize) {
+            const current = activePOs[poIdx];
+            if (!current) return;
+            
+            const bWt = getBoxWeightFromDimensions(newSize);
+
+            current.generatedCartons.forEach(c => {
+                if (c.cartonNum >= startCtn && c.cartonNum <= endCtn) {
+                    c.dimensions = newSize.replace(/\s*X\s*/g, '/');
+                    c.rawDimensions = newSize + " CM";
+                    c.boxWt = bWt;
+                    c.grWt = (parseFloat(c.netWt) + bWt).toFixed(2);
+                }
+            });
+            window.renderActivePreviews();
+        };
+
+        window.renderActivePreviews = function() {
+            if (activePOs.length === 0) return;
+            const current = activePOs[previewPOIndex];
+            if (!current || current.generatedCartons.length === 0) return;
+
+            const labelsContainer = document.getElementById('labels-preview-container');
+            const plPreview = document.getElementById('pl-preview-table-container');
+
+            if (labelsContainer) {
+                labelsContainer.innerHTML = '';
+            }
+
+            // Generate Label Previews Visual (Scale down to fit in responsive grid column cleanly)
+            current.generatedCartons.forEach(c => {
+                if (labelsContainer) {
+                    labelsContainer.insertAdjacentHTML('beforeend', `<div style="transform: scale(0.65); transform-origin: top left; margin-bottom: -5.33cm; margin-right: -3.55cm;">${generateLabelHTML(c)}</div>`);
+                }
+            });
+
+            // Rebuild exact A4 Landscape PDF export pages (exactly 2 labels side-by-side with gap per page)
+            let pdfHTML = '';
+            for (let i = 0; i < current.generatedCartons.length; i += 2) {
+                const label1 = generateLabelHTML(current.generatedCartons[i]);
+                const label2 = i + 1 < current.generatedCartons.length ? generateLabelHTML(current.generatedCartons[i + 1]) : '';
+                pdfHTML += `
+                    <div class="pdf-page">
+                        <div style="width: 10.0cm; height: 15.0cm; display: block;">${label1}</div>
+                        ${label2 ? `<div style="width: 10.0cm; height: 15.0cm; display: block;">${label2}</div>` : '<div class="label-template" style="visibility: hidden !important; border: none !important;"></div>'}
+                    </div>
+                `;
+            }
+            const pdfContainer = document.getElementById('pdf-container');
+            if (pdfContainer) {
+                pdfContainer.innerHTML = pdfHTML;
+            }
+            JsBarcode(".barcode").init(); 
+
+            // Visual Packing List Matrix
+            const totalQty = current.generatedCartons.reduce((sum, c) => sum + c.qty, 0);
+            const totalNet = current.generatedCartons.reduce((sum, c) => sum + parseFloat(c.netWt), 0).toFixed(2);
+            const totalGr = current.generatedCartons.reduce((sum, c) => sum + parseFloat(c.grWt), 0).toFixed(2);
+            
+            let sizesHeaders = current.allUniqueSizes.map(s => `<th style="border: 1px solid black; padding: 4px;">${s}</th>`).join('');
+
+            let groupedCartons = [];
+            let currentGroup = null;
+
+            current.generatedCartons.forEach((c) => {
+                let cartonSignature = `${c.sku}|${c.style}|${c.color}|${c.qty}|${c.netWt}|${c.grWt}|${JSON.stringify(c.sizesMap)}`;
+                if (!currentGroup) {
+                    currentGroup = { ...c, startCtn: c.cartonNum, endCtn: c.cartonNum, signature: cartonSignature, count: 1 };
+                } else if (currentGroup.signature === cartonSignature) {
+                    currentGroup.endCtn = c.cartonNum;
+                    currentGroup.count++;
+                } else {
+                    groupedCartons.push(currentGroup);
+                    currentGroup = { ...c, startCtn: c.cartonNum, endCtn: c.cartonNum, signature: cartonSignature, count: 1 };
+                }
+            });
+            if (currentGroup) groupedCartons.push(currentGroup);
+
+            // Deduplication logic for visual preview
+            let lastSku = "", lastStyle = "", lastColor = "";
+
+            let tableRows = groupedCartons.map(c => {
+                let sizeCells = current.allUniqueSizes.map(s => {
+                    const qty = c.sizesMap[s] || '';
+                    return `
+                        <td style="border: 1px solid black; padding: 2px;">
+                            <input type="number" min="0" value="${qty}" 
+                                   onchange="updateCartonGroupSize(${previewPOIndex}, ${c.startCtn}, ${c.endCtn}, '${s}', this.value)" 
+                                   class="w-12 text-center border border-gray-300 rounded p-1 bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 font-semibold text-gray-800">
+                        </td>
+                    `;
+                }).join('');
+
+                let rowQty = c.qty;
+                let ttlNetWt = (parseFloat(c.netWt) * c.count).toFixed(2);
+                let ttlGrWt = (parseFloat(c.grWt) * c.count).toFixed(2);
+                let ttlQty = rowQty * c.count;
+
+                let showMeta = (c.sku !== lastSku || c.style !== lastStyle || c.color || c.color !== lastColor);
+                lastSku = c.sku; lastStyle = c.style; lastColor = c.color;
+
+                let dispSku = showMeta ? c.sku : "";
+                let dispStyle = showMeta ? c.style : "";
+                let dispColor = showMeta ? c.color : "";
+
+                const currentDim = getDimensionsNormalized(c.rawDimensions || c.dimensions || '60 X 40 X 40');
+
+                return `
+                    <tr>
+                        <td style="border: 1px solid black; padding: 4px;">${c.startCtn}</td>
+                        <td style="border: 1px solid black; padding: 4px;">To</td>
+                        <td style="border: 1px solid black; padding: 4px;">${c.endCtn}</td>
+                        <td style="border: 1px solid black; padding: 2px;">
+                            <input type="text" value="${c.sku}" onchange="updateCartonGroupMeta(${previewPOIndex}, ${c.startCtn}, ${c.endCtn}, 'sku', this.value)" class="w-24 text-xs border border-gray-300 rounded p-1 bg-white text-center font-mono font-semibold text-gray-700">
+                        </td>
+                        <td style="border: 1px solid black; padding: 2px;">
+                            <input type="text" value="${c.style}" onchange="updateCartonGroupMeta(${previewPOIndex}, ${c.startCtn}, ${c.endCtn}, 'style', this.value)" class="w-32 text-xs border border-gray-300 rounded p-1 bg-white text-center">
+                        </td>
+                        <td style="border: 1px solid black; padding: 2px;">
+                            <input type="text" value="${c.color}" onchange="updateCartonGroupMeta(${previewPOIndex}, ${c.startCtn}, ${c.endCtn}, 'color', this.value)" class="w-24 text-xs border border-gray-300 rounded p-1 bg-white text-center">
+                        </td>
+                        <td style="border: 1px solid black; padding: 2px;">
+                            <select onchange="updateCartonGroupBoxSize(${previewPOIndex}, ${c.startCtn}, ${c.endCtn}, this.value)" class="text-xs border border-gray-300 rounded p-1 bg-white focus:ring-1 focus:ring-indigo-500">
+                                <option value="60 X 40 X 40" ${currentDim === '60 X 40 X 40' ? 'selected' : ''}>60/40/40</option>
+                                <option value="60 X 40 X 30" ${currentDim === '60 X 40 X 30' ? 'selected' : ''}>60/40/30</option>
+                                <option value="60 X 40 X 20" ${currentDim === '60 X 40 X 20' ? 'selected' : ''}>60/40/20</option>
+                                <option value="60 X 40 X 10" ${currentDim === '60 X 40 X 10' ? 'selected' : ''}>60/40/10</option>
+                            </select>
+                        </td>
+                        ${sizeCells}
+                        <td style="border: 1px solid black; padding: 4px; font-weight: bold; color: #1e293b;">${rowQty}</td>
+                        <td style="border: 1px solid black; padding: 4px;">${c.count}</td>
+                        <td style="border: 1px solid black; padding: 4px;">${c.netWt}</td>
+                        <td style="border: 1px solid black; padding: 4px;">${c.grWt}</td>
+                        <td style="border: 1px solid black; padding: 4px; font-weight: bold;">${ttlNetWt}</td>
+                        <td style="border: 1px solid black; padding: 4px; font-weight: bold;">${ttlGrWt}</td>
+                        <td style="border: 1px solid black; padding: 4px; font-weight: bold; color: #1e293b;">${ttlQty}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            let sizeTotalsCells = current.allUniqueSizes.map(s => {
+                let tot = current.generatedCartons.reduce((sum, c) => sum + (c.sizesMap[s] || 0), 0);
+                return `<td style="border: 1px solid black; padding: 4px;"><strong>${tot}</strong></td>`;
+            }).join('');
+
+            let summaryDataCells = current.allUniqueSizes.map(s => {
+                let tot = current.generatedCartons.reduce((sum, c) => sum + (c.sizesMap[s] || 0), 0);
+                return `<td style="border: 1px solid black; padding: 4px;">${tot}</td>`;
+            }).join('');
+
+            let plHTML = `
+                <div class="pl-page" style="width: 100%; font-family: Arial, sans-serif; font-size: 11px;">
+                    <div style="font-size: 18px; font-weight: 950; text-align: center; margin-bottom: 20px; text-transform: uppercase;">
+                        PACKING LIST ${getFormattedDateTitle()}
+                    </div>
+                    
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border: none; text-align: left;">
+                        <tr>
+                            <td style="padding: 3px 0; width: 100px;"><strong>Order No.:</strong></td>
+                            <td style="padding: 3px 0;">${current.po}</td>
+                            <td colspan="4"></td>
+                            <td style="padding: 3px 0; width: 120px;"><strong>HTS code:</strong></td>
+                            <td style="padding: 3px 0;">${current.hts}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 3px 0;"><strong>Picking address:</strong></td>
+                            <td style="padding: 3px 0;">"blvd. Hristo Botev 5, Ruse, 7000 Bulgaria"</td>
+                            <td colspan="4"></td>
+                            <td style="padding: 3px 0;"><strong>Total Net Weight:</strong></td>
+                            <td style="padding: 3px 0;">${totalNet} KGS</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 3px 0;"><strong>Delivery address:</strong></td>
+                            <td style="padding: 3px 0;">"${current.address}"</td>
+                            <td colspan="4"></td>
+                            <td style="padding: 3px 0;"><strong>Total Gross Weight:</strong></td>
+                            <td style="padding: 3px 0;">${totalGr} KGS</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 3px 0;">// total packages logic
+                                <strong>Total Quantity:</strong></td>
+                            <td style="padding: 3px 0;">${totalQty} PCS</td>
+                            <td colspan="4"></td>
+                            <td style="padding: 3px 0;"><strong>Total Packages:</strong></td>
+                            <td style="padding: 3px 0;">${current.generatedCartons.length} CTNS</td>
+                        </tr>
+                    </table>
+
+                    <table style="width: 100%; border-collapse: collapse; font-size: 10px; text-align: center;">
+                        <thead style="background-color: #f3f4f6;">
+                            <tr>
+                                <th style="border: 1px solid black; padding: 4px;">CTN</th>
+                                <th style="border: 1px solid black; padding: 4px;"></th>
+                                <th style="border: 1px solid black; padding: 4px;">NO.</th>
+                                <th style="border: 1px solid black; padding: 4px;">SKU</th>
+                                <th style="border: 1px solid black; padding: 4px;">STYLE</th>
+                                <th style="border: 1px solid black; padding: 4px;">COLOR</th>
+                                <th style="border: 1px solid black; padding: 4px;">BOX SIZE</th>
+                                ${sizesHeaders}
+                                <th style="border: 1px solid black; padding: 4px;">QTY</th>
+                                <th style="border: 1px solid black; padding: 4px;">TTL CTNS</th>
+                                <th style="border: 1px solid black; padding: 4px;">NET WT</th>
+                                <th style="border: 1px solid black; padding: 4px;">GR. WT</th>
+                                <th style="border: 1px solid black; padding: 4px;">TTL NET WT</th>
+                                <th style="border: 1px solid black; padding: 4px;">TTL GR. WT</th>
+                                <th style="border: 1px solid black; padding: 4px;">TTL QTY</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                            <tr style="background-color: #f3f4f6;">
+                                <td colspan="7" style="border: 1px solid black; padding: 4px; text-align: left;"><strong>TOTAL</strong></td>
+                                ${sizeTotalsCells}
+                                <td style="border: 1px solid black; padding: 4px;"></td>
+                                <td style="border: 1px solid black; padding: 4px;"><strong>${current.generatedCartons.length}</strong></td>
+                                <td style="border: 1px solid black; padding: 4px;"></td>
+                                <td style="border: 1px solid black; padding: 4px;"></td>
+                                <td style="border: 1px solid black; padding: 4px;"><strong>${totalNet}</strong></td>
+                                <td style="border: 1px solid black; padding: 4px;"><strong>${totalGr}</strong></td>
+                                <td style="border: 1px solid black; padding: 4px;"><strong>${totalQty}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div style="margin-top: 30px;">
+                        <h4 style="font-size: 13px; font-weight: bold; margin-bottom: 10px;">TOTAL SHIPPED</h4>
+                        <table style="border-collapse: collapse; font-size: 10px; text-align: center;">
+                            <thead style="background-color: #f3f4f6;">
+                                <tr>
+                                    <th style="border: 1px solid black; padding: 4px 10px;">SKU</th>
+                                    <th style="border: 1px solid black; padding: 4px 10px;">STYLE</th>
+                                    <th style="border: 1px solid black; padding: 4px 10px;">COLOR</th>
+                                    ${sizesHeaders}
+                                    <th colspan="2" style="border: 1px solid black; padding: 4px 10px;">TOTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="border: 1px solid black; padding: 4px 10px; text-align: left;">${current.sku}</td>
+                                    <td style="border: 1px solid black; padding: 4px 10px; text-align: left;">${current.style}</td>
+                                    <td style="border: 1px solid black; padding: 4px 10px; text-align: left;">${current.color}</td>
+                                    ${summaryDataCells}
+                                    <td colspan="2" style="border: 1px solid black; padding: 4px 10px;"><strong>${totalQty}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p style="font-size: 11px; font-weight: bold; margin-top: 15px;">Made in: Bulgaria</p>
+                    </div>
+                </div>
+            `;
+
+            if (plPreview) {
+                plPreview.innerHTML = plHTML;
+            }
+        };
+
+        // --- NEW: STYLED EXCEL EXPORT ---
+        window.exportPackingListExcel = function() {
+            const current = activePOs[previewPOIndex];
+            if(!current || current.generatedCartons.length === 0) return;
+
+            let groupedCartons = [];
+            let currentGroup = null;
+
+            current.generatedCartons.forEach((c) => {
+                let cartonSignature = `${c.sku}|${c.style}|${c.color}|${c.qty}|${c.netWt}|${c.grWt}|${JSON.stringify(c.sizesMap)}`;
+                if (!currentGroup) {
+                    currentGroup = { ...c, startCtn: c.cartonNum, endCtn: c.cartonNum, signature: cartonSignature, count: 1 };
+                } else if (currentGroup.signature === cartonSignature) {
+                    currentGroup.endCtn = c.cartonNum;
+                    currentGroup.count++;
+                } else {
+                    groupedCartons.push(currentGroup);
+                    currentGroup = { ...c, startCtn: c.cartonNum, endCtn: c.cartonNum, signature: cartonSignature, count: 1 };
+                }
+            });
+            if (currentGroup) groupedCartons.push(currentGroup);
+
+            const totalQty = current.generatedCartons.reduce((sum, c) => sum + c.qty, 0);
+            const totalNet = current.generatedCartons.reduce((sum, c) => sum + parseFloat(c.netWt), 0).toFixed(2);
+            const totalGr = current.generatedCartons.reduce((sum, c) => sum + parseFloat(c.grWt), 0).toFixed(2);
+
+            let aoa = [];
+            const dateStr = getFormattedDateTitle();
+
+            // Define Table Headers first so we can strict-limit the array width
+            let sizesHeaders = current.allUniqueSizes;
+            let tableHeader = ["", "CTN", "", "NO.", "SKU", "STYLE", "COLOR", "BOX SIZE", ...sizesHeaders, "QTY   ", "TTL CTNS", "NET WT", "GR. WT", "TTL NET WT", "TTL GR. WT", "TTL QTY"];
+
+            // Header Section formatted tightly (left aligned alignment rules)
+            aoa.push(["", `PACKING LIST ${dateStr}`]); // Row 0
+            aoa.push([]); // Row 1
+            
+            // Define left side properties, and dynamically position right side parameters
+            let rightLabelCol = 8 + current.allUniqueSizes.length; // Aligns perfectly with 'TTL CTNS'
+            let rightValueCol = rightLabelCol + 4; // Ensures 3 empty columns between Label and Value on right
+
+            let row2 = []; row2[1] = "Order No.:"; row2[4] = current.po; 
+            row2[rightLabelCol] = "HTS code:"; row2[rightValueCol] = current.hts;
+            
+            let row3 = []; row3[1] = "Picking address:"; row3[4] = "blvd. Hristo Botev 5, Ruse, 7000 Bulgaria";
+            row3[rightLabelCol] = "Total Net Weight:"; row3[rightValueCol] = ""; // Set by formula later
+            
+            let row4 = []; row4[1] = "Delivery address:"; row4[4] = current.address;
+            row4[rightLabelCol] = "Total Gross Weight:"; row4[rightValueCol] = ""; // Set by formula later
+
+            let row5 = []; row5[1] = "Total Quantity:"; row5[4] = ""; // Set by formula later
+            row5[rightLabelCol] = "Total Packages:"; row5[rightValueCol] = ""; // Set by formula later
+
+            [row2, row3, row4, row5].forEach(r => {
+                while(r.length < tableHeader.length) r.push("");
+                for(let i=0; i<tableHeader.length; i++) if(r[i] === undefined) r[i] = "";
+                aoa.push(r);
+            });
+            aoa.push([]); // Row 6 (blank before table)
+
+            aoa.push(tableHeader); // Row 7
+
+            let unitWtVal = parseFloat(current.unitWt) || 0.40;
+
+            // Deduplication tracker - Declared safely here to prevent any ReferenceErrors inside the carton loop
+            let lastSku = "", lastStyle = "", lastColor = "";
+
+            // Main Table Data with Live Formulas
+            groupedCartons.forEach((c, idx) => {
+                let r = aoa.length; // current aoa index/row
+                let excelRow = r + 1; // 1-based Excel row index
+
+                let qtyColLetter = getColLetter(8 + sizesHeaders.length);
+                let ctnsColLetter = getColLetter(8 + sizesHeaders.length + 1);
+                let netWtColLetter = getColLetter(8 + sizesHeaders.length + 2);
+                let grWtColLetter = getColLetter(8 + sizesHeaders.length + 3);
+
+                // Build exact dynamic formulas for this row
+                let qtyFormula = `SUM(${getColLetter(8)}${excelRow}:${getColLetter(8 + sizesHeaders.length - 1)}${excelRow})`;
+                let ctnsFormula = `${getColLetter(3)}${excelRow}-${getColLetter(1)}${excelRow}+1`;
+                let netWtFormula = `ROUND(${qtyColLetter}${excelRow}*${unitWtVal},2)`;
+                let grWtFormula = `${netWtColLetter}${excelRow}+IF(H${excelRow}="60/40/10",0.69,IF(H${excelRow}="60/40/20",0.75,IF(H${excelRow}="60/40/30",0.95,1.10)))`;
+                let ttlNetWtFormula = `ROUND(${netWtColLetter}${excelRow}*${ctnsColLetter}${excelRow},2)`;
+                let ttlGrWtFormula = `ROUND(${grWtColLetter}${excelRow}*${ctnsColLetter}${excelRow},2)`;
+                let ttlQtyFormula = `${qtyColLetter}${excelRow}*${ctnsColLetter}${excelRow}`;
+
+                let showMeta = (c.sku !== lastSku || c.style !== lastStyle || c.color !== lastColor);
+                lastSku = c.sku; lastStyle = c.style; lastColor = c.color;
+
+                let dispSku = showMeta ? c.sku : "";
+                let dispStyle = showMeta ? c.style : "";
+                let dispColor = showMeta ? c.color : "";
+
+                const currentDim = getDimensionsNormalized(c.rawDimensions || c.dimensions || '60 X 40 X 40');
+
+                let row = [ "", c.startCtn, "To", c.endCtn, dispSku, dispStyle, dispColor, currentDim.replace(/\s*X\s*/g, '/') ];
+                sizesHeaders.forEach(s => row.push(c.sizesMap[s] || ""));
+                
+                // Push formulas as objects
+                row.push(
+                    { f: qtyFormula, t: "n", v: 0 },
+                    { f: ctnsFormula, t: "n", v: 0 },
+                    { f: netWtFormula, t: "n", z: "0.00", v: 0 },
+                    { f: grWtFormula, t: "n", z: "0.00", v: 0 },
+                    { f: ttlNetWtFormula, t: "n", z: "0.00", v: 0 },
+                    { f: ttlGrWtFormula, t: "n", z: "0.00", v: 0 },
+                    { f: ttlQtyFormula, t: "n", v: 0 }
+                );
+
+                aoa.push(row);
+            });
+
+            let mainTableEnd = aoa.length; // index where Totals Row will go (Excel row number: mainTableEnd + 1)
+            let totalsRowIndex = mainTableEnd;
+            let totalsRowNumber = totalsRowIndex + 1;
+
+            let startRowNum = 9; // Table data starts at row 9 (index 8)
+            let endRowNum = mainTableEnd; // Table data ends at row mainTableEnd (index mainTableEnd - 1)
+
+            let qtyColLetter = getColLetter(8 + sizesHeaders.length);
+            let ctnsColLetter = getColLetter(8 + sizesHeaders.length + 1);
+            let ttlNetWtColLetter = getColLetter(8 + sizesHeaders.length + 4);
+            let ttlGrWtColLetter = getColLetter(8 + sizesHeaders.length + 5);
+            let ttlQtyColLetter = getColLetter(8 + sizesHeaders.length + 6);
+
+            // Totals Row
+            let totalsRow = ["", "TOTAL", "", "", "", "", "", ""];
+            sizesHeaders.forEach((s, idx) => {
+                let colLetter = getColLetter(8 + idx);
+                totalsRow.push({ f: `SUM(${colLetter}${startRowNum}:${colLetter}${endRowNum})`, t: "n", v: 0 });
+            });
+            totalsRow.push(
+                { f: `SUM(${qtyColLetter}${startRowNum}:${qtyColLetter}${endRowNum})`, t: "n", v: 0 },
+                { f: `SUM(${ctnsColLetter}${startRowNum}:${ctnsColLetter}${endRowNum})`, t: "n", v: 0 },
+                "", // NET WT blank
+                "", // GR. WT blank
+                { f: `SUM(${ttlNetWtColLetter}${startRowNum}:${ttlNetWtColLetter}${endRowNum})`, t: "n", z: "0.00", v: 0 },
+                { s: null, f: `SUM(${ttlGrWtColLetter}${startRowNum}:${ttlGrWtColLetter}${endRowNum})`, t: "n", z: "0.00", v: 0 },
+                { f: `SUM(${ttlQtyColLetter}${startRowNum}:${ttlQtyColLetter}${endRowNum})`, t: "n", v: 0 }
+            );
+            aoa.push(totalsRow);
+
+            // Assign Top-level Metadata Card Formulas pointing directly to the main table Totals Row
+            aoa[3][rightValueCol] = { f: `${ttlNetWtColLetter}${totalsRowNumber}`, t: "n", z: '#,##0.00" KGS"', v: 0 };
+            aoa[4][rightValueCol] = { f: `${ttlGrWtColLetter}${totalsRowNumber}`, t: "n", z: '#,##0.00" KGS"', v: 0 };
+            aoa[5][4] = { f: `${ttlQtyColLetter}${totalsRowNumber}`, t: "n", z: '#,##0" PCS"', v: 0 };
+            aoa[5][rightValueCol] = { f: `${ctnsColLetter}${totalsRowNumber}`, t: "n", z: '#,##0" CTNS"', v: 0 };
+
+            // Blank rows before total shipped matrix
+            aoa.push([]);
+            aoa.push([]);
+
+            // Summary Table (TOTAL SHIPPED) - Completely spacer-free
+            let summaryStartRow = aoa.length;
+            
+            let summaryHeader = [];
+            summaryHeader[4] = "SKU";
+            summaryHeader[5] = "STYLE";
+            summaryHeader[6] = "COLOR";
+            // Sizes follow COLOR immediately at index 7 with NO empty cells or spacers
+            sizesHeaders.forEach((s, i) => summaryHeader[7 + i] = s);
+            summaryHeader[7 + sizesHeaders.length] = "TOTAL"; // Spans QTY and TTL CTNS of main table
+            
+            for(let i=0; i<tableHeader.length; i++) if(summaryHeader[i] === undefined) summaryHeader[i] = "";
+            aoa.push(summaryHeader);
+            
+            let summaryData = [];
+            summaryData[4] = current.sku;
+            summaryData[5] = current.style;
+            summaryData[6] = current.color;
+            sizesHeaders.forEach((s, i) => {
+                // Point dynamically to size sum columns of the main table totals row
+                let mainTableSizeColLetter = getColLetter(8 + i);
+                summaryData[7 + i] = { f: `${mainTableSizeColLetter}${totalsRowNumber}`, t: "n", v: 0 };
+            });
+            summaryData[7 + sizesHeaders.length] = { f: `${ttlQtyColLetter}${totalsRowNumber}`, t: "n", v: 0 };
+            for(let i=0; i<tableHeader.length; i++) if(summaryData[i] === undefined) summaryData[i] = "";
+            aoa.push(summaryData);
+
+            aoa.push([]);
+            let bulgariaRow = [];
+            bulgariaRow[4] = "Made in: Bulgaria";
+            aoa.push(bulgariaRow);
+
+            // Strip ALL cells strictly to the boundary of the Table Header length to prevent empty trailing cells
+            aoa.forEach(r => { 
+                while(r.length < tableHeader.length) r.push(""); 
+                r.length = tableHeader.length; // Force array truncation
+            });
+
+            // Apply xlsx-js-style properties and merge cells
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+            
+            const borderStyle = {
+                top: { style: "thin", color: { rgb: "000000" } },
+                bottom: { style: "thin", color: { rgb: "000000" } },
+                left: { style: "thin", color: { rgb: "000000" } },
+                right: { style: "thin", color: { rgb: "000000" } }
+            };
+
+            let summaryTotalColIndex = 7 + sizesHeaders.length;
+
+            // Setup Cell Merges for alignment
+            ws['!merges'] = [
+                { s: { r: 0, c: 1 }, e: { r: 0, c: tableHeader.length - 1 } }, // PACKING LIST TITLE spanning entire table
+                { s: { r: 2, c: 1 }, e: { r: 2, c: 3 } }, // Left Labels
+                { s: { r: 3, c: 1 }, e: { r: 3, c: 3 } },
+                { s: { r: 4, c: 1 }, e: { r: 4, c: 3 } },
+                { s: { r: 5, c: 1 }, e: { r: 5, c: 3 } },
+                { s: { r: 2, c: 4 }, e: { r: 2, c: rightLabelCol - 2 } }, // Left Values
+                { s: { r: 3, c: 4 }, e: { r: 3, c: rightLabelCol - 2 } }, 
+                { s: { r: 4, c: 4 }, e: { r: 4, c: rightLabelCol - 2 } },
+                { s: { r: 5, c: 4 }, e: { r: 5, c: rightLabelCol - 2 } },
+                { s: { r: 2, c: rightLabelCol }, e: { r: 2, c: rightValueCol - 1 } }, // Right Labels
+                { s: { r: 3, c: rightLabelCol }, e: { r: 3, c: rightValueCol - 1 } },
+                { s: { r: 4, c: rightLabelCol }, e: { r: 4, c: rightValueCol - 1 } },
+                { s: { r: 5, c: rightLabelCol }, e: { r: 5, c: rightValueCol - 1 } },
+                { s: { r: 2, c: rightValueCol }, e: { r: 2, c: tableHeader.length - 1 } }, // Right Values
+                { s: { r: 3, c: rightValueCol }, e: { r: 3, c: tableHeader.length - 1 } },
+                { s: { r: 4, c: rightValueCol }, e: { r: 4, c: tableHeader.length - 1 } },
+                { s: { r: 5, c: rightValueCol }, e: { r: 5, c: tableHeader.length - 1 } },
+                { s: { r: 7, c: 1 }, e: { r: 7, c: 3 } }, // CTN NO Merge
+                { s: { r: mainTableEnd, c: 1 }, e: { r: mainTableEnd, c: 7 } }, // Main Table TOTAL footer
+                { s: { r: summaryStartRow - 1, c: 4 }, e: { r: summaryStartRow - 1, c: 6 } }, // TOTAL SHIPPED Title
+                { s: { r: summaryStartRow, c: summaryTotalColIndex }, e: { r: summaryStartRow, c: summaryTotalColIndex + 1 } }, // TOTAL SHIPPED Header span
+                { s: { r: summaryStartRow + 1, c: summaryTotalColIndex }, e: { r: summaryStartRow + 1, c: summaryTotalColIndex + 1 } }  // TOTAL SHIPPED Value span
+            ];
+
+            ws[XLSX.utils.encode_cell({r: summaryStartRow - 1, c: 4})] = {v: "TOTAL SHIPPED", t: "s", s: {font: {bold: true, sz: 11}}};
+
+            // Custom Row Heights
+            ws['!rows'] = [];
+            ws['!rows'][0] = { hpt: 28 }; // Puts centered packing list title at 28pt height
+
+            for (let R = 0; R < aoa.length; ++R) {
+                for (let C = 0; C < aoa[R].length; ++C) {
+                    let cellRef = XLSX.utils.encode_cell({r: R, c: C});
+                    if (!ws[cellRef]) ws[cellRef] = {v: "", t: "s"}; 
+                    
+                    let s = { font: {}, alignment: { vertical: "center" } };
+
+                    // Enlarge and center the main Packing List Title
+                    if (R === 0 && C === 1) { 
+                        s.font.bold = true; 
+                        s.font.sz = 14; 
+                        s.alignment.horizontal = "center";
+                    }
+                    
+                    if (R >= 2 && R <= 5) {
+                        s.alignment.horizontal = "left";
+                        if (C === 1 || C === rightLabelCol) s.font.bold = true;
+                    }
+
+                    if (R >= 7 && R <= mainTableEnd) {
+                        if (C >= 1 && C < tableHeader.length) {
+                            s.border = borderStyle;
+                            s.alignment.horizontal = "center";
+                            
+                            // Align SKU, STYLE, COLOR to the left
+                            if(C >= 4 && C <= 6 && R < mainTableEnd) s.alignment.horizontal = "left";
+
+                            if (R === 7 || R === mainTableEnd) {
+                                s.font.bold = true;
+                                s.fill = { fgColor: { rgb: "F3F4F6" } };
+                            }
+                            if (R === mainTableEnd && C === 1) {
+                                s.alignment.horizontal = "left";
+                            }
+                        }
+                    }
+
+                    if (R >= summaryStartRow && R <= summaryStartRow + 1) {
+                        if (C >= 4 && C <= summaryTotalColIndex + 1) {
+                            s.border = borderStyle;
+                            s.alignment.horizontal = "center";
+
+                            // Align SKU, STYLE, COLOR to the left
+                            if(C >= 4 && C <= 6) s.alignment.horizontal = "left";
+
+                            if (R === summaryStartRow) {
+                                s.font.bold = true;
+                                s.fill = { fgColor: { rgb: "F3F4F6" } };
+                            }
+                        }
+                    }
+
+                    if (R === summaryStartRow + 3 && C === 4) {
+                        s.font.bold = true;
+                    }
+
+                    ws[cellRef].s = s;
+                }
+            }
+
+            ws['!cols'] = [ {wch: 3}, {wch: 8}, {wch: 4}, {wch: 8}, {wch: 15}, {wch: 25}, {wch: 15}, {wch: 12} ];
+            sizesHeaders.forEach(() => ws['!cols'].push({wch: 6}));
+            ws['!cols'].push({wch: 8}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 12}, {wch: 12}, {wch: 10});
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Packing List");
+            XLSX.writeFile(wb, `PackingList_PO_${current.po}.xlsx`);
+        };
+
+        window.exportLabelsPDF = function() {
+            const sourceContainer = document.getElementById('pdf-container');
+            if (!sourceContainer || !sourceContainer.innerHTML.trim()) {
+                showToast("Error", "No labels generated to export.");
+                return;
+            }
+            showLoading("Preparing labels for PDF...");
+
+            // Get dynamic PO name and date values
+            const current = activePOs.length > 0 ? activePOs[previewPOIndex] : null;
+            let poName = "Legacy";
+            if (current) {
+                poName = current.po;
+            } else if (generatedLabelsData.length > 0) {
+                poName = generatedLabelsData[0].po;
+            }
+            
+            const dateStr = getFormattedDateTitle();
+            const docTitle = `Reformation_PO_${poName}_${dateStr}`;
+
+            // Open a clean print window
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                hideLoading();
+                showToast("Popup Blocked", "Please allow popups to generate PDF labels.");
+                return;
+            }
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${docTitle}</title>
+                    <style>
+                        /* Resets body default spacing */
+                        html, body {
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            background: white !important;
+                            width: 29.7cm !important;
+                            height: auto !important; /* Allow the document body height to scale naturally to fit multi-page lists */
+                            overflow: visible !important; /* Force overflow visible to let browser page breaks execute */
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+                        
+                        /* Force physical browser Landscape configuration on print dialog exit */
+                        @media print {
+                            @page {
+                                size: A4 landscape !important;
+                                margin: 0 !important;
+                            }
+                            body {
+                                margin: 0 !important;
+                                padding: 0 !important;
+                            }
+                        }
+                        
+                        /* --- EXACT CENTIMETER LAYOUT FOR NATIVE VECTOR A4 EXPORTS --- */
+                        .pdf-page {
+                            width: 29.7cm !important;
+                            min-width: 29.7cm !important;
+                            max-width: 29.7cm !important;
+                            height: 20.0cm !important; /* Margined buffer from 21.0cm to prevent browser scale accidental empty pages */
+                            min-height: 20.0cm !important;
+                            max-height: 20.0cm !important;
+                            display: flex !important;
+                            flex-direction: row !important;
+                            justify-content: center !important;
+                            align-items: center !important;
+                            gap: 1.2cm !important;
+                            page-break-inside: avoid !important;
+                            break-inside: avoid !important;
+                            page-break-after: always !important;
+                            break-after: page !important;
+                            box-sizing: border-box !important;
+                            overflow: hidden !important;
+                            background: white !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                        }
+                        
+                        .pdf-page:last-child {
+                            page-break-after: avoid !important;
+                            break-after: avoid !important;
+                        }
+                        
+                        /* --- PHYSICAL THERMAL BOUNDS: exactly 10.0cm x 15.0cm --- */
+                        .label-template {
+                            width: 10.0cm !important;
+                            min-width: 10.0cm !important;
+                            max-width: 10.0cm !important;
+                            height: 15.0cm !important;
+                            min-height: 15.0cm !important;
+                            max-height: 15.0cm !important;
+                            background: white !important;
+                            color: black !important;
+                            font-family: Arial, sans-serif !important;
+                            border: 2px solid black !important;
+                            box-sizing: border-box !important;
+                            display: flex !important;
+                            flex-direction: column !important;
+                            margin: 0 !important;
+                            overflow: hidden !important;
+                            box-shadow: none !important;
+                        }
+                        .label-section {
+                            display: flex !important;
+                            flex-direction: column !important;
+                            flex: 1 !important;
+                        }
+                        .header-row {
+                            display: flex !important;
+                            flex: 0 0 14px !important;
+                        }
+                        .value-row {
+                            display: flex !important;
+                            flex: 1 !important;
+                        }
+                        .cell {
+                            flex: 1 !important;
+                            border-bottom: 2px solid black !important;
+                            border-right: 2px solid black !important;
+                            display: flex !important;
+                            flex-direction: column !important;
+                            justify-content: center !important;
+                            align-items: center !important;
+                            text-align: center !important;
+                            padding: 2px 4px !important;
+                            box-sizing: border-box !important;
+                            width: 50% !important;
+                            overflow: hidden !important;
+                        }
+                        .cell:nth-child(2) { border-right: none !important; }
+                        .label-section:last-child .value-row .cell { border-bottom: none !important; }
+                        
+                        .header-cell {
+                            font-weight: 600 !important;
+                            font-size: 9px !important;
+                            text-transform: uppercase !important;
+                            color: #000 !important;
+                            align-items: flex-start !important;
+                            text-align: left !important;
+                            padding-left: 6px !important;
+                        }
+                        .value-cell {
+                            font-size: 22px !important;
+                            font-weight: 900 !important;
+                            line-height: 1.1 !important;
+                            word-wrap: break-word !important;
+                            max-width: 100% !important;
+                        }
+                        .value-cell.address { font-size: 10px !important; font-weight: 800 !important; line-height: 1.2 !important; }
+                        .value-cell.medium { font-size: 16px !important; }
+                        .value-cell.l { font-size: 18px !important; }
+                        .value-cell.xl { font-size: 24px !important; line-height: 1 !important; }
+                        .barcode { max-height: 30px; max-width: 100%; margin-bottom: 2px; }
+                    </style>
+                    <!-- Re‑load JsBarcode to render barcodes in the new window -->
+                    <script src="vendor/cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"><\/script>
+                    <script>
+                        window.onload = function() {
+                            // Regenerate all barcodes inside the print window
+                            JsBarcode(".barcode").init();
+                            // Automatically open the browser's print dialog
+                            window.print();
+                            // Close the print window after printing or cancelling
+                            window.onafterprint = function() {
+                                window.close();
+                            };
+                        };
+                    <\/script>
+                </head>
+                <body style="margin:0; padding:0; background:white;">
+                    ${sourceContainer.innerHTML}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            hideLoading();
+            showToast("Info", "Print dialog opened. Select 'Save as PDF' (Landscape), set Margins to 'None' and Scale to 'Default' or '100%'.");
+        };
+
+        function generateLabelHTML(data) {
+            const senderFormat = "PELINTEX BULGARIA LTD\n" + data.from;
+            return `
+                <div class="label-template">
+                    <div class="label-section">
+                        <div class="header-row">
+                            <div class="cell header-cell">FROM:</div>
+                            <div class="cell header-cell">TO:</div>
+                        </div>
+                        <div class="value-row">
+                            <div class="cell value-cell address" style="white-space: pre-wrap;">${senderFormat}</div>
+                            <div class="cell value-cell address">${data.to}</div>
+                        </div>
+                    </div>
+                    <div class="label-section">
+                        <div class="header-row">
+                            <div class="cell header-cell">PO:</div>
+                            <div class="cell header-cell">CARTON #:</div>
+                        </div>
+                        <div class="value-row">
+                            <div class="cell value-cell medium">
+                                <svg class="barcode" jsbarcode-value="${data.po || 'N/A'}" jsbarcode-format="CODE128" jsbarcode-height="30" jsbarcode-width="1.2" jsbarcode-displayvalue="false" jsbarcode-margin="0"></svg>
+                                <span>${data.po}</span>
+                            </div>
+                            <div class="cell value-cell xl">${data.cartonNum} of ${data.totalCartons}</div>
+                        </div>
+                    </div>
+                    <div class="label-section">
+                        <div class="header-row">
+                            <div class="cell header-cell">QTY:</div>
+                            <div class="cell header-cell">STYLE:</div>
+                        </div>
+                        <div class="value-row">
+                            <div class="cell value-cell medium">
+                                <svg class="barcode" jsbarcode-value="${data.qty || '0'}" jsbarcode-format="CODE128" jsbarcode-height="30" jsbarcode-width="1.2" jsbarcode-displayvalue="false" jsbarcode-margin="0"></svg>
+                                <span>${data.qty}</span>
+                            </div>
+                            <div class="cell value-cell medium">${data.style}</div>
+                        </div>
+                    </div>
+                    <div class="label-section">
+                        <div class="header-row">
+                            <div class="cell header-cell">COLOR:</div>
+                            <div class="cell header-cell">SIZE:</div>
+                        </div>
+                        <div class="value-row">
+                            <div class="cell value-cell xl">${data.color}</div>
+                            <div class="cell value-cell xl">${data.sizes}</div>
+                        </div>
+                    </div>
+                    <div class="label-section">
+                        <div class="header-row">
+                            <div class="cell header-cell">COO:</div>
+                            <div class="cell header-cell">CARTON DIMENSIONS:</div>
+                        </div>
+                        <div class="value-row">
+                            <div class="cell value-cell l">${data.coo}</div>
+                            <div class="cell value-cell l">${data.dimensions}</div>
+                        </div>
+                    </div>
+                    <div class="label-section">
+                        <div class="header-row">
+                            <div class="cell header-cell">NET WEIGHT (KG):</div>
+                            <div class="cell header-cell">GROSS WEIGHT (KG):</div>
+                        </div>
+                        <div class="value-row">
+                            <div class="cell value-cell xl">${data.netWt}</div>
+                            <div class="cell value-cell xl">${data.grWt}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // TAB 2: LEGACY EXCEL PARSER LOGIC
+        // ==========================================
+        const excelDropzone = document.getElementById('excel-dropzone');
+        const excelUpload = document.getElementById('excel-upload');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => excelDropzone.addEventListener(evt, preventDefaults, false));
+        ['dragenter', 'dragover'].forEach(evt => excelDropzone.addEventListener(evt, () => excelDropzone.classList.add('bg-indigo-50', 'border-indigo-400')));
+        ['dragleave', 'drop'].forEach(evt => excelDropzone.addEventListener(evt, () => excelDropzone.classList.remove('bg-indigo-50', 'border-indigo-400')));
+        
+        excelDropzone.addEventListener('drop', (e) => { if(e.dataTransfer.files.length > 0) processExcel(e.dataTransfer.files[0]); });
+        excelUpload.addEventListener('change', (e) => { if(e.target.files.length > 0) processExcel(e.target.files[0]); });
+
+        function processExcel(file) {
+            document.getElementById('excel-file-name').textContent = file.name;
+            showLoading("Reading Excel data...");
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
+                    
+                    parseExcelList(json);
+                } catch (error) {
+                    showToast("Error", "Error parsing Excel list.");
+                    hideLoading();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function parseExcelList(data) {
+            let po = "", fromAddress = "", toAddress = "", dimensions = "", totalCartons = "";
+            let headerRowIdx = -1;
+
+            for(let i=0; i < Math.min(data.length, 30); i++) {
+                let row = data[i] || [];
+                let rowStr = row.map(c => getCellValue(c).toUpperCase()).join(" ");
+                
+                if (rowStr.includes("ORDER NO")) po = getNextCellData(row, "ORDER NO");
+                if (rowStr.includes("PICKING ADDRESS")) {
+                    fromAddress = getNextCellData(row, "PICKING ADDRESS");
+                    if(!fromAddress.toUpperCase().includes("PELINTEX")) fromAddress = "PELINTEX BULGARIA LTD " + fromAddress;
+                }
+                if (rowStr.includes("DELIVERY ADDRESS")) toAddress = getNextCellData(row, "DELIVERY ADDRESS");
+                if (rowStr.includes("TOTAL PACKAGES")) totalCartons = getNextCellData(row, "TOTAL PACKAGES");
+            }
+
+            // High precision header row scanner (searches for row holding SKU and Style Name)
+            for (let i = 0; i < data.length; i++) {
+                let row = data[i] || [];
+                let rowStr = row.map(c => getCellValue(c).toUpperCase()).join(" ");
+                if (rowStr.includes("SKU") && rowStr.includes("STYLE") && (rowStr.includes("CTN") || rowStr.includes("NO."))) {
+                    headerRowIdx = i;
+                    break;
+                }
+            }
+
+            if (headerRowIdx === -1) { 
+                showToast("Error", "Could not find valid main table headers (SKU, STYLE, CTN) in the uploaded packing list."); 
+                hideLoading(); 
+                return; 
+            }
+
+            let headers = data[headerRowIdx].map(c => getCellValue(c).toUpperCase().trim());
+            
+            // Detect our custom generated template format
+            let isCustomFormat = headers.includes("BOX SIZE") && headers.includes("TTL CTNS") && headers.includes("TTL NET WT");
+            
+            let colMap = {};
+            if (isCustomFormat) {
+                let ctnIndex = headers.indexOf("CTN");
+                let noIndex = headers.indexOf("NO.");
+                let skuIndex = headers.indexOf("SKU");
+                let styleIndex = headers.indexOf("STYLE");
+                let colorIndex = headers.indexOf("COLOR");
+                let boxSizeIndex = headers.indexOf("BOX SIZE");
+
+                colMap = {
+                    ctnStart: ctnIndex !== -1 ? ctnIndex : 1,
+                    ctnEnd: noIndex !== -1 ? noIndex : 3,
+                    sku: skuIndex !== -1 ? skuIndex : 4,
+                    style: styleIndex !== -1 ? styleIndex : 5,
+                    color: colorIndex !== -1 ? colorIndex : 6,
+                    boxSize: boxSizeIndex !== -1 ? boxSizeIndex : 7,
+                    qty: headers.findIndex(h => h.trim().startsWith("QTY")),
+                    netWt: headers.findIndex(h => h === "NET WT" || h.includes("NET WT") || h === "NETWEIGHT"),
+                    grWt: headers.findIndex(h => h === "GR. WT" || h === "GR.WT" || h.includes("GR. WT") || h.includes("GROSS")),
+                };
+            } else {
+                colMap = {
+                    ctnStart: headers.findIndex(h => h === "CTN" || h === "CTN NO" || h.includes("CTN")),
+                    ctnEnd: headers.findIndex(h => h === "NO." || h === "NO" || (h.includes("NO") && !h.includes("CTN") && !h.includes("STYLE") && !h.includes("KNO"))),
+                    sku: headers.findIndex(h => h === "SKU" || h.includes("SKU")),
+                    style: headers.findIndex(h => h === "STYLE" || h.includes("STYLE")),
+                    color: headers.findIndex(h => h === "COLOR" || h.includes("COLOR")),
+                    boxSize: headers.findIndex(h => h.includes("BOX SIZE") || h.includes("BOXSIZE") || h === "BOX SIZE"),
+                    qty: headers.findIndex(h => h === "QTY" || h.startsWith("QTY") || h.includes("QTY") && !h.includes("TTL") && !h.includes("TOTAL")),
+                    netWt: headers.findIndex(h => h === "NET WT" || h.includes("NET WT") || h === "NETWEIGHT"),
+                    grWt: headers.findIndex(h => h === "GR. WT" || h === "GR.WT" || h.includes("GR. WT") || h.includes("GROSS")),
+                };
+            }
+
+            let sizeCols = [];
+            let startSearch = isCustomFormat ? colMap.boxSize + 1 : Math.max(colMap.color, colMap.boxSize) + 1;
+            let endSearch = colMap.qty;
+            if (startSearch !== 0 && endSearch !== -1) {
+                for (let c = startSearch; c < endSearch; c++) {
+                    let hVal = headers[c];
+                    if (hVal && isActualSize(hVal)) {
+                        sizeCols.push({ index: c, name: hVal });
+                    }
+                }
+            }
+
+            generatedLabelsData = [];
+            let currentSku = "", currentStyle = "", currentColor = "", currentBoxSize = "60 X 40 X 40";
+
+            for (let i = headerRowIdx + 1; i < data.length; i++) {
+                let row = data[i];
+                if (!row || !row.length) continue;
+
+                let rowStr = row.map(c => getCellValue(c).toUpperCase()).join(" ");
+                // Break loop if we reach any total footer row
+                let cell1Val = getCellValue(row[1]).toUpperCase().trim();
+                let cell0Val = getCellValue(row[0]).toUpperCase().trim();
+                if (cell0Val === "TOTAL" || cell0Val === "GRAND TOTAL" || cell1Val === "TOTAL" || cell1Val === "GRAND TOTAL") {
+                    break;
+                }
+
+                let ctnStartVal = getCellValue(row[colMap.ctnStart]);
+                if (ctnStartVal === undefined || ctnStartVal === null || ctnStartVal === "") continue;
+
+                let ctnStart = parseInt(ctnStartVal, 10);
+                if (isNaN(ctnStart)) continue;
+                
+                let ctnEnd = ctnStart;
+                if (colMap.ctnEnd !== -1) {
+                    let endVal = parseInt(getCellValue(row[colMap.ctnEnd]), 10);
+                    if (!isNaN(endVal)) ctnEnd = endVal;
+                }
+
+                // Carry forward merged values to handle Excel merged cells seamlessly
+                let skuVal = getCellValue(row[colMap.sku]);
+                let styleVal = getCellValue(row[colMap.style]);
+                let colorVal = getCellValue(row[colMap.color]);
+                let boxSizeVal = getCellValue(row[colMap.boxSize]);
+                let qtyVal = getCellValue(row[colMap.qty]);
+                let netWtVal = getCellValue(row[colMap.netWt]);
+                let grWtVal = getCellValue(row[colMap.grWt]);
+
+                if (colMap.sku !== -1 && skuVal !== "") {
+                    currentSku = skuVal;
+                }
+                if (colMap.style !== -1 && styleVal !== "") {
+                    currentStyle = styleVal;
+                }
+                if (colMap.color !== -1 && colorVal !== "") {
+                    currentColor = colorVal;
+                }
+                if (colMap.boxSize !== -1 && boxSizeVal !== "") {
+                    currentBoxSize = boxSizeVal;
+                }
+
+                let qtyInt = parseInt(qtyVal, 10);
+                if (isNaN(qtyInt)) qtyInt = 0;
+
+                let netWtFloat = parseFloat(netWtVal);
+                let netWtStr = isNaN(netWtFloat) ? netWtVal : netWtFloat.toFixed(2);
+
+                let grWtFloat = parseFloat(grWtVal);
+                let grWtStr = isNaN(grWtFloat) ? grWtVal : grWtFloat.toFixed(2);
+
+                let sizeNames = [];
+                sizeCols.forEach(sc => {
+                    let val = getCellValue(row[sc.index]);
+                    let valInt = parseInt(val, 10);
+                    if (!isNaN(valInt) && valInt > 0) {
+                        sizeNames.push(sc.name);
+                    }
+                });
+
+                for (let c = ctnStart; c <= ctnEnd; c++) {
+                    generatedLabelsData.push({
+                        from: fromAddress,
+                        to: toAddress,
+                        po: po,
+                        cartonNum: c,
+                        totalCartons: totalCartons || "?",
+                        qty: qtyInt,
+                        style: currentStyle,
+                        color: currentColor,
+                        sizes: sizeNames.join(", "),
+                        coo: "BULGARIA",
+                        dimensions: currentBoxSize.replace(/\s*X\s*/g, '/'),
+                        netWt: netWtStr,
+                        grWt: grWtStr
+                    });
+                }
+            }
+
+            document.getElementById('excel-controlsArea').classList.remove('hidden');
+            document.getElementById('excel-previewArea').classList.remove('hidden');
+            
+            // Build visual labels for excel tab
+            const prevContainer = document.getElementById('excel-previewContainer');
+            prevContainer.innerHTML = '';
+            
+            let pdfHTML = '';
+            for (let i = 0; i < generatedLabelsData.length; i += 2) {
+                const lblData1 = generatedLabelsData[i];
+                const lblData2 = i + 1 < generatedLabelsData.length ? generatedLabelsData[i + 1] : null;
+
+                const label1 = generateLabelHTML(lblData1);
+                const label2 = lblData2 ? generateLabelHTML(lblData2) : '';
+
+                pdfHTML += `
+                    <div class="pdf-page">
+                        <div style="width: 10.0cm; height: 15.0cm; display: block;">${label1}</div>
+                        ${lblData2 ? `<div style="width: 10.0cm; height: 15.0cm; display: block;">${label2}</div>` : '<div class="label-template" style="visibility: hidden !important; border: none !important;"></div>'}
+                    </div>
+                `;
+                
+                // Visual scale down previews in UI
+                prevContainer.insertAdjacentHTML('beforeend', `<div style="transform: scale(0.65); transform-origin: top left; margin-bottom: -5.33cm; margin-right: -3.55cm;">${label1}</div>`);
+                if (lblData2) {
+                    prevContainer.insertAdjacentHTML('beforeend', `<div style="transform: scale(0.65); transform-origin: top left; margin-bottom: -5.33cm; margin-right: -3.55cm;">${label2}</div>`);
+                }
+            }
+            document.getElementById('pdf-container').innerHTML = pdfHTML;
+
+            JsBarcode(".barcode").init();
+            hideLoading();
+        }
+    </script>
+</body>
+</html>
